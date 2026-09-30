@@ -15,7 +15,6 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PIN_FILE="$SCRIPT_DIR/fleet-pin.json"
 ROOT="${PI_FLEET_ROOT:-${XDG_DATA_HOME:-$HOME/.local/share}/pi-fleet}"
 
 die() { echo "fleet-wrapper: $*" >&2; exit 70; }
@@ -25,6 +24,11 @@ json_get() { sed -n 's/.*"'"$2"'"[[:space:]]*:[[:space:]]*"\{0,1\}\([^",}]*\)"\{
 [ -e "$ROOT/current" ] || die "no shared install at $ROOT/current (run fleet-install.sh install)"
 INSTALL="$(readlink -f "$ROOT/current")"
 [ -f "$INSTALL/dist/cli.js" ] || die "install has no dist/cli.js: $INSTALL"
+# Self-describing install: verify against the pin recorded AT INSTALL TIME
+# (fleet-install.sh copies it in), so `current` can flip to any verified
+# install — including the rollback pre-pin — without a wrapper change.
+PIN_FILE="$INSTALL/.fleet-pin.json"
+[ -f "$PIN_FILE" ] || die "install is not self-describing (no .fleet-pin.json): $INSTALL"
 
 want_v="$(json_get "$PIN_FILE" version)"
 got_v="$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$INSTALL/package.json" | head -n1)"

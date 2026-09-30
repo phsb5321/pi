@@ -127,6 +127,10 @@ cmd_install() {
     rm -rf "$target.tmp"
     mkdir -p "$root" "$target.tmp"
     cp -a "$src/." "$target.tmp/"
+    # Self-describing install: the verified pin travels with the install so
+    # fleet-wrapper.sh can verify + identify ANY installed pin. This is what
+    # makes the MS-30 rollback flip (current -> pre-pin) mechanically sound.
+    cp "$PIN_FILE" "$target.tmp/.fleet-pin.json"
     rm -rf "$target"
     mv "$target.tmp" "$target"
     chmod -R a-w "$target"
