@@ -198,3 +198,11 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   from current upstream/main. mem-verify delivered (ms/mem-verify@fdc7c10,
   self-check PASS on MS-04 data, negative controls FAIL as expected; parked
   pre-lgtm, no PR).
+- 2026-09-30 16:35 — **M1 EXIT SIGNED.** Criteria: top-3 buckets named +
+  MiB ✓ (MS-10); levers mapped with U-rank + effort ✓; backlog re-ranked ✓
+  (MS-12 re-rank v3); differential method ✓. MS-12 v3 **ratifies** the M2
+  pick (MS-20 first). MS-20 landing map accepted (p8: 538 boot-graph
+  files, per-dep sizing, proxy numbers — MS-10 heap is arbiter). p6
+  erratum + protocol B0 (hydrate+build before check) confirmed. M2 is now
+  open: p4 implements ms/lazy-load-baseline after MS-03; p5 specs slice
+  acceptance tables; first M2 acceptance run on the fixed probe.
