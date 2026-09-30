@@ -141,3 +141,7 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
 
 - 2026-09-30 — plan written; objective update (upstream-first, deliverables
   as PRs) folded in; seats re-briefed by pointer to this file.
+- 2026-09-30 — Plane home = project FLEET (milestones #34–37, backlog
+  1:1 with the candidate table #38–43); dedicated board rejected — revisit
+  only past >30 active MS items or state collision. Orchestrator has no
+  Plane writer mapping; gate receipts route via p7.
