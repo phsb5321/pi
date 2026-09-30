@@ -159,3 +159,12 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   cohort-aware (fresh-seat target ≈99 MiB, not 181.5); M1 gains the
   differential old-vs-fresh snapshot; variant column must carry wrapper
   identity. M0 stays open pending p4's build + probe reconciliation.
+- 2026-09-30 — **Acceptance protocol v1 ADOPTED as the M2 gate** (p6,
+  vault `ACCEPTANCE-PROTOCOL.md`) with one blocking amendment: C6 baseline
+  validity uses age-matched MS-04 census bands (fresh ≈99.1 MiB) until p4's
+  M0 reference number lands, then the M0 reference wins — never the 29/09
+  181.5 cohort number (fresh cohorts false-fail against it). Plane items
+  re-key to p5's MS-IDs (external-id = MS-ID from BACKLOG.md; ms/<slug>
+  branch names unchanged). #34 carries the MS-04 evidence receipt; M0 exit
+  gate receipt (repo-gate / memory-sound-m0-gate-<date>) goes to p7 when
+  p4's reconciliation closes.
