@@ -1,53 +1,93 @@
 import hljs from "highlight.js/lib/core.js";
-import bash from "highlight.js/lib/languages/bash.js";
-import c from "highlight.js/lib/languages/c.js";
-import cpp from "highlight.js/lib/languages/cpp.js";
-import csharp from "highlight.js/lib/languages/csharp.js";
-import dart from "highlight.js/lib/languages/dart.js";
-import go from "highlight.js/lib/languages/go.js";
-import groovy from "highlight.js/lib/languages/groovy.js";
-import java from "highlight.js/lib/languages/java.js";
-import javascript from "highlight.js/lib/languages/javascript.js";
-import json from "highlight.js/lib/languages/json.js";
-import kotlin from "highlight.js/lib/languages/kotlin.js";
-import lua from "highlight.js/lib/languages/lua.js";
-import nix from "highlight.js/lib/languages/nix.js";
-import perl from "highlight.js/lib/languages/perl.js";
-import php from "highlight.js/lib/languages/php.js";
-import python from "highlight.js/lib/languages/python.js";
-import ruby from "highlight.js/lib/languages/ruby.js";
-import rust from "highlight.js/lib/languages/rust.js";
-import scala from "highlight.js/lib/languages/scala.js";
-import swift from "highlight.js/lib/languages/swift.js";
-import typescript from "highlight.js/lib/languages/typescript.js";
+import { createRequire } from "module";
 import { decodeHtmlEntityAt } from "./html.ts";
 
-const eagerLanguages = {
-	python,
-	java,
-	go,
-	javascript,
-	json,
-	cpp,
-	typescript,
-	php,
-	ruby,
-	c,
-	csharp,
-	nix,
-	bash,
-	rust,
-	scala,
-	kotlin,
-	swift,
-	dart,
-	groovy,
-	perl,
-	lua,
+const require = createRequire(import.meta.url);
+
+// The most common languages stay available without loading the full catalog,
+// but each grammar module loads only when its language is first used.
+const languageLoaders: Record<string, () => HighlightJsLanguageFactory> = {
+	bash: () => require("highlight.js/lib/languages/bash.js"),
+	c: () => require("highlight.js/lib/languages/c.js"),
+	cpp: () => require("highlight.js/lib/languages/cpp.js"),
+	csharp: () => require("highlight.js/lib/languages/csharp.js"),
+	dart: () => require("highlight.js/lib/languages/dart.js"),
+	go: () => require("highlight.js/lib/languages/go.js"),
+	groovy: () => require("highlight.js/lib/languages/groovy.js"),
+	java: () => require("highlight.js/lib/languages/java.js"),
+	javascript: () => require("highlight.js/lib/languages/javascript.js"),
+	json: () => require("highlight.js/lib/languages/json.js"),
+	kotlin: () => require("highlight.js/lib/languages/kotlin.js"),
+	lua: () => require("highlight.js/lib/languages/lua.js"),
+	nix: () => require("highlight.js/lib/languages/nix.js"),
+	perl: () => require("highlight.js/lib/languages/perl.js"),
+	php: () => require("highlight.js/lib/languages/php.js"),
+	python: () => require("highlight.js/lib/languages/python.js"),
+	ruby: () => require("highlight.js/lib/languages/ruby.js"),
+	rust: () => require("highlight.js/lib/languages/rust.js"),
+	scala: () => require("highlight.js/lib/languages/scala.js"),
+	swift: () => require("highlight.js/lib/languages/swift.js"),
+	typescript: () => require("highlight.js/lib/languages/typescript.js"),
 };
 
-for (const [name, language] of Object.entries(eagerLanguages)) {
-	hljs.registerLanguage(name, language);
+// Aliases declared by the pinned highlight.js@10.7.3 grammar definitions, so
+// lazy registration accepts exactly the names the registered set always has.
+const languageAliases: Record<string, string> = {
+	sh: "bash",
+	zsh: "bash",
+	h: "c",
+	cc: "cpp",
+	"c++": "cpp",
+	"h++": "cpp",
+	hpp: "cpp",
+	hh: "cpp",
+	hxx: "cpp",
+	cxx: "cpp",
+	cs: "csharp",
+	"c#": "csharp",
+	golang: "go",
+	jsp: "java",
+	js: "javascript",
+	jsx: "javascript",
+	mjs: "javascript",
+	cjs: "javascript",
+	kt: "kotlin",
+	kts: "kotlin",
+	nixos: "nix",
+	pl: "perl",
+	pm: "perl",
+	php3: "php",
+	php4: "php",
+	php5: "php",
+	php6: "php",
+	php7: "php",
+	php8: "php",
+	py: "python",
+	gyp: "python",
+	ipython: "python",
+	rb: "ruby",
+	gemspec: "ruby",
+	podspec: "ruby",
+	thor: "ruby",
+	irb: "ruby",
+	rs: "rust",
+	ts: "typescript",
+	tsx: "typescript",
+};
+
+function ensureLanguageRegistered(name: string): boolean {
+	if (hljs.getLanguage(name) !== undefined) {
+		return true;
+	}
+	const key = name.toLowerCase();
+	// hasOwn gate: plain-object lookups resolve prototype keys ("constructor",
+	// "toString", …) to functions, and those names must stay unsupported.
+	const canonical = languageAliases[key] ?? key;
+	if (!Object.hasOwn(languageLoaders, canonical)) {
+		return false;
+	}
+	hljs.registerLanguage(canonical, languageLoaders[canonical]());
+	return hljs.getLanguage(name) !== undefined;
 }
 
 let allLanguagesPromise: Promise<void> | undefined;
@@ -205,6 +245,15 @@ export function renderHighlightedHtml(html: string, theme: HighlightTheme = {}):
 }
 
 export function highlight(code: string, options: HighlightOptions = {}): string {
+	if (options.language) {
+		ensureLanguageRegistered(options.language);
+	} else {
+		// highlightAuto guesses across the registered languages; keep the set it
+		// saw before grammars became lazy.
+		for (const name of Object.keys(languageLoaders)) {
+			ensureLanguageRegistered(name);
+		}
+	}
 	const html = options.language
 		? hljs.highlight(code, {
 				language: options.language,
@@ -215,5 +264,5 @@ export function highlight(code: string, options: HighlightOptions = {}): string 
 }
 
 export function supportsLanguage(name: string): boolean {
-	return hljs.getLanguage(name) !== undefined;
+	return ensureLanguageRegistered(name);
 }
