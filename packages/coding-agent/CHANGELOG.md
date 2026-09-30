@@ -36,6 +36,10 @@
 - `/login` and `/logout` now label providers without credentials as "not configured" instead of "unconfigured".
 - OAuth browser pages now show the color Pi logo.
 
+### Changed
+
+- Syntax highlighting grammars now load on first use: the common highlight.js languages register one by one when first needed, and the full language catalog loads after the first code block renders instead of at startup.
+
 ### Fixed
 
 - Fixed MCP OAuth sign-in accepting an authorization response whose `iss` parameter names another authorization server; the code is now rejected before it is exchanged (RFC 9207).
