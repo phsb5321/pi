@@ -43,8 +43,9 @@ describe("lazy grammar registration", () => {
 		}
 	});
 
-	// Pins the baked name/alias map to the pinned highlight.js grammars: a
-	// dependency upgrade that adds or renames an alias fails here.
+	// Pins availability parity with the pinned highlight.js grammars: every
+	// declared name and alias must be renderable on demand (the fallback chain
+	// covers map drift; the map is the fast path that avoids the catalog).
 	it("accepts every name and alias the startup grammars declare before the full catalog loads", () => {
 		for (const name of startupLanguages) {
 			const factory = require(grammarModule(name)) as HighlightJsLanguageFactory;
@@ -54,7 +55,10 @@ describe("lazy grammar registration", () => {
 				expect(supportsLanguage(alias)).toBe(true);
 			}
 		}
-		expect(supportsLanguage("ada")).toBe(false);
+		// A rare canonical name loads exactly its own grammar, not the catalog.
+		expect(supportsLanguage("ada")).toBe(true);
+		expect(require.cache[require.resolve(grammarModule("ada"))]).toBeDefined();
+		expect(require.cache[require.resolve("highlight.js/lib/index.js")]).toBeUndefined();
 	});
 
 	// Prototype keys must stay unsupported exactly as before lazy registration.
@@ -67,6 +71,14 @@ describe("lazy grammar registration", () => {
 	it("renders the same output through an alias as through the canonical name", () => {
 		const canonical = highlight("const value = 1", { language: "javascript", ignoreIllegals: true });
 		const viaAlias = highlight("const value = 1", { language: "js", ignoreIllegals: true });
+		expect(viaAlias).toBe(canonical);
+	});
+
+	// Aliases of rare grammars resolve through the one-time catalog load.
+	it("renders rare aliases identically to their canonical name", () => {
+		expect(supportsLanguage("yml")).toBe(true);
+		const canonical = highlight("key: value", { language: "yaml", ignoreIllegals: true });
+		const viaAlias = highlight("key: value", { language: "yml", ignoreIllegals: true });
 		expect(viaAlias).toBe(canonical);
 	});
 });

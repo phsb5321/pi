@@ -30,13 +30,15 @@ const eagerLanguages = [
 	"perl",
 	"lua",
 ];
-const eagerLanguagesLoadedAtStartup = eagerLanguages.every(supportsLanguage);
-const uncommonLanguageLoadedAtStartup = supportsLanguage("ada");
+const eagerLanguagesAvailableAtStartup = eagerLanguages.every(supportsLanguage);
+// Rare languages resolve on demand by loading exactly their own grammar;
+// the full catalog stays a warm-up preload that no availability depends on.
+const uncommonLanguageAvailableOnDemand = supportsLanguage("ada");
 
 describe("syntax highlight renderer", () => {
-	it("loads the twenty most common languages at startup and defers the rest", async () => {
-		expect(eagerLanguagesLoadedAtStartup).toBe(true);
-		expect(uncommonLanguageLoadedAtStartup).toBe(false);
+	it("keeps the twenty most common languages available and loads the rest per language on first use", async () => {
+		expect(eagerLanguagesAvailableAtStartup).toBe(true);
+		expect(uncommonLanguageAvailableOnDemand).toBe(true);
 		await loadAllHighlightLanguages();
 		expect(supportsLanguage("ada")).toBe(true);
 	});
