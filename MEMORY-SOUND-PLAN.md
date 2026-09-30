@@ -168,3 +168,23 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   branch names unchanged). #34 carries the MS-04 evidence receipt; M0 exit
   gate receipt (repo-gate / memory-sound-m0-gate-<date>) goes to p7 when
   p4's reconciliation closes.
+- 2026-09-30 16:05 — **MS-10 accepted** (p3): top-3 buckets named + mapped
+  to levers; live heap is not the mass (fresh→P90 delta = live +34.2 /
+  slack +33.3 / SwapPss +71.9 / native +17); raw snapshots preserved gz +
+  sha256 in evidence/M1-differential/raw/. Caveat (p6 C1): M1 anchor pids
+  came from p3 scratch script — bucket analysis stands (heap snapshots are
+  its instrument), PSS anchors re-anchored with the accepted instrument
+  before any M2 table cites them. **M1 exit = pending MS-12 only.**
+- 2026-09-30 16:05 — **MS-02 verdict BLOCKED** (p6): untracked deliverable
+  (no sha), no evidence bundle, §7 deviations (no condition label / C4
+  proofs; fail-closed violated). Path-to-PASS at evidence/MS-02/ACCEPTANCE.md.
+- 2026-09-30 16:10 — **M2 lever pick (orchestrator, per plan entry rule):
+  MS-20 lazy-load baseline, first slice.** Cheapest MiB/effort × U-rank:
+  source-as-text 11.6 MiB/seat age-invariant (only pure per-seat baseline
+  waste bucket), U3, minimal-diff PR shape. Order after it: MS-21 (entry-
+  structure growth +11-13 MiB/3d, version-independent) then MS-22 (slack +
+  SwapPss mass). Wrapper 0.85.1→0.99.x stays U1/measure-first (live-heap
+  delta +17 but fresh-PSS near-parity). Ratify at MS-12.
+- 2026-09-30 — p7 receipt-id convention ack'd: receipt tuples are
+  project-unique; per-item suffixes `deliverables-2026-09-30-<MS-ID>`;
+  anchor id unchanged. Approved.
