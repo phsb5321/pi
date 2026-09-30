@@ -38,7 +38,7 @@
 
 ### Changed
 
-- Syntax highlighting grammars now load on first use: the common highlight.js languages register one by one when first needed, and the full language catalog loads after the first code block renders instead of at startup.
+- Syntax highlighting grammars now load on first use: each language loads its exact grammar when it is first rendered — from code blocks or file renderers alike — and the full language catalog is only a warm-up preload instead of a startup cost.
 
 ### Fixed
 

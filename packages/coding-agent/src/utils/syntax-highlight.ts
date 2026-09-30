@@ -75,6 +75,19 @@ const languageAliases: Record<string, string> = {
 	tsx: "typescript",
 };
 
+function requireOrNull(specifier: string): HighlightJsLanguageFactory | null {
+	try {
+		return require(specifier) as HighlightJsLanguageFactory;
+	} catch {
+		return null;
+	}
+}
+
+let catalogLoaded = false;
+
+// Registers the grammar for `name` on first use and reports whether the name
+// is renderable. Every highlight consumer goes through here, so a render
+// never falls back to plain output while a grammar is merely not loaded yet.
 function ensureLanguageRegistered(name: string): boolean {
 	if (hljs.getLanguage(name) !== undefined) {
 		return true;
@@ -83,10 +96,25 @@ function ensureLanguageRegistered(name: string): boolean {
 	// hasOwn gate: plain-object lookups resolve prototype keys ("constructor",
 	// "toString", …) to functions, and those names must stay unsupported.
 	const canonical = languageAliases[key] ?? key;
-	if (!Object.hasOwn(languageLoaders, canonical)) {
-		return false;
+	if (Object.hasOwn(languageLoaders, canonical)) {
+		hljs.registerLanguage(canonical, languageLoaders[canonical]());
+		return hljs.getLanguage(name) !== undefined;
 	}
-	hljs.registerLanguage(canonical, languageLoaders[canonical]());
+	// Any other grammar loads from its own module (in highlight.js@10.7.3 the
+	// module file is named after the canonical language id: "ada" → ada.js),
+	// so a rare-language render costs exactly one grammar.
+	const factory = requireOrNull(`highlight.js/lib/languages/${key}.js`);
+	if (factory) {
+		hljs.registerLanguage(key, factory);
+		return hljs.getLanguage(name) !== undefined;
+	}
+	// Names that are aliases of rare grammars ("yml", "htm", …) resolve
+	// through the full catalog, loaded at most once. The catalog is otherwise
+	// only a warm-up preload.
+	if (!catalogLoaded) {
+		catalogLoaded = true;
+		requireOrNull("highlight.js/lib/index.js");
+	}
 	return hljs.getLanguage(name) !== undefined;
 }
 
