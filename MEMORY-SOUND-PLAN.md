@@ -188,3 +188,13 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
 - 2026-09-30 — p7 receipt-id convention ack'd: receipt tuples are
   project-unique; per-item suffixes `deliverables-2026-09-30-<MS-ID>`;
   anchor id unchanged. Approved.
+- 2026-09-30 16:25 — p6 "pristine upstream check red" finding adjudicated
+  as worktree artifact (upstream CI build-check-test success @a9424cd;
+  lockfile identical b29db89..a9424cd; shared tsc exit 0). Root cause:
+  acceptance worktrees must run `npm run build` before check (workspace
+  dist/*.d.ts). Protocol gets precondition B0; M0 gates unchanged. Also:
+  upstream released 0.99.2 (955cc66) — memory-sound rebase onto new
+  upstream/main scheduled at the next quiet point; ms/ branches always cut
+  from current upstream/main. mem-verify delivered (ms/mem-verify@fdc7c10,
+  self-check PASS on MS-04 data, negative controls FAIL as expected; parked
+  pre-lgtm, no PR).
