@@ -93,16 +93,25 @@ branches on the fork.
 
 **M0 — build & reproduce** (p4 + p1)
 - Exit: monorepo builds (`npm run build`, `npm run check` green); one idle
-  seat launched from this fork; `tools/mem-probe` reproduces the idle-seat
-  baseline within ±15% of 181.5 MiB on ≥3 seats; p1's fleet audit table
-  committed as evidence. No behavioral deltas (diff vs upstream/main = docs +
-  tools only).
+  seat launched from this fork; `tools/mem-probe` **reconciles with the
+  MS-04 census on age-matched cohorts**: a fresh (same-day) fork seat within
+  ±15% of the 30/09 census cohort (~99 MiB idle) AND a long-lived seat
+  within ±15% of the side-projects cohort (177.5–181.5 MiB); p1's fleet
+  audit table committed as evidence (done — MS-04). No behavioral deltas
+  (diff vs upstream/main = docs + tools only). Variant column must record
+  the pi wrapper identity/generation (NixOS switched generations 08:07,
+  08:23, 13:33 on 30/09 — wrapper cohort is a live confound).
 
 **M1 — where the heap goes** (p3, p8 support)
 - Exit: heap snapshot of an idle seat; top-3 application heap buckets named
   with MiB and % of app heap (app heap = total − bare-runtime baseline);
   each bucket mapped to a candidate lever with a U-rank and effort estimate;
   p5's backlog re-ranked from that data.
+- **Differential method (added after MS-04):** snapshot one long-lived idle
+  seat (started 27/09, P90-class ≈246 MiB) vs one fresh idle seat (30/09,
+  ≈99 MiB) — the delta isolates what grows with age and likely names the M2
+  lever directly. Both snapshots must record wrapper identity to cut the
+  NixOS-generation confound.
 
 **M2 — first structural win** (p4 builds; p6 accepts; p2 gates)
 - Entry: orchestrator picks the lever from M1 data (cheapest MiB per effort ×
@@ -145,3 +154,8 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   1:1 with the candidate table #38–43); dedicated board rejected — revisit
   only past >30 active MS items or state collision. Orchestrator has no
   Plane writer mapping; gate receipts route via p7.
+- 2026-09-30 14:47 — MS-04 census accepted as M0 fleet evidence (306 seats,
+  idle mean 139.7 MiB, 43.08 GiB total). Charter erratum added; M0 gate made
+  cohort-aware (fresh-seat target ≈99 MiB, not 181.5); M1 gains the
+  differential old-vs-fresh snapshot; variant column must carry wrapper
+  identity. M0 stays open pending p4's build + probe reconciliation.

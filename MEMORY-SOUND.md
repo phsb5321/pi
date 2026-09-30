@@ -14,6 +14,15 @@ plus tooling. Measured 29/09 with the same method this fork will use
 | pi agent (idle, long-lived) | **181.5 MiB** | 215 procs = **39.0 GiB** |
 | reference: a Rust-native agent seat | 67.0 MiB | — |
 
+**Census correction (30/09 14:47, probe v2, 306/306 pids):** the 181.5×215
+figure is the long-lived side-projects cohort. Fleet-wide: **306 seats, idle
+mean 139.7 MiB (PSS 115.1 + SwapPss 24.5), total 43.08 GiB** — larger than
+the charter estimate, so the problem stands strengthened. Idle grows with
+seat age (+~75 MiB over 3 days: 99.1 → 146.5 → 173.5 by start-day),
+consistently with session-retention cost; attribution pending M1. Evidence:
+vault `1. Projects/Memory-Sound Program/fleet-baseline-2026-09-30.md` +
+`evidence/MS-04/`. These census numbers are the ones to cite publicly.
+
 System pressure was real: heavy swap (5.7 GiB SwapPss on 94 seats alone when
 measured mid-migration). The fleet's entire memory campaign (native-agent
 experiment included) came from this table. That experiment was removed from
