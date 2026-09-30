@@ -1,0 +1,275 @@
+#!/usr/bin/env python3
+"""mem-verify — independent recomputation checker (acceptance protocol D1).
+
+Recomputes every cell of a probe summary table from the raw per-pid JSONL
+rows it claims to aggregate, and fails on any mismatch beyond tolerance.
+Integer cells (n, *_kb) must match exactly; MiB cells must match within
+--tolerance (default 0.1 MiB). A table that does not recompute from its
+raw rows is not evidence: exit 1 means invalid table, no merge.
+
+Verified cell schema (MS-04 census shape, probe-v2 summary.json):
+
+  table[session][bucket] = {n, pss_sum_kb, swappss_sum_kb, tot_sum_kb,
+                            pss_mean_mib, swappss_mean_mib, tot_mean_mib,
+                            p10_mib, p50_mib, p90_mib, max_mib}
+
+  - buckets: `all` = every row of the session; `idle` / `mid_turn` /
+    `idle_recent` / `other` = rows whose `state` matches (state
+    `no_pane` counts in `all` only);
+  - `FLEET` is the all-rows aggregate across every session;
+  - rows: one JSON object per line with pss_kb, swappss_kb (ints),
+    state, and optionally HERDR_SESSION.
+
+Statistical definitions are the producer's documented ones (probe-v2):
+percentiles are linear-interpolated on sorted totals, MiB = kb/1024, and
+the producer rounds MiB cells to 1 decimal — the checker compares against
+the unrounded recompute, so the 0.1 MiB tolerance absorbs rounding.
+
+Only the definitions are shared with the producer; every value is
+recomputed from raw rows, never read back from the summary.
+
+usage: mem-verify --summary FILE --per-pid FILE [--tolerance 0.1]
+       mem-verify --self-test
+"""
+
+import json
+import socket
+import sys
+
+VERSION = "1.0.0"
+KB = 1024.0
+BUCKETS = ("all", "idle", "mid_turn", "idle_recent", "other")
+CELL_KEYS = (
+    "n",
+    "pss_sum_kb",
+    "swappss_sum_kb",
+    "tot_sum_kb",
+    "pss_mean_mib",
+    "swappss_mean_mib",
+    "tot_mean_mib",
+    "p10_mib",
+    "p50_mib",
+    "p90_mib",
+    "max_mib",
+)
+EXACT_KEYS = ("n", "pss_sum_kb", "swappss_sum_kb", "tot_sum_kb")
+EPS = 1e-9  # keep a cell printed as exactly 0.1 from failing on float noise
+
+
+def load_rows(path):
+    rows = []
+    with open(path) as f:
+        for lineno, line in enumerate(f, 1):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+            except json.JSONDecodeError as e:
+                print(f"mem-verify: {path}:{lineno}: bad JSON ({e})", file=sys.stderr)
+                sys.exit(2)
+            for k in ("pss_kb", "swappss_kb", "state"):
+                if k not in r:
+                    print(f"mem-verify: {path}:{lineno}: row missing {k}", file=sys.stderr)
+                    sys.exit(2)
+            if not isinstance(r["pss_kb"], int) or not isinstance(r["swappss_kb"], int):
+                print(f"mem-verify: {path}:{lineno}: pss_kb/swappss_kb must be ints",
+                      file=sys.stderr)
+                sys.exit(2)
+            rows.append(r)
+    return rows
+
+
+def pct(sorted_vals, q):
+    """Linear-interpolated percentile (probe-v2 convention)."""
+    i = (len(sorted_vals) - 1) * q / 100.0
+    lo = int(i)
+    hi = min(lo + 1, len(sorted_vals) - 1)
+    return sorted_vals[lo] + (sorted_vals[hi] - sorted_vals[lo]) * (i - lo)
+
+
+def recompute(rows):
+    """Unrounded cell values for a row subset; None for an empty subset."""
+    if not rows:
+        return None
+    ps = sorted(r["pss_kb"] for r in rows)
+    sw = sorted(r["swappss_kb"] for r in rows)
+    tot = sorted(r["pss_kb"] + r["swappss_kb"] for r in rows)
+    n = len(rows)
+    return {
+        "n": n,
+        "pss_sum_kb": sum(ps),
+        "swappss_sum_kb": sum(sw),
+        "tot_sum_kb": sum(tot),
+        "pss_mean_mib": sum(ps) / n / KB,
+        "swappss_mean_mib": sum(sw) / n / KB,
+        "tot_mean_mib": sum(tot) / n / KB,
+        "p10_mib": pct(tot, 10) / KB,
+        "p50_mib": pct(tot, 50) / KB,
+        "p90_mib": pct(tot, 90) / KB,
+        "max_mib": tot[-1] / KB,
+    }
+
+
+def cell_rows(rows, session, bucket):
+    if session == "FLEET":
+        subset = rows
+    else:
+        subset = [r for r in rows if (r.get("HERDR_SESSION") or "(unattached)") == session]
+    if bucket == "all":
+        return subset
+    return [r for r in subset if r["state"] == bucket]
+
+
+def compare_cells(reported, got, where, tol, findings):
+    if reported is None or got is None:
+        if reported is not None or got is not None:
+            findings.append(f"{where}: reported {'null' if reported is None else 'cells'} "
+                            f"vs recomputed {'null' if got is None else 'cells'}")
+        return
+    for k in CELL_KEYS:
+        if k not in reported:
+            findings.append(f"{where}: cell key {k} missing")
+            continue
+        if not isinstance(reported[k], (int, float)) or isinstance(reported[k], bool):
+            findings.append(f"{where}/{k}: non-numeric value {reported[k]!r}")
+            continue
+        delta = reported[k] - got[k]
+        if k in EXACT_KEYS:
+            if delta != 0:
+                findings.append(f"{where}/{k}: reported {reported[k]} recomputed {got[k]} "
+                                f"(delta {delta})")
+        else:
+            if abs(delta) > tol + EPS:
+                findings.append(f"{where}/{k}: reported {reported[k]} recomputed "
+                                f"{got[k]:.4f} (delta {delta:+.4f} MiB)")
+    for k in reported:
+        if k not in CELL_KEYS:
+            findings.append(f"{where}: unknown cell key {k} (unverifiable = not evidence)")
+
+
+def verify(table, rows, tol):
+    findings = []
+    row_sessions = {(r.get("HERDR_SESSION") or "(unattached)") for r in rows}
+    for sess in sorted(row_sessions - set(table)):
+        findings.append(f"coverage: raw rows for session {sess} missing from table")
+    for sess in sorted(table):
+        buckets = table[sess]
+        for k in buckets:
+            if k not in BUCKETS:
+                findings.append(f"{sess}: unknown bucket {k} (unverifiable = not evidence)")
+        for b in BUCKETS:
+            compare_cells(
+                buckets.get(b),
+                recompute(cell_rows(rows, sess, b)),
+                f"{sess}/{b}",
+                tol,
+                findings,
+            )
+    return findings
+
+
+def self_test():
+    assert pct([10, 20, 30, 40], 50) == 25.0
+    assert pct([7], 50) == 7
+    assert pct([0, 100], 90) == 90
+    rows = [
+        {"pss_kb": 1000, "swappss_kb": 0, "state": "idle", "HERDR_SESSION": "A"},
+        {"pss_kb": 3000, "swappss_kb": 1024, "state": "idle", "HERDR_SESSION": "A"},
+        {"pss_kb": 500, "swappss_kb": 0, "state": "no_pane", "HERDR_SESSION": "A"},
+        {"pss_kb": 4096, "swappss_kb": 0, "state": "mid_turn", "HERDR_SESSION": "B"},
+    ]
+    all_a = recompute(cell_rows(rows, "A", "all"))
+    assert all_a["n"] == 3 and all_a["tot_sum_kb"] == 5524
+    idle_a = recompute(cell_rows(rows, "A", "idle"))
+    assert idle_a["n"] == 2 and idle_a["pss_sum_kb"] == 4000
+    assert idle_a["p50_mib"] == 2512 / KB  # linear p50 of [1000, 4024]
+    assert recompute(cell_rows(rows, "A", "other")) is None  # no_pane counts in all only
+    fleet = recompute(cell_rows(rows, "FLEET", "all"))
+    assert fleet["n"] == 4 and fleet["max_mib"] == 4096 / KB
+    # comparator: producer-rounded MiB cells pass; delta exactly 0.1 passes;
+    # 0.11 fails; kb/n cells must match exactly
+    good = {k: (idle_a[k] if k in EXACT_KEYS else round(idle_a[k], 1)) for k in CELL_KEYS}
+    findings = []
+    compare_cells(good, idle_a, "t", 0.1, findings)
+    assert findings == [], findings
+    borderline = dict(good)
+    borderline["tot_mean_mib"] = idle_a["tot_mean_mib"] + 0.1
+    findings = []
+    compare_cells(borderline, idle_a, "t", 0.1, findings)
+    assert findings == [], findings
+    over = dict(good)
+    over["tot_mean_mib"] = idle_a["tot_mean_mib"] + 0.11
+    findings = []
+    compare_cells(over, idle_a, "t", 0.1, findings)
+    assert len(findings) == 1 and findings[0].startswith("t/tot_mean_mib:"), findings
+    bad_n = dict(good)
+    bad_n["n"] = 3
+    findings = []
+    compare_cells(bad_n, idle_a, "t", 0.1, findings)
+    assert len(findings) == 1 and findings[0].startswith("t/n:"), findings
+    # coverage: a raw session absent from the table is a finding
+    findings = verify({"A": {b: good for b in BUCKETS}}, rows, 0.1)
+    assert any(f.startswith("coverage:") and "B" in f for f in findings), findings
+    print(f"mem-verify v{VERSION} self-test: ok")
+    return 0
+
+
+def main(argv):
+    args = {"summary": None, "per_pid": None, "tolerance": 0.1}
+    i = 1
+    while i < len(argv):
+        a = argv[i]
+        if a == "--summary":
+            i += 1
+            args["summary"] = argv[i]
+        elif a == "--per-pid":
+            i += 1
+            args["per_pid"] = argv[i]
+        elif a == "--tolerance":
+            i += 1
+            args["tolerance"] = float(argv[i])
+        elif a == "--self-test":
+            return self_test()
+        elif a == "--version":
+            print(f"mem-verify v{VERSION}")
+            return 0
+        elif a in ("-h", "--help"):
+            print(__doc__)
+            return 0
+        else:
+            print(f"mem-verify: unknown arg {a!r} (see --help)", file=sys.stderr)
+            return 2
+        i += 1
+
+    if not args["summary"] or not args["per_pid"]:
+        print("mem-verify: --summary and --per-pid are required (see --help)", file=sys.stderr)
+        return 2
+
+    with open(args["summary"]) as f:
+        doc = json.load(f)
+    table = doc.get("table")
+    if not isinstance(table, dict):
+        print(f"mem-verify: {args['summary']}: no table object", file=sys.stderr)
+        sys.exit(2)
+    rows = load_rows(args["per_pid"])
+
+    findings = verify(table, rows, args["tolerance"])
+    n_cells = len(table) * len(BUCKETS) * len(CELL_KEYS)
+    print(f"mem-verify v{VERSION} host={socket.gethostname()}"
+          f" summary={args['summary']} per-pid={args['per_pid']}"
+          f" tolerance={args['tolerance']} MiB (kb/n cells exact)")
+    print(f"recomputed from {len(rows)} raw rows; {len(table)} sessions x {len(BUCKETS)} "
+          f"buckets x {len(CELL_KEYS)} cells = {n_cells} expected")
+    for line in findings:
+        print(f"FAIL {line}")
+    if findings:
+        print(f"verdict: FAIL — {len(findings)} mismatch(es); table does not recompute "
+              f"from raw rows (D1: invalid table, no merge)")
+        return 1
+    print("verdict: PASS — every cell recomputes from raw rows within tolerance")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
