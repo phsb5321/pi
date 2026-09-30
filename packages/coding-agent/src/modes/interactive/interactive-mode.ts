@@ -461,6 +461,7 @@ export class InteractiveMode {
 	private keybindings: KeybindingsManager;
 	private version: string;
 	private isInitialized = false;
+	private remainingSyntaxGrammarsScheduled = false;
 	private onInputCallback?: (text: string) => void;
 	private pendingUserInputs: string[] = [];
 	private activeStatusIndicator: StatusIndicator | undefined = undefined;
@@ -1085,14 +1086,6 @@ export class InteractiveMode {
 
 		// Initialize available provider count for footer display
 		await this.updateAvailableProviderCount();
-
-		// Flush the completed startup state before loading the remaining syntax grammars.
-		this.ui.renderNow();
-		void loadAllHighlightLanguages().then(() => {
-			if (!this.isInitialized) return;
-			this.ui.invalidate();
-			this.ui.requestRender();
-		});
 	}
 
 	/**
@@ -1345,10 +1338,29 @@ export class InteractiveMode {
 	}
 
 	private getMarkdownThemeWithSettings(): MarkdownTheme {
+		const markdownTheme = getMarkdownTheme();
+		const highlightCode = markdownTheme.highlightCode;
 		return {
-			...getMarkdownTheme(),
+			...markdownTheme,
 			codeBlockIndent: this.settingsManager.getCodeBlockIndent(),
+			highlightCode: (code: string, lang?: string): string[] => {
+				this.scheduleRemainingSyntaxGrammars();
+				return highlightCode ? highlightCode(code, lang) : code.split("\n");
+			},
 		};
+	}
+
+	// The full grammar catalog loads after the first code block renders, so
+	// idle sessions never pay for it. The re-render below picks up the
+	// languages that were deferred while the catalog was still loading.
+	private scheduleRemainingSyntaxGrammars(): void {
+		if (this.remainingSyntaxGrammarsScheduled) return;
+		this.remainingSyntaxGrammarsScheduled = true;
+		void loadAllHighlightLanguages().then(() => {
+			if (!this.isInitialized) return;
+			this.ui.invalidate();
+			this.ui.requestRender();
+		});
 	}
 
 	// =========================================================================
