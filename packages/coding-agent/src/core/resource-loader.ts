@@ -349,6 +349,9 @@ export class DefaultResourceLoader implements ResourceLoader {
 	private skillDiagnostics: ResourceDiagnostic[];
 	private prompts: PromptTemplate[];
 	private promptDiagnostics: ResourceDiagnostic[];
+	/** Discovery and parse run at first read so session creation skips the scan. */
+	private skillsInitialized = false;
+	private promptsInitialized = false;
 	private themes: Theme[];
 	private themeDiagnostics: ResourceDiagnostic[];
 	private agentsFiles: Array<{ path: string; content: string }>;
@@ -423,10 +426,12 @@ export class DefaultResourceLoader implements ResourceLoader {
 	}
 
 	getSkills(): { skills: Skill[]; diagnostics: ResourceDiagnostic[] } {
+		this.ensureSkillsLoaded();
 		return { skills: this.skills, diagnostics: this.skillDiagnostics };
 	}
 
 	getPrompts(): { prompts: PromptTemplate[]; diagnostics: ResourceDiagnostic[] } {
+		this.ensurePromptsLoaded();
 		return { prompts: this.prompts, diagnostics: this.promptDiagnostics };
 	}
 
@@ -475,6 +480,7 @@ export class DefaultResourceLoader implements ResourceLoader {
 				skillPaths.map((entry) => entry.path),
 			);
 			this.updateSkillsFromPaths(this.lastSkillPaths, this.resourceMetadataByPath);
+			this.skillsInitialized = true;
 		}
 
 		if (promptPaths.length > 0) {
@@ -483,6 +489,7 @@ export class DefaultResourceLoader implements ResourceLoader {
 				promptPaths.map((entry) => entry.path),
 			);
 			this.updatePromptsFromPaths(this.lastPromptPaths, this.resourceMetadataByPath);
+			this.promptsInitialized = true;
 		}
 
 		if (themePaths.length > 0) {
@@ -524,6 +531,8 @@ export class DefaultResourceLoader implements ResourceLoader {
 		});
 		// Kept on the instance so post-reload passes (extendResources) can still resolve package metadata.
 		this.resourceMetadataByPath = new Map();
+		this.skillsInitialized = false;
+		this.promptsInitialized = false;
 		const metadataByPath = this.resourceMetadataByPath;
 
 		this.extensionSkillSourceInfos = new Map();
@@ -589,34 +598,12 @@ export class DefaultResourceLoader implements ResourceLoader {
 			: this.mergePaths([...cliEnabledSkills, ...enabledSkills], this.additionalSkillPaths);
 
 		this.lastSkillPaths = skillPaths;
-		this.updateSkillsFromPaths(skillPaths, metadataByPath);
-		for (const p of this.additionalSkillPaths) {
-			if (isLocalPath(p)) {
-				const resolved = this.resolveResourcePath(p);
-				if (!existsSync(resolved) && !this.skillDiagnostics.some((d) => d.path === resolved)) {
-					this.skillDiagnostics.push({ type: "error", message: "Skill path does not exist", path: resolved });
-				}
-			}
-		}
 
 		const promptPaths = this.noPromptTemplates
 			? this.mergePaths(cliEnabledPrompts, this.additionalPromptTemplatePaths)
 			: this.mergePaths([...cliEnabledPrompts, ...enabledPrompts], this.additionalPromptTemplatePaths);
 
 		this.lastPromptPaths = promptPaths;
-		this.updatePromptsFromPaths(promptPaths, metadataByPath);
-		for (const p of this.additionalPromptTemplatePaths) {
-			if (isLocalPath(p)) {
-				const resolved = this.resolveResourcePath(p);
-				if (!existsSync(resolved) && !this.promptDiagnostics.some((d) => d.path === resolved)) {
-					this.promptDiagnostics.push({
-						type: "error",
-						message: "Prompt template path does not exist",
-						path: resolved,
-					});
-				}
-			}
-		}
 
 		const themePaths = this.noThemes
 			? this.mergePaths(cliEnabledThemes, this.additionalThemePaths)
@@ -823,6 +810,38 @@ export class DefaultResourceLoader implements ResourceLoader {
 				metadata,
 			};
 		});
+	}
+
+	private ensureSkillsLoaded(): void {
+		if (this.skillsInitialized) return;
+		this.skillsInitialized = true;
+		this.updateSkillsFromPaths(this.lastSkillPaths, this.resourceMetadataByPath);
+		for (const p of this.additionalSkillPaths) {
+			if (isLocalPath(p)) {
+				const resolved = this.resolveResourcePath(p);
+				if (!existsSync(resolved) && !this.skillDiagnostics.some((d) => d.path === resolved)) {
+					this.skillDiagnostics.push({ type: "error", message: "Skill path does not exist", path: resolved });
+				}
+			}
+		}
+	}
+
+	private ensurePromptsLoaded(): void {
+		if (this.promptsInitialized) return;
+		this.promptsInitialized = true;
+		this.updatePromptsFromPaths(this.lastPromptPaths, this.resourceMetadataByPath);
+		for (const p of this.additionalPromptTemplatePaths) {
+			if (isLocalPath(p)) {
+				const resolved = this.resolveResourcePath(p);
+				if (!existsSync(resolved) && !this.promptDiagnostics.some((d) => d.path === resolved)) {
+					this.promptDiagnostics.push({
+						type: "error",
+						message: "Prompt template path does not exist",
+						path: resolved,
+					});
+				}
+			}
+		}
 	}
 
 	private updateSkillsFromPaths(skillPaths: string[], metadataByPath?: Map<string, PathMetadata>): void {

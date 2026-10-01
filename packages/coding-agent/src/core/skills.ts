@@ -1,11 +1,13 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "fs";
-import ignore from "ignore";
+import { createRequire } from "module";
 import { basename, dirname, join, relative, resolve, sep } from "path";
 import { CONFIG_DIR_NAME, getAgentDir } from "../config.ts";
 import { parseFrontmatter } from "../utils/frontmatter.ts";
 import { canonicalizePath, resolvePath } from "../utils/paths.ts";
 import type { ResourceDiagnostic } from "./diagnostics.ts";
 import { createSyntheticSourceInfo, type SourceInfo } from "./source-info.ts";
+
+const require = createRequire(import.meta.url);
 
 /** Max name length per spec */
 const MAX_NAME_LENGTH = 64;
@@ -15,7 +17,16 @@ const MAX_DESCRIPTION_LENGTH = 1024;
 
 const IGNORE_FILE_NAMES = [".gitignore", ".ignore", ".fdignore"];
 
-type IgnoreMatcher = ReturnType<typeof ignore>;
+type IgnoreMatcher = {
+	add(patterns: string | readonly string[]): unknown;
+	ignores(path: string): boolean;
+};
+let createIgnore: (() => IgnoreMatcher) | undefined;
+
+function createIgnoreMatcher(): IgnoreMatcher {
+	if (!createIgnore) createIgnore = require("ignore") as () => IgnoreMatcher;
+	return createIgnore();
+}
 
 function toPosixPath(p: string): string {
 	return p.split(sep).join("/");
@@ -185,7 +196,7 @@ function loadSkillsFromDirInternal(
 	}
 
 	const root = rootDir ?? dir;
-	const ig = ignoreMatcher ?? ignore();
+	const ig = ignoreMatcher ?? createIgnoreMatcher();
 	addIgnoreRules(ig, dir, root);
 
 	try {
