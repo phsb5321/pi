@@ -220,3 +220,17 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   bar + fix. LESSON: proxy numbers (isolated RSS, chunk smoke, per-dep
   sizing) systematically OVERSTATE seat-PSS wins; only acceptance-run
   and MS-10 numbers are citable.
+- 2026-10-01 01:20 — **M0 EXIT SIGNED** (gate repo-gate/
+  memory-sound-m0-gate-2026-10-01). Criteria: build+check green @
+  749ab56dd (MS-01, p6 B1 cross-confirm); fork seat launched + probed
+  (DEMO + MS-03); probe reconciliation vs MS-04 census — long-lived n=88
+  mean 181.4 in band (swap-full composition marked); fresh = paired
+  same-seat +2.3% at census-time conditions (n=86/87 proof-OK) + 69-min
+  instrument drift +1.8/+0.0; static fresh band mechanically
+  time-invalidated (cohort aged 10.5 h: 10/86 in band vs 69/86 at census)
+  — paired design supersedes it; synthetic recipe floor 81.4 recorded
+  informational, not re-based; MS-04 audit complete; no behavioral
+  deltas (docs+tools-only fork diff; S1 separately parity-proven).
+  Instrument binding: mem-probe v1.2.0 @ 749ab56dd. Also: +45.8 MiB per
+  10.5 h work-time growth (ratio med 1.46) = strongest live evidence for
+  session-retention (MS-21).
