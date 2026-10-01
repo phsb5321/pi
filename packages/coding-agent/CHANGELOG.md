@@ -15,6 +15,10 @@
 - Fixed MCP OAuth sign-in accepting an authorization response whose `iss` parameter names another authorization server; the code is now rejected before it is exchanged (RFC 9207).
 - Fixed MCP OAuth sign-in failing with `Invalid scope` when the token response contains `"scope": ""`, and similar failures for other empty or `null` optional OAuth fields ([#10266](https://github.com/earendil-works/pi/issues/10266)).
 
+### Changed
+
+- The llama.cpp extension's Hugging Face and UI modules now load on the first `/llama` command instead of at extension initialization (first-command latency shifts accordingly; the client module stays extension-loadable because the provider value-imports it).
+
 ## [0.99.2] - 2026-09-30
 
 ### New Features
