@@ -1,3 +1,4 @@
+import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { uuidv7 } from "@earendil-works/pi-ai/utils/uuid";
 import type { Context } from "../../context.ts";
 import type { FileSystem } from "../../types.ts";
@@ -36,6 +37,9 @@ function splitCompleteLines(content: string): { lines: string[]; torn: boolean }
 
 type JsonlBacking = { kind: "v4" } | { kind: "v3"; source: LegacyV3Source };
 
+/** Default full-entry retention window (MS-21 s1); see JsonlStorageOptions. */
+const DEFAULT_RETENTION_WINDOW_ENTRIES = 300;
+
 /** JSONL storage backed by an injected filesystem capability. */
 export class JsonlStorage implements Storage {
 	private readonly fileSystem: FileSystem;
@@ -43,7 +47,7 @@ export class JsonlStorage implements Storage {
 	private readonly now: () => number;
 	readonly header: JsonlStorageHeader;
 	private backing: JsonlBacking;
-	private readonly storageState = new InMemoryStorageState();
+	private readonly storageState: InMemoryStorageState;
 	private commitQueue: Promise<void> = Promise.resolve();
 	private state: "open" | "closing" | "closed" = "open";
 	private closePromise: Promise<void> | undefined;
@@ -54,6 +58,61 @@ export class JsonlStorage implements Storage {
 		this.now = options.now ?? Date.now;
 		this.header = header;
 		this.backing = backing;
+		this.storageState = new InMemoryStorageState(
+			backing.kind === "v4"
+				? {
+						entryWindow: options.retentionWindowEntries ?? DEFAULT_RETENTION_WINDOW_ENTRIES,
+						hydration: { loadEntries: (ids) => this.readEntriesByIds(ids) },
+					}
+				: undefined,
+		);
+	}
+
+	/** Full entries older than the retention window, read back from the JSONL. */
+	private async readEntriesByIds(ids: readonly string[]): Promise<Entry[]> {
+		const wanted = new Set(ids);
+		if (wanted.size === 0) return [];
+		const text = fileValue(
+			await this.fileSystem.readTextFile(this.path, BACKGROUND_CONTEXT),
+			`Failed to read JSONL storage ${this.path}`,
+		);
+		const { lines } = splitCompleteLines(text);
+		const found: Entry[] = [];
+		for (let index = 1; index < lines.length; index++) {
+			let writes: readonly CommittedWrite[];
+			try {
+				writes = parseJsonlTransaction(lines[index]!);
+			} catch {
+				continue; // torn tail is not durable state; the replay pass owns validation
+			}
+			for (const write of writes) {
+				if (write.kind === "entry" && wanted.has(write.id)) {
+					const { kind: _kind, ...entry } = write;
+					found.push(entry);
+				}
+			}
+		}
+		return found;
+	}
+
+	/** Hydrate window-evicted entries needed by a read (no-op when materialized). */
+	private async hydrateIds(ids: readonly string[]): Promise<void> {
+		const missing = this.storageState.unmaterializedIds(ids);
+		if (missing.length === 0) return;
+		const loaded = await this.readEntriesByIds(missing);
+		this.storageState.hydrateInto(loaded);
+	}
+
+	/** Branch path ids (structure walk over skeletons; no hydration). */
+	private branchPathIds(query: StorageBranchScan): string[] | undefined {
+		const path: string[] = [];
+		let skeleton = this.storageState.getSkeleton(query.start);
+		while (skeleton !== undefined) {
+			path.push(skeleton.id);
+			if (skeleton.parentId === null) break;
+			skeleton = this.storageState.getSkeleton(skeleton.parentId);
+		}
+		return path.length === 0 ? undefined : path;
 	}
 
 	static async create(
@@ -188,9 +247,10 @@ export class JsonlStorage implements Storage {
 		};
 	}
 
-	getEntries(ids: string[], _context: Context): Promise<Map<string, Entry>> {
-		if (this.state !== "open") return Promise.reject(new Error("JsonlStorage is closed"));
-		return Promise.resolve(this.storageState.getEntries(ids));
+	async getEntries(ids: string[], _context: Context): Promise<Map<string, Entry>> {
+		if (this.state !== "open") throw new Error("JsonlStorage is closed");
+		await this.hydrateIds(ids);
+		return this.storageState.getEntries(ids);
 	}
 
 	getValue<T>(address: Value<T>, _context: Context): Promise<StoredValue<T> | undefined> {
@@ -214,17 +274,34 @@ export class JsonlStorage implements Storage {
 
 	async scanBranch(query: StorageBranchScan, _context: Context): Promise<Entry[]> {
 		if (this.state !== "open") throw new Error("JsonlStorage is closed");
+		const pathIds = this.branchPathIds(query);
+		if (pathIds !== undefined) await this.hydrateIds(pathIds);
 		return this.storageState.scanBranch(query);
 	}
 
 	async scanBranchStructure(query: StorageBranchScan, _context: Context): Promise<EntryStructure[]> {
 		if (this.state !== "open") throw new Error("JsonlStorage is closed");
-		return this.storageState.scanBranchStructure(query);
+		if (!this.storageState.hasEntry(query.start)) return this.storageState.scanBranchStructure(query); // identical error path
+		return this.storageState.scanBranchStructureFromSkeletons(query);
 	}
 
-	scanEntries(query: EntryScan, _context: Context): Promise<Entry[]> {
-		if (this.state !== "open") return Promise.reject(new Error("JsonlStorage is closed"));
-		return Promise.resolve(this.storageState.scanEntries(query));
+	async scanEntries(query: EntryScan, _context: Context): Promise<Entry[]> {
+		if (this.state !== "open") throw new Error("JsonlStorage is closed");
+		const limit = query.limit === undefined ? Number.POSITIVE_INFINITY : Math.max(0, Math.trunc(query.limit));
+		const candidates: string[] = [];
+		for (const skeleton of this.storageState.getSkeletons()) {
+			if (
+				(query.type === undefined || skeleton.type === query.type) &&
+				(query.customType === undefined || skeleton.customType === query.customType) &&
+				(query.fromSeq === undefined || skeleton.seq >= query.fromSeq) &&
+				(query.toSeq === undefined || skeleton.seq <= query.toSeq)
+			) {
+				candidates.push(skeleton.id);
+				if (candidates.length >= limit) break;
+			}
+		}
+		await this.hydrateIds(candidates);
+		return this.storageState.scanEntries(query);
 	}
 
 	scanUsage(query: UsageScan, _context: Context): Promise<UsageRow[]> {

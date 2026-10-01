@@ -85,7 +85,45 @@ export interface RetainedEntrySkeleton {
 	customType?: string;
 }
 
-function skeletonOf(entry: Entry): RetainedEntrySkeleton {
+/** Walks the parent chain from start to the root (or a skeleton gap) in path order. */
+function walkParentChain<T extends { id: string; parentId: string | null }>(
+	query: StorageBranchScan,
+	start: T,
+	resolve: (id: string) => T | undefined,
+): T[] {
+	const path: T[] = [];
+	let current: T | undefined = start;
+	while (current !== undefined) {
+		path.push(current);
+		if (current.parentId === null) break;
+		current = resolve(current.parentId);
+	}
+	if (query.order === "oldestFirst") path.reverse();
+	return path;
+}
+
+/** Applies stopAt + type/customType/cursor filters and the limit. */
+function applyBranchQuerySemantics<T extends { id: string; seq: number; type: Entry["type"]; customType?: string }>(
+	path: T[],
+	query: StorageBranchScan,
+): T[] {
+	const stopped: T[] = [];
+	for (const candidate of path) {
+		stopped.push(candidate);
+		if (candidate.id === query.stopAtId || candidate.type === query.stopAtType) break;
+	}
+	const filtered = stopped
+		.filter((candidate) => query.type === undefined || candidate.type === query.type)
+		.filter((candidate) => query.customType === undefined || candidate.customType === query.customType)
+		.filter(
+			(candidate) =>
+				query.cursor === undefined ||
+				(query.order === "oldestFirst" ? candidate.seq > query.cursor.seq : candidate.seq < query.cursor.seq),
+		);
+	return query.limit === undefined ? filtered : filtered.slice(0, Math.max(0, query.limit));
+}
+
+export function skeletonOf(entry: Entry): RetainedEntrySkeleton {
 	return {
 		id: entry.id,
 		parentId: entry.parentId,
@@ -368,31 +406,24 @@ export class InMemoryStorageState {
 	scanBranch(query: StorageBranchScan): Entry[] {
 		const start = this.entries.get(query.start);
 		if (start === undefined) throw new Error(`Unknown branch start: ${query.start}`);
+		return applyBranchQuerySemantics(
+			walkParentChain(query, start, (id) => this.entries.get(id)),
+			query,
+		);
+	}
 
-		const path: Entry[] = [];
-		let entry: Entry | undefined = start;
-		while (entry !== undefined) {
-			path.push(entry);
-			if (entry.parentId === null) break;
-			entry = this.entries.get(entry.parentId);
-			if (entry === undefined) throw new Error("Corrupt branch: missing parent");
+	/** Structure scan served from skeletons alone (window-safe, no hydration). */
+	scanBranchStructureFromSkeletons(query: StorageBranchScan): EntryStructure[] {
+		const start = this.skeletons.get(query.start);
+		if (start === undefined) {
+			// Unknown start on an evicted window would already be a skeleton miss;
+			// delegate so the error text matches scanBranch exactly.
+			throw new Error(`Unknown branch start: ${query.start}`);
 		}
-		if (query.order === "oldestFirst") path.reverse();
-
-		const stopped: Entry[] = [];
-		for (const candidate of path) {
-			stopped.push(candidate);
-			if (candidate.id === query.stopAtId || candidate.type === query.stopAtType) break;
-		}
-		const filtered = stopped
-			.filter((candidate) => query.type === undefined || candidate.type === query.type)
-			.filter((candidate) => query.customType === undefined || candidate.customType === query.customType)
-			.filter(
-				(candidate) =>
-					query.cursor === undefined ||
-					(query.order === "oldestFirst" ? candidate.seq > query.cursor.seq : candidate.seq < query.cursor.seq),
-			);
-		return query.limit === undefined ? filtered : filtered.slice(0, Math.max(0, query.limit));
+		return applyBranchQuerySemantics(
+			walkParentChain(query, start, (id) => this.skeletons.get(id)),
+			query,
+		);
 	}
 
 	scanBranchStructure(query: StorageBranchScan): EntryStructure[] {

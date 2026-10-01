@@ -21,6 +21,11 @@ export interface JsonlStorageOptions {
 	fileSystem: FileSystem;
 	path: string;
 	now?: () => number;
+	/** Retention window for full Entry objects (MS-21 s1). Entries beyond the
+	 * window keep only their tree skeleton and hydrate from the JSONL on
+	 * demand; behavior is unchanged for every read. Defaults to 300; <= 0 or
+	 * undefined on legacy v3 backing disables windowing. */
+	retentionWindowEntries?: number;
 }
 
 export interface JsonlSessionMetadata extends SessionMetadata {
