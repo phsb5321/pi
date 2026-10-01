@@ -1,8 +1,7 @@
 import type { ExtensionAPI, ExtensionCommandContext } from "../../core/extensions/types.ts";
-import { formatBytes, LlamaClient, type LlamaModelInfo, normalizeLlamaServerUrl } from "./client.ts";
-import { findHuggingFaceToken, HuggingFaceClient } from "./huggingface.ts";
-import { createLlamaProvider, LLAMA_PROVIDER_ID } from "./provider.ts";
-import { type LlamaUi, runWithProgress, showLlamaUi } from "./ui.ts";
+import type { LlamaClient, LlamaModelInfo } from "./client.ts";
+import { loadLlamaModules } from "./modules.lazy.ts";
+import type { LlamaUi } from "./ui.ts";
 
 function modelIsLoaded(model: LlamaModelInfo): boolean {
 	return model.status.value === "loaded" || model.status.value === "sleeping";
@@ -26,20 +25,27 @@ function parseHuggingFaceModel(value: string): { repository: string; quantizatio
 		: { repository: value.slice(0, colon), quantization: value.slice(colon + 1) };
 }
 
-async function configuredClient(ctx: ExtensionCommandContext): Promise<LlamaClient | undefined> {
-	const result = await ctx.modelRegistry.getProviderAuth(LLAMA_PROVIDER_ID);
-	if (!result) {
-		ctx.ui.notify(`Configure llama.cpp with /login ${LLAMA_PROVIDER_ID}`, "warning");
-		return undefined;
-	}
-	const configuredUrl = result.env?.LLAMA_BASE_URL;
-	const serverUrl = normalizeLlamaServerUrl(
-		typeof configuredUrl === "string" && configuredUrl ? configuredUrl : (result.auth.baseUrl ?? ""),
-	);
-	return new LlamaClient(serverUrl, result.auth.apiKey);
-}
+export default async function llamaExtension(pi: ExtensionAPI): Promise<void> {
+	const [
+		{ formatBytes, LlamaClient: LlamaClientCtor, normalizeLlamaServerUrl },
+		{ findHuggingFaceToken, HuggingFaceClient },
+		{ createLlamaProvider, LLAMA_PROVIDER_ID },
+		{ runWithProgress, showLlamaUi },
+	] = await loadLlamaModules();
 
-export default function llamaExtension(pi: ExtensionAPI): void {
+	async function configuredClient(ctx: ExtensionCommandContext): Promise<LlamaClient | undefined> {
+		const result = await ctx.modelRegistry.getProviderAuth(LLAMA_PROVIDER_ID);
+		if (!result) {
+			ctx.ui.notify(`Configure llama.cpp with /login ${LLAMA_PROVIDER_ID}`, "warning");
+			return undefined;
+		}
+		const configuredUrl = result.env?.LLAMA_BASE_URL;
+		const serverUrl = normalizeLlamaServerUrl(
+			typeof configuredUrl === "string" && configuredUrl ? configuredUrl : (result.auth.baseUrl ?? ""),
+		);
+		return new LlamaClientCtor(serverUrl, result.auth.apiKey);
+	}
+
 	const provider = createLlamaProvider();
 	pi.registerProvider(provider.provider);
 
