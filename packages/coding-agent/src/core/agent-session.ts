@@ -2688,6 +2688,28 @@ export class AgentSession {
 	 *
 	 * @param customInstructions Optional instructions for the compaction summary
 	 */
+	/** Shared compaction tail: saved-entry scan, context refresh, token estimate, extension event. */
+	private async _emitSessionCompact(
+		summary: string,
+		fromExtension: boolean,
+		reason: "manual" | "threshold" | "overflow",
+		willRetry: boolean,
+	): Promise<number> {
+		const savedCompaction = this.sessionManager.findCompactionBySummary(summary);
+		this._refreshFinalizedContext();
+		const estimatedTokensAfter = estimateMessagesTokens(this.sessionManager.buildSessionProjection().messages);
+		if (this._extensionRunner && savedCompaction) {
+			await this._extensionRunner.emit({
+				type: "session_compact",
+				compactionEntry: savedCompaction,
+				fromExtension,
+				reason,
+				willRetry,
+			});
+		}
+		return estimatedTokensAfter;
+	}
+
 	async compact(customInstructions?: string): Promise<CompactionResult> {
 		await this.abort();
 		this._compactionAbortController = new AbortController();
@@ -2772,24 +2794,7 @@ export class AgentSession {
 			}
 
 			this.sessionManager.appendCompaction(summary, firstKeptEntryId, tokensBefore, details, fromExtension, usage);
-			const newEntries = this.sessionManager.getEntries();
-			this._refreshFinalizedContext();
-			const estimatedTokensAfter = estimateMessagesTokens(this.sessionManager.buildSessionProjection().messages);
-
-			// Get the saved compaction entry for the extension event
-			const savedCompactionEntry = newEntries.find((e) => e.type === "compaction" && e.summary === summary) as
-				| CompactionEntry
-				| undefined;
-
-			if (this._extensionRunner && savedCompactionEntry) {
-				await this._extensionRunner.emit({
-					type: "session_compact",
-					compactionEntry: savedCompactionEntry,
-					fromExtension,
-					reason: "manual",
-					willRetry: false,
-				});
-			}
+			const estimatedTokensAfter = await this._emitSessionCompact(summary, fromExtension, "manual", false);
 
 			const compactionResult: CompactionResult = {
 				summary,
@@ -3102,24 +3107,7 @@ export class AgentSession {
 			abortController.signal.throwIfAborted();
 
 			this.sessionManager.appendCompaction(summary, firstKeptEntryId, tokensBefore, details, fromExtension, usage);
-			const newEntries = this.sessionManager.getEntries();
-			this._refreshFinalizedContext();
-			const estimatedTokensAfter = estimateMessagesTokens(this.sessionManager.buildSessionProjection().messages);
-
-			// Get the saved compaction entry for the extension event
-			const savedCompactionEntry = newEntries.find((e) => e.type === "compaction" && e.summary === summary) as
-				| CompactionEntry
-				| undefined;
-
-			if (this._extensionRunner && savedCompactionEntry) {
-				await this._extensionRunner.emit({
-					type: "session_compact",
-					compactionEntry: savedCompactionEntry,
-					fromExtension,
-					reason,
-					willRetry,
-				});
-			}
+			const estimatedTokensAfter = await this._emitSessionCompact(summary, fromExtension, reason, willRetry);
 
 			const result: CompactionResult = {
 				summary,
@@ -4083,10 +4071,9 @@ export class AgentSession {
 	 * Get all user messages from session for fork selector.
 	 */
 	getUserMessagesForForking(): Array<{ entryId: string; text: string }> {
-		const entries = this.sessionManager.getEntries();
 		const result: Array<{ entryId: string; text: string }> = [];
 
-		for (const entry of entries) {
+		for (const entry of this.sessionManager.scanEntries()) {
 			if (entry.type !== "message") continue;
 			if (entry.message.role !== "user") continue;
 
@@ -4112,7 +4099,7 @@ export class AgentSession {
 		let toolCalls = 0;
 		const usageTotals = createUsageTotals();
 
-		for (const entry of this.sessionManager.getEntries()) {
+		for (const entry of this.sessionManager.scanEntries()) {
 			if (entry.type === "usage") {
 				addUsageToTotals(usageTotals, entry.usage);
 			} else if ((entry.type === "branch_summary" || entry.type === "compaction") && entry.usage) {
