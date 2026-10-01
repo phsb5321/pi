@@ -56,7 +56,7 @@ import sys
 import time
 from datetime import datetime, timezone
 
-VERSION = "1.2.1"
+VERSION = "1.2.2"
 
 # Label set per p6 §7 extension (01/10): {idle, mid-turn, boot, resume_peak,
 # mid_peak}. The two peak labels are accepted so ONE scoped D4 covers them,
@@ -290,22 +290,32 @@ def boot_proof(v, receipts):
 
 
 def load_receipts(path):
-    """Harness receipts: jsonl of {pid, exit_code, output_sha256}."""
+    """Harness receipts: jsonl of {pid, exit_code, output_sha256, ...}.
+
+    Missing keys and malformed lines are tolerated like missing values: the
+    affected fields stay None and the proof stamps a failure downstream —
+    fail-closed, never a traceback."""
     out = {}
+    malformed = 0
     if not path:
-        return out
+        return out, 0
     with open(path) as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
-            r = json.loads(line)
+            try:
+                r = json.loads(line)
+                pid = int(r["pid"])
+            except (ValueError, KeyError, TypeError, json.JSONDecodeError):
+                malformed += 1
+                continue
             try:
                 r["exit_code"] = int(r["exit_code"])
-            except (TypeError, ValueError):
-                pass
-            out[int(r["pid"])] = r
-    return out
+            except (KeyError, TypeError, ValueError):
+                r["exit_code"] = None
+            out[pid] = r
+    return out, malformed
 
 
 def stamp_receipts(prefix, receipts_path):
@@ -314,7 +324,7 @@ def stamp_receipts(prefix, receipts_path):
     only exist after release. This loads a boot capture, injects matching
     receipts, recomputes proof.ok, and rewrites the pair — numbers untouched
     (D1 recomputes them from the unchanged per-pid rows)."""
-    receipts = load_receipts(receipts_path)
+    receipts, _malformed = load_receipts(receipts_path)
     with open(prefix + ".json") as f:
         data = json.load(f)
     if data.get("condition") != "boot":
@@ -380,34 +390,128 @@ def mid_peak_proof(children_series):
     return {"type": "mid_peak", "tool": tool, "tool_window_ts": window_ts, "ok": len(tool) >= 1 and bool(window_ts)}
 
 
+def fast_sample(roots, members):
+    """Scoped rescan for peak series: stat-only /proc enumeration, full reads
+    (cmdline + smaps_rollup) only for the cohort's known tree members and any
+    NEW pid whose ppid is inside a tree (tool children appearing mid-window).
+    A full capture() pass costs ~6-7 s on a loaded host; this is ~0.3 s."""
+    member_set = set(members)
+    stat_cache = {}
+    for name in os.listdir("/proc"):
+        if not name.isdigit():
+            continue
+        pid = int(name)
+        try:
+            with open(f"/proc/{pid}/stat") as f:
+                ppid, _st, _cpu = parse_stat(f.read())
+        except OSError:
+            continue  # churn: dead before this sample, zero contribution
+        stat_cache[pid] = ppid
+    # adopt new descendants of known members
+    for pid, ppid in stat_cache.items():
+        if pid not in member_set and ppid in member_set:
+            member_set.add(pid)
+            members = members | {pid}
+    seats = {}
+    bad = []
+    for root in roots:
+        if root not in stat_cache:
+            continue  # seat died; its series just stops
+        # collect the root's tree among currently-alive pids
+        tree = {root}
+        changed = True
+        while changed:
+            changed = False
+            for pid, ppid in stat_cache.items():
+                if ppid in tree and pid not in tree:
+                    tree.add(pid)
+                    changed = True
+        rows = []
+        pss = sw = rss = cpu = 0
+        for pid in tree:
+            try:
+                with open(f"/proc/{pid}/smaps_rollup") as f:
+                    r, p, s = parse_rollup(f.read())
+                cmd = ""
+                try:
+                    with open(f"/proc/{pid}/cmdline", "rb") as f:
+                        cmd = " ".join(a.decode("utf-8", "replace") for a in f.read().split(b"\0") if a)
+                except OSError:
+                    pass
+                rows.append({"pid": pid, "pss_kb": p, "swappss_kb": s, "rss_kb": r, "cpu_ticks": 0, "cmd": cmd[:200]})
+                rss += r
+                pss += p
+                sw += s
+            except OSError:
+                bad.append(pid)
+        if bad:
+            return None, bad
+        seats[root] = {
+            "root": root,
+            "nproc": len(rows),
+            "rss_kb": rss,
+            "pss_kb": pss,
+            "swappss_kb": sw,
+            "total_kb": pss + sw,
+            "pids": rows,
+        }
+    return seats, bad
+
+
 def run_peak_series(args, hz, seconds):
-    """Sample the cohort at >=1 Hz, reduce to per-seat maxima (p6 §7 peak
-    semantics). The per-pid rows kept for D1 are those of the PEAK sample."""
+    """Sample the cohort at >=1 Hz and reduce to per-seat maxima (p6 §7 peak
+    semantics). Sample 1 is a full capture() (root resolution, environ for
+    proofs); subsequent samples use the scoped fast_sample path. The per-pid
+    rows kept for D1 are those of the PEAK sample; peak_sample_ts recorded;
+    requested and effective rates both carried on the data."""
     import time as _time
 
     interval = 1.0 / hz
-    n = max(1, int(round(seconds * hz)))
+    n = max(2, int(round(seconds * hz)))
     series = {}  # root -> [(ts, total_kb)]
-    peak_at = {}  # root -> (ts, data)
-    last = None
-    children_series = []  # [{ts, children:[{pid,cmdline}]}] for mid_peak
+    peak_at = {}  # root -> (ts, seat-dict-at-peak)
+    children_series = []
+    first = capture(args)
+    roots = [s["root"] for s in first["seats"]]
+    members = {p["pid"] for s in first["seats"] for p in s["pids"]}
+    last = first
+    ts_first = None
     for i in range(n):
-        data = capture(args)
-        last = data
+        if i == 0:
+            seats = {s["root"]: s for s in first["seats"]}
+            sample_dur = 0.0
+        else:
+            t0 = _time.time()
+            seats, bad = fast_sample(roots, members)
+            sample_dur = _time.time() - t0
+            if seats is None:
+                last["pids_unreadable_in_trees"] = bad
+                return series, peak_at, last, children_series, {"error": "tree drop in fast sample", "bad": bad}
+            for root, s in seats.items():
+                members |= {p["pid"] for p in s["pids"]}
         ts = _time.time()
+        if ts_first is None:
+            ts_first = ts
         children_series.append(
-            {"ts": ts, "children": [{"pid": p["pid"], "cmdline": p["cmd"]} for s in data["seats"] for p in s["pids"] if p["pid"] != s["root"]]}
+            {"ts": ts, "children": [{"pid": p["pid"], "cmdline": p["cmd"]} for root, s in seats.items() for p in s["pids"] if p["pid"] != root]}
         )
-        for s in data["seats"]:
+        for root, s in seats.items():
             total = s["total_kb"]
-            series.setdefault(s["root"], []).append((ts, total))
-            if s["root"] not in peak_at or total > peak_at[s["root"]][1]["seats"][0]["total_kb"] if False else True:
-                pass
+            series.setdefault(root, []).append((ts, total))
+            cur = peak_at.get(root)
+            if cur is None or total > cur[1]["total_kb"]:
+                peak_at[root] = (ts, s)
+        last = dict(first)
+        last["seats"] = list(seats.values())
         if i < n - 1:
-            _time.sleep(interval)
-    return series, peak_at, last, children_series
+            _time.sleep(max(0.0, interval - sample_dur))
+    ts_last = ts
+    eff = (n - 1) / (ts_last - ts_first) if ts_last > ts_first else 0.0
+    meta = {"requested_hz": hz, "effective_hz": round(eff, 3), "samples": n, "fast_path": True, "first_by_root": {s["root"]: s for s in first["seats"]}}
+    return series, peak_at, last, children_series, meta
 
 
+def percentile(sorted_vals, q):
     if not sorted_vals:
         return 0.0
     i = min(len(sorted_vals) - 1, max(0, round(q * (len(sorted_vals) - 1))))
@@ -450,7 +554,7 @@ def capture(args):
             break
 
     session_paths = herdr_session_paths(procs) if args["condition"] == "idle" else {}
-    receipts = load_receipts(args["receipts"]) if args["condition"] in ("boot", "resume_peak") else {}
+    receipts, _malformed = load_receipts(args["receipts"]) if args["condition"] in ("boot", "resume_peak") else ({}, 0)
     hz = os.sysconf("SC_CLK_TCK")
     with open("/proc/uptime") as f:
         uptime = float(f.read().split()[0])
@@ -681,16 +785,27 @@ def main(argv):
 
     data = capture(args)
     if args["condition"] in ("resume_peak", "mid_peak"):
-        series, peak_at, data, children_series = run_peak_series(args, args["sample_hz"], args["sample_seconds"])
+        series, peak_at, data, children_series, meta = run_peak_series(args, args["sample_hz"], args["sample_seconds"])
+        if meta.get("error"):
+            print(f"# FAIL-CLOSED: fast-sample tree drop: {meta.get('bad')} (capture invalid)")
+            return 2
+        if meta.get("effective_hz", 0) < 1.0:
+            print(f"# FAIL-CLOSED: effective sample rate {meta.get('effective_hz')} Hz < 1 Hz (contract §7 peak semantics)")
+            return 2
         now = time.time()
-        receipts_main = load_receipts(args["receipts"])
+        receipts_main, _m = load_receipts(args["receipts"])
+        first_by_root = meta.get("first_by_root", {})
         peak_seats = []
-        for s in data["seats"]:
-            rows = series.get(s["root"], [])
-            peak = peak_at.get(s["root"])
-            if peak:
-                s = dict(peak[1])  # values + per-pid rows from the PEAK sample (D1)
-                s["peak_sample_ts"] = peak[0]
+        for root in sorted(peak_at):
+            ts, seat = peak_at[root]
+            s = dict(seat)  # values + per-pid rows from the PEAK sample (D1)
+            s["root"] = root
+            s["peak_sample_ts"] = ts
+            fb = first_by_root.get(root, {})
+            for k in ("age_s", "argv0", "cwd", "cpu_ticks"):
+                if k in fb and k not in s:
+                    s[k] = fb[k]
+            rows = series.get(root, [])
             s["series"] = [{"ts": t, "total_kb": v} for t, v in rows]
             root_row = next((p for p in s["pids"] if p["pid"] == s["root"]), {})
             v = {"pid": s["root"], "cmdline": root_row.get("cmd", ""), "age_s": s["age_s"]}
@@ -706,8 +821,9 @@ def main(argv):
                 }
             peak_seats.append(s)
         data["seats"] = sorted(peak_seats, key=lambda s: -s["total_kb"])
-        data["sample_hz"] = args["sample_hz"]
-        data["sample_seconds"] = args["sample_seconds"]
+        data["sample_hz"] = meta["requested_hz"]
+        data["sample_effective_hz"] = meta["effective_hz"]
+        data["samples"] = meta["samples"]
     if args["out"]:
         write_capture(data, args["out"])
         print(f"# capture written: {args['out']}.json + {args['out']}.pids")
