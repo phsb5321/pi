@@ -125,7 +125,6 @@ import { parseGitUrl } from "../../utils/git.ts";
 import { getCwdRelativePath } from "../../utils/paths.ts";
 import { getPiUserAgent } from "../../utils/pi-user-agent.ts";
 import { killTrackedDetachedChildren } from "../../utils/shell.ts";
-import { loadAllHighlightLanguages } from "../../utils/syntax-highlight.ts";
 import { ensureTool, type ToolStatus } from "../../utils/tools-manager.ts";
 import { checkForNewPiVersion, type LatestPiRelease } from "../../utils/version-check.ts";
 import { reportBug } from "./bug-report.ts";
@@ -461,7 +460,6 @@ export class InteractiveMode {
 	private keybindings: KeybindingsManager;
 	private version: string;
 	private isInitialized = false;
-	private remainingSyntaxGrammarsScheduled = false;
 	private onInputCallback?: (text: string) => void;
 	private pendingUserInputs: string[] = [];
 	private activeStatusIndicator: StatusIndicator | undefined = undefined;
@@ -1338,29 +1336,10 @@ export class InteractiveMode {
 	}
 
 	private getMarkdownThemeWithSettings(): MarkdownTheme {
-		const markdownTheme = getMarkdownTheme();
-		const highlightCode = markdownTheme.highlightCode;
 		return {
-			...markdownTheme,
+			...getMarkdownTheme(),
 			codeBlockIndent: this.settingsManager.getCodeBlockIndent(),
-			highlightCode: (code: string, lang?: string): string[] => {
-				this.scheduleRemainingSyntaxGrammars();
-				return highlightCode ? highlightCode(code, lang) : code.split("\n");
-			},
 		};
-	}
-
-	// The full grammar catalog loads after the first code block renders, so
-	// idle sessions never pay for it. The re-render below picks up the
-	// languages that were deferred while the catalog was still loading.
-	private scheduleRemainingSyntaxGrammars(): void {
-		if (this.remainingSyntaxGrammarsScheduled) return;
-		this.remainingSyntaxGrammarsScheduled = true;
-		void loadAllHighlightLanguages().then(() => {
-			if (!this.isInitialized) return;
-			this.ui.invalidate();
-			this.ui.requestRender();
-		});
 	}
 
 	// =========================================================================
