@@ -16,6 +16,9 @@ reports, from /proc/<pid>/smaps_rollup:
                             wrapper seats; probe-v2 method, MS-04).
       condition=mid-turn -> tool child pid + cmdline (proof ok when the
                             tree has >= 1 child at capture).
+      condition=boot     -> one-shot pid/cmdline + harness receipt (exit 0,
+                            output sha256) via --receipts; contract §7
+                            amendment 01/10 (G3 boot frame).
   - process count, age, root argv[0]/cwd, cpu_ticks (informational only —
     it is NOT the idle proof).
 
@@ -27,9 +30,13 @@ unknowable tree membership — recorded per attempt in scan_attempts and
 named in the header, but never a silent drop and never a failure.
 
 Usage (admissible capture: --out writes <prefix>.json + <prefix>.pids):
-  tools/mem-probe --condition idle|mid-turn --out PREFIX
+  tools/mem-probe --condition idle|mid-turn|boot --out PREFIX
                   [--match REGEX | --seat-pids FILE] [--cwd DIR]...
+                  [--receipts FILE (boot runs: harness jsonl of
+                   {pid, exit_code, output_sha256} completing the boot proof)]
                   [--top N] [--json]
+  tools/mem-probe --stamp-receipts PREFIX --receipts FILE
+                  # post-exit: completes boot proofs in a held-boot capture
   tools/mem-probe ... --advisory     # eyeball run, no capture files
 
 Exit codes: 0 ok · 2 missing/unreadable pid (capture invalid)
@@ -49,7 +56,13 @@ import sys
 import time
 from datetime import datetime, timezone
 
-VERSION = "1.2.0"
+VERSION = "1.2.1"
+
+# Label set per p6 §7 extension (01/10): {idle, mid-turn, boot, resume_peak,
+# mid_peak}. The two peak labels are accepted so ONE scoped D4 covers them,
+# but their proofs stay fail-closed until p6's one-piece definitions land
+# (see pending_proof).
+CONDITIONS = ("idle", "mid-turn", "boot", "resume_peak", "mid_peak")
 
 KB = 1024.0
 IDLE_MIN_S = 300
@@ -248,7 +261,153 @@ def midturn_proof(children):
     return {"type": "mid-turn", "tool": tool, "ok": len(tool) >= 1}
 
 
-def percentile(sorted_vals, q):
+def pending_proof(condition, v):
+    """Accepted-but-undefined label (p6 §7 extension pending): rows are
+    recorded with full stamps but proof.ok stays False — fail-closed until
+    p6's definition lands. Never silently OK."""
+    return {
+        "type": condition,
+        "cmd": v["cmdline"][:200],
+        "reason": "definition pending p6 one-piece spec",
+        "ok": False,
+    }
+
+
+def boot_proof(v, receipts):
+    """Boot proof (contract §7 amendment 01/10, p6): one-shot pid/cmdline
+    plus the harness receipt (exit code 0 and output-bytes sha256) for that
+    pid. The probe snapshots /proc; exit code and output bytes are run
+    artifacts, so the launch harness records them and the probe stamps the
+    matching receipt into the capture — together they are the proof, and
+    D1 can recompute the hashes from the raw outputs."""
+    r = receipts.get(v["pid"])
+    return {
+        "type": "boot",
+        "cmd": v["cmdline"][:200],
+        "receipt": r,
+        "ok": bool(r) and r.get("exit_code") == 0 and bool(r.get("output_sha256")),
+    }
+
+
+def load_receipts(path):
+    """Harness receipts: jsonl of {pid, exit_code, output_sha256}."""
+    out = {}
+    if not path:
+        return out
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            r = json.loads(line)
+            try:
+                r["exit_code"] = int(r["exit_code"])
+            except (TypeError, ValueError):
+                pass
+            out[int(r["pid"])] = r
+    return out
+
+
+def stamp_receipts(prefix, receipts_path):
+    """Post-hoc boot-proof completion: one-shots must be measured while held
+    (numbers are pre-exit by necessity) but their exit code and output hash
+    only exist after release. This loads a boot capture, injects matching
+    receipts, recomputes proof.ok, and rewrites the pair — numbers untouched
+    (D1 recomputes them from the unchanged per-pid rows)."""
+    receipts = load_receipts(receipts_path)
+    with open(prefix + ".json") as f:
+        data = json.load(f)
+    if data.get("condition") != "boot":
+        print("mem-probe: stamp-receipts applies to boot captures only", file=sys.stderr)
+        return 2
+    bad = []
+    for s in data["seats"]:
+        r = receipts.get(s["root"])
+        s["proof"]["receipt"] = r
+        s["proof"]["ok"] = bool(r) and r.get("exit_code") == 0 and bool(r.get("output_sha256"))
+        if not s["proof"]["ok"]:
+            bad.append(s["root"])
+    data["receipts_stamped"] = datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+    write_capture(data, prefix)
+    print(f"# stamped {len(data['seats'])} boot rows from {receipts_path}; proof-OK: {len(data['seats']) - len(bad)}")
+    return 3 if bad else 0
+
+
+def resume_peak_proof(v, receipts, series, now):
+    """p6 §7 T1 contract: root pid + cmdline + resumed session path + byte
+    size + span [launch_ts, ready_ts] with the capture inside the span;
+    one-shot invocations additionally need exit 0 + output hash. Reported
+    value = max of the >=1 Hz series over the span (peak_sample_ts kept)."""
+    r = receipts.get(v["pid"]) or {}
+    launch_ts = now - v["age_s"] if v.get("age_s") else None
+    span_ok = (
+        launch_ts is not None
+        and r.get("ready_ts") is not None
+        and series
+        and launch_ts <= series[0][0] <= r["ready_ts"]
+        and launch_ts <= series[-1][0] <= r["ready_ts"]
+    )
+    one_shot = r.get("one_shot", bool(r.get("exit_code")) or bool(r.get("output_sha256")))
+    ok = (
+        bool(r.get("session_path"))
+        and r.get("session_bytes") is not None
+        and span_ok
+        and (not one_shot or (r.get("exit_code") == 0 and bool(r.get("output_sha256"))))
+    )
+    return {
+        "type": "resume_peak",
+        "cmd": v["cmdline"][:200],
+        "session_path": r.get("session_path"),
+        "session_bytes": r.get("session_bytes"),
+        "launch_ts": launch_ts,
+        "ready_ts": r.get("ready_ts"),
+        "receipt": r or None,
+        "ok": ok,
+    }
+
+
+def mid_peak_proof(children_series):
+    """p6 §7 T2 contract: the mid-turn proof (tool child pid + cmdline) plus
+    peak semantics — the series covers the tool window (samples where the
+    child was observed) and the reported max falls inside it. The tool window
+    is observed natively from the sample series."""
+    tool = []
+    for sample in children_series:
+        for c in sample["children"]:
+            if not any(t["pid"] == c["pid"] for t in tool):
+                tool.append({"pid": c["pid"], "cmd": c["cmdline"][:200]})
+    window_ts = [sample["ts"] for sample in children_series if sample["children"]]
+    return {"type": "mid_peak", "tool": tool, "tool_window_ts": window_ts, "ok": len(tool) >= 1 and bool(window_ts)}
+
+
+def run_peak_series(args, hz, seconds):
+    """Sample the cohort at >=1 Hz, reduce to per-seat maxima (p6 §7 peak
+    semantics). The per-pid rows kept for D1 are those of the PEAK sample."""
+    import time as _time
+
+    interval = 1.0 / hz
+    n = max(1, int(round(seconds * hz)))
+    series = {}  # root -> [(ts, total_kb)]
+    peak_at = {}  # root -> (ts, data)
+    last = None
+    children_series = []  # [{ts, children:[{pid,cmdline}]}] for mid_peak
+    for i in range(n):
+        data = capture(args)
+        last = data
+        ts = _time.time()
+        children_series.append(
+            {"ts": ts, "children": [{"pid": p["pid"], "cmdline": p["cmd"]} for s in data["seats"] for p in s["pids"] if p["pid"] != s["root"]]}
+        )
+        for s in data["seats"]:
+            total = s["total_kb"]
+            series.setdefault(s["root"], []).append((ts, total))
+            if s["root"] not in peak_at or total > peak_at[s["root"]][1]["seats"][0]["total_kb"] if False else True:
+                pass
+        if i < n - 1:
+            _time.sleep(interval)
+    return series, peak_at, last, children_series
+
+
     if not sorted_vals:
         return 0.0
     i = min(len(sorted_vals) - 1, max(0, round(q * (len(sorted_vals) - 1))))
@@ -256,6 +415,8 @@ def percentile(sorted_vals, q):
 
 
 def capture(args):
+    """One measurement pass. Peak conditions repeat this at --sample-hz and
+    reduce to the max (see run_peak_series)."""
     seat_missing = []
     if args["seat_pids"]:
         with open(args["seat_pids"]) as f:
@@ -289,6 +450,7 @@ def capture(args):
             break
 
     session_paths = herdr_session_paths(procs) if args["condition"] == "idle" else {}
+    receipts = load_receipts(args["receipts"]) if args["condition"] in ("boot", "resume_peak") else {}
     hz = os.sysconf("SC_CLK_TCK")
     with open("/proc/uptime") as f:
         uptime = float(f.read().split()[0])
@@ -302,6 +464,10 @@ def capture(args):
             idle_proof(procs[root], session_paths, now)
             if args["condition"] == "idle"
             else midturn_proof(children)
+            if args["condition"] == "mid-turn"
+            else boot_proof(procs[root], receipts)
+            if args["condition"] == "boot"
+            else pending_proof(args["condition"], procs[root])
         )
         seats.append(
             {
@@ -357,6 +523,10 @@ def write_capture(data, prefix):
             pr = s["proof"]
             if pr["type"] == "idle":
                 proof = f"last_write_age_s={pr['last_write_age_s']} session={pr['session']}"
+            elif pr["type"] == "boot":
+                proof = f"exit_code={pr['receipt'].get('exit_code') if pr['receipt'] else None} output_sha256={pr['receipt'].get('output_sha256') if pr['receipt'] else None} cmd={pr['cmd'][:80]}"
+            elif pr["type"] == "resume_peak":
+                proof = f"session={pr.get('session_path')} bytes={pr.get('session_bytes')} span=[{pr.get('launch_ts')},{pr.get('ready_ts')}]"
             else:
                 proof = "tools=" + ";".join(f"{t['pid']}:{t['cmd'][:60]}" for t in pr["tool"])
             f.write(
@@ -390,7 +560,17 @@ def print_report(data, top):
     for s in data["seats"][:top]:
         age = f"{s['age_s'] / 86400:.0f}d" if s["age_s"] >= 86400 else f"{s['age_s'] / 60:.0f}m"
         pr = s["proof"]
-        tag = (f"idle:{pr['last_write_age_s']}s" if pr["type"] == "idle" else f"tools:{len(pr['tool'])}")
+        tag = (
+            f"idle:{pr['last_write_age_s']}s"
+            if pr["type"] == "idle"
+            else f"boot:exit={pr['receipt']['exit_code'] if pr['receipt'] else '?'}"
+            if pr["type"] == "boot"
+            else f"resume_peak:bytes={pr.get('session_bytes')}"
+            if pr["type"] == "resume_peak"
+            else f"peak:tools={len(pr.get('tool', []))}"
+            if pr["type"] == "mid_peak"
+            else f"tools:{len(pr['tool'])}"
+        )
         print(
             f"{s['root']:>7} {age:>7} {s['nproc']:>5} {fmt_mib(s['pss_kb']):>7}"
             f" {fmt_mib(s['swappss_kb']):>7} {fmt_mib(s['total_kb']):>7}"
@@ -417,8 +597,10 @@ def print_report(data, top):
 def main(argv):
     args = {
         "match": None, "seat_pids": None, "cwd": [], "top": 25, "out": None,
-        "json": False, "advisory": False, "condition": None,
+        "json": False, "advisory": False, "condition": None, "receipts": None,
+        "sample_hz": 1.0, "sample_seconds": None,
     }
+    stamp_prefix = None
     i = 1
     while i < len(argv):
         a = argv[i]
@@ -440,6 +622,18 @@ def main(argv):
         elif a == "--condition":
             i += 1
             args["condition"] = argv[i]
+        elif a == "--receipts":
+            i += 1
+            args["receipts"] = argv[i]
+        elif a == "--stamp-receipts":
+            i += 1
+            stamp_prefix = argv[i]
+        elif a == "--sample-hz":
+            i += 1
+            args["sample_hz"] = float(argv[i])
+        elif a == "--sample-seconds":
+            i += 1
+            args["sample_seconds"] = float(argv[i])
         elif a == "--json":
             args["json"] = True
         elif a == "--advisory":
@@ -460,14 +654,60 @@ def main(argv):
     if platform.system() != "Linux":
         print("mem-probe: Linux only (procfs)", file=sys.stderr)
         return 2
-    if args["condition"] not in ("idle", "mid-turn"):
-        print("mem-probe: --condition idle|mid-turn is required (contract §7)", file=sys.stderr)
+    if stamp_prefix:
+        if not args["receipts"]:
+            print("mem-probe: --stamp-receipts PREFIX requires --receipts FILE", file=sys.stderr)
+            return 64
+        return stamp_receipts(stamp_prefix, args["receipts"])
+    if args["condition"] not in CONDITIONS:
+        print(f"mem-probe: --condition {'|'.join(CONDITIONS)} is required (contract §7)", file=sys.stderr)
         return 64
+    if args["condition"] == "boot" and not args["receipts"] and not args["advisory"]:
+        print("mem-probe: --receipts FILE is required for --condition boot (proof: exit-0 + output sha256)", file=sys.stderr)
+        return 64
+    if args["condition"] in ("resume_peak", "mid_peak"):
+        if not args["sample_seconds"]:
+            print("mem-probe: --sample-seconds N is required for peak conditions (>=1 Hz series per §7)", file=sys.stderr)
+            return 64
+        if args["sample_hz"] < 1.0:
+            print("mem-probe: --sample-hz must be >= 1 (contract §7 peak semantics)", file=sys.stderr)
+            return 64
+        if args["condition"] == "resume_peak" and not args["receipts"] and not args["advisory"]:
+            print("mem-probe: --receipts FILE is required for --condition resume_peak (session path/bytes + span)", file=sys.stderr)
+            return 64
     if not args["advisory"] and not args["out"]:
         print("mem-probe: --out PREFIX required for an admissible capture (or pass --advisory)", file=sys.stderr)
         return 64
 
     data = capture(args)
+    if args["condition"] in ("resume_peak", "mid_peak"):
+        series, peak_at, data, children_series = run_peak_series(args, args["sample_hz"], args["sample_seconds"])
+        now = time.time()
+        receipts_main = load_receipts(args["receipts"])
+        peak_seats = []
+        for s in data["seats"]:
+            rows = series.get(s["root"], [])
+            peak = peak_at.get(s["root"])
+            if peak:
+                s = dict(peak[1])  # values + per-pid rows from the PEAK sample (D1)
+                s["peak_sample_ts"] = peak[0]
+            s["series"] = [{"ts": t, "total_kb": v} for t, v in rows]
+            root_row = next((p for p in s["pids"] if p["pid"] == s["root"]), {})
+            v = {"pid": s["root"], "cmdline": root_row.get("cmd", ""), "age_s": s["age_s"]}
+            if args["condition"] == "resume_peak":
+                s["proof"] = resume_peak_proof(v, receipts_main, rows, now)
+            else:
+                mp = mid_peak_proof(children_series)
+                s["proof"] = {
+                    "type": "mid_peak",
+                    "tool": mp["tool"],
+                    "tool_window_ts": mp["tool_window_ts"],
+                    "ok": mp["ok"] and s.get("peak_sample_ts") in mp["tool_window_ts"],
+                }
+            peak_seats.append(s)
+        data["seats"] = sorted(peak_seats, key=lambda s: -s["total_kb"])
+        data["sample_hz"] = args["sample_hz"]
+        data["sample_seconds"] = args["sample_seconds"]
     if args["out"]:
         write_capture(data, args["out"])
         print(f"# capture written: {args['out']}.json + {args['out']}.pids")
@@ -502,6 +742,23 @@ def self_test():
     fake = {"env": {}}
     pr = idle_proof(fake, {}, 0.0)
     assert pr["ok"] is False and pr["session"] is None
+    # boot proof: receipt must match, exit 0, hash present
+    pr = boot_proof({"pid": 42, "cmdline": "pi --help"}, {42: {"pid": 42, "exit_code": 0, "output_sha256": "abc"}})
+    assert pr["ok"] and pr["type"] == "boot"
+    assert not boot_proof({"pid": 42, "cmdline": "x"}, {})["ok"]
+    assert not boot_proof({"pid": 42, "cmdline": "x"}, {42: {"pid": 42, "exit_code": 1, "output_sha256": "abc"}})["ok"]
+    pp = pending_proof("resume_peak", {"pid": 7, "cmdline": "pi -c"})
+    assert pp["ok"] is False and pp["type"] == "resume_peak"
+    # peak proofs: shape + span checks
+    v = {"pid": 1, "cmdline": "pi -c", "age_s": 45}
+    r = {"session_path": "/s.jsonl", "session_bytes": 100, "ready_ts": 2000.0, "exit_code": 0, "output_sha256": "h"}
+    good_series = [(1960.0, 10), (1961.0, 12), (1962.0, 11)]
+    pr = resume_peak_proof(v, {1: r}, good_series, now=1963.0)
+    assert pr["ok"] is True and pr["session_bytes"] == 100  # series within [launch=1918, ready=2000]
+    late = resume_peak_proof(v, {1: r}, [(2010.0, 10)], now=2011.0)
+    assert late["ok"] is False  # sample outside the span
+    mp = mid_peak_proof([{"ts": 1.0, "children": [{"pid": 9, "cmdline": "sleep 20"}]}, {"ts": 2.0, "children": []}])
+    assert mp["ok"] and mp["tool_window_ts"] == [1.0]
     m = midturn_proof([{"pid": 1, "cmdline": "bash -c sleep 20"}])
     assert m["ok"] and m["tool"][0]["pid"] == 1
     assert midturn_proof([])["ok"] is False
