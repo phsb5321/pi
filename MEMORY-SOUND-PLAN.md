@@ -285,3 +285,14 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   Deviations disclosed honestly (run-1 snapshot-order inflation discarded
   with receipt — the probe-before-snapshot rule, reinforced). G-03
   compliance verified (payload on-host, provider-free).
+- 2026-10-01 17:30 — **R2 DECISION EXECUTED: upstream issue POSTED** —
+  earendil-works/pi#10308 (17:17 BRT, phsb5321; auto-closed untriaged =
+  the normal gate cycle per measured base rates: Sept n=947 -> 76.3%
+  no-action / 9.1% reopened / 13.9% completed; gate grants 122 lifetime,
+  6 in Sept, all in the #9033 shape). Text = p5 draft re-optimized
+  (#9033 lgtm-winning shape; voided holder phrasing dropped per the M1
+  erratum; bare-node re-measured). STRIKE CORRECTION: "one strike spent"
+  was a conservative internal reading — no-action is not enforced blocking
+  (label on 2933 issues; repeated no-action filers never blocked). S1 PR
+  opens ONLY on lgtm in command position. Follow-through (R2 owns): if
+  untriaged past 08/10 -> ONE Discord message; no-action -> never repost.
