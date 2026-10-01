@@ -322,3 +322,41 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   gate correctly forbade relaunch; resume = calm window, recipe ready);
   S1 PR-PREP ready (ms/pr-hljs@bc2d8dc1c lineage clean, parity
   byte-identical; NOT opened — lgtm gate stands).
+
+## Endgame (Pedro 01/10 19:0x — program-level, binding)
+
+1. **ADOPTION** — once a measured Δ lands, the fleet runs OUR patched build
+   locally as its pinned pi runtime. Mechanism: NixOS piVersion plumbing
+   (the 0.85.1→0.99.0 bumps prove the swap path) — point the pin at the
+   fork build. **Gate: Δ row + conformance green** (p6 verifies; p1
+   verifies post-adopt band movement). Owner: **R3 (deploy track)** —
+   folded into the NixOS#2536 deploy decision; first adoption target =
+   the merged wins (S1 + S5 + S4b2 class) once the pin plumbing lands.
+2. **SYNC DISCIPLINE** — the fork tracks upstream continuously: rebase/
+   merge upstream/main regularly (upstream ships fast — 0.99.0→0.99.1 in
+   days); PR-only-new-content stays rule 4 (divergence shrinks to unlanded
+   PRs only); **every upstream version bump is re-measured with mem-probe
+   before fleet adoption.** Owner: **p1 (sync + re-measurement cadence)**.
+
+- 2026-10-01 19:10 — S11 (TUI render-depth) ownership reconciled.
+  AMENDED 19:2x: **R2 owns S11 execution** (ratified — it produced the
+  kickoff 2x2 discriminator and has gate-timer capacity; supersedes the
+  p9-after-S9 placeholder and my earlier p9 line). p9 stays on S9 (Row A,
+  source-complete). p3 keeps the stack-class LABELING research (feeds
+  R2's 2x2). p5 folds the spec row (U3 if pure-memoization caps hold, U2
+  if windowing is plugin-visible). Sequence unchanged: S11 lands after
+  S9. Upstream PR check: zero phsb5321 PRs on earendil-works/pi — lgtm
+  gate intact.
+
+- 2026-10-01 19:2x — **UPSTREAM v1.0.0 RELEASED (a13d35a74, git-only) —
+  sync-discipline execution (Pedro):** (1) fork syncs onto upstream/main
+  v1.0.0, memory-sound delta stays minimal (rule 4: divergence = unlanded
+  PRs + fleet wiring only) — p1 sync duty, integration-branch merges;
+  (2) **REBASELINE** — pi 1.0 changed memory-relevant behavior (shrink
+  codemode prompt, fullscreen TUI default, durable Package 21) so the
+  MS-04 table is STALE for 1.0: p3 + p4 re-run the mem-probe baseline +
+  conformance on the 1.0 build (staged behind the G4 calm window — the
+  calm protocol stands); (3) S1 PR reframe onto the v1.0.0 base (p4);
+  (4) **fleet pin moves 0.99.0 -> 1.0.0 VIA OUR FORK BUILD** (npm lacks
+  1.0; git source is the only route = exactly the ADOPTION plan above,
+  R3 owns the pin flip, gate: Delta row + conformance green).
