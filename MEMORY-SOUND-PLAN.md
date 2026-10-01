@@ -206,3 +206,17 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   erratum + protocol B0 (hydrate+build before check) confirmed. M2 is now
   open: p4 implements ms/lazy-load-baseline after MS-03; p5 specs slice
   acceptance tables; first M2 acceptance run on the fixed probe.
+- 2026-09-30 21:50 — **G1/S1 verdict BLOCKED + ARBITRATION** (spec clause:
+  MS-10 is arbiter). Measured grammar-residency class ceiling = 7.0 MiB
+  (p6: A-nocode − B-nocode), corroborated by M1 buckets (source 6.7 +
+  grammars 1.0). Proxy-derived bars void: **G1 grammar-class bar re-set
+  15 → 5 MiB idle P50** (≈70 % of measured ceiling, spec convention);
+  declared ~33 MiB claim RETRACTED (bundle-chunk isolation proxy, not
+  seat PSS). S = measured at gate time per §5 (provisional 10 void on
+  this class); if measured S > new bar, S1 rides a bundle. Finding 2
+  accepted: B-code ≈ A-code ⇒ catalog over-trigger suspected (one-time
+  full-catalog load on rare alias) — p9 must make NO path load the full
+  catalog, then re-declare. Finding 3: C6-corrected cohort re-run after
+  bar + fix. LESSON: proxy numbers (isolated RSS, chunk smoke, per-dep
+  sizing) systematically OVERSTATE seat-PSS wins; only acceptance-run
+  and MS-10 numbers are citable.
