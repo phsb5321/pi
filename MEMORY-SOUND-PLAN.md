@@ -296,3 +296,14 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   (label on 2933 issues; repeated no-action filers never blocked). S1 PR
   opens ONLY on lgtm in command position. Follow-through (R2 owns): if
   untriaged past 08/10 -> ONE Discord message; no-action -> never repost.
+- 2026-10-01 17:35 — **GROWTH LEDGER CLOSED (two-seat convergence)** (p3
+  object-growth × p8 replay, independent): heap +21.98 = UI render caches
+  +15.8 + shared message content +7.1 + H3 0.17 + T3 0; residual ~21.5
+  NAMED = V8 committed slack + non-heap (churn candidate: T2 getEntries()
+  copy churn session-manager.ts:1520 — s3 reframed as slack-targeting);
+  honest remainder 1-3 MiB (2-6%): +6.0 MiB structural/extension state
+  with no exclusive holder. Wall-age flat confirmed (history-driven).
+  Optimization stack now measured-backed: (1) cache eviction (68% of
+  heap growth + aged mass), (2) slack class via copy-churn removal +
+  heap caps, (3) shared message content secondary. Controls 4/4 (3
+  instrument traps caught); engine-substrate taxonomy note open to p8.
