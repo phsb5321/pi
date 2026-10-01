@@ -13,7 +13,7 @@
 
 ### Changed
 
-- The llama.cpp extension's client, provider, and UI modules now load when its extension initializes instead of at CLI startup.
+- The llama.cpp extension's Hugging Face and UI modules now load on the first `/llama` command instead of at extension initialization (first-command latency shifts accordingly; the client module stays extension-loadable because the provider value-imports it).
 
 ## [0.99.2] - 2026-09-30
 

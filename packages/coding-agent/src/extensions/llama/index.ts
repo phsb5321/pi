@@ -1,7 +1,13 @@
 import type { ExtensionAPI, ExtensionCommandContext } from "../../core/extensions/types.ts";
 import type { LlamaClient, LlamaModelInfo } from "./client.ts";
-import { loadLlamaModules } from "./modules.lazy.ts";
+import { loadLlamaCommandModules, loadLlamaProvider } from "./modules.lazy.ts";
 import type { LlamaUi } from "./ui.ts";
+
+let commandModulesPromise: ReturnType<typeof loadLlamaCommandModules> | undefined;
+const commandModules = (): ReturnType<typeof loadLlamaCommandModules> => {
+	if (!commandModulesPromise) commandModulesPromise = loadLlamaCommandModules();
+	return commandModulesPromise;
+};
 
 function modelIsLoaded(model: LlamaModelInfo): boolean {
 	return model.status.value === "loaded" || model.status.value === "sleeping";
@@ -26,14 +32,10 @@ function parseHuggingFaceModel(value: string): { repository: string; quantizatio
 }
 
 export default async function llamaExtension(pi: ExtensionAPI): Promise<void> {
-	const [
-		{ formatBytes, LlamaClient: LlamaClientCtor, normalizeLlamaServerUrl },
-		{ findHuggingFaceToken, HuggingFaceClient },
-		{ createLlamaProvider, LLAMA_PROVIDER_ID },
-		{ runWithProgress, showLlamaUi },
-	] = await loadLlamaModules();
+	const { createLlamaProvider, LLAMA_PROVIDER_ID } = await loadLlamaProvider();
 
 	async function configuredClient(ctx: ExtensionCommandContext): Promise<LlamaClient | undefined> {
+		const [{ LlamaClient: LlamaClientCtor, normalizeLlamaServerUrl }] = await commandModules();
 		const result = await ctx.modelRegistry.getProviderAuth(LLAMA_PROVIDER_ID);
 		if (!result) {
 			ctx.ui.notify(`Configure llama.cpp with /login ${LLAMA_PROVIDER_ID}`, "warning");
@@ -76,6 +78,7 @@ export default async function llamaExtension(pi: ExtensionAPI): Promise<void> {
 		catalog: LlamaModelInfo[],
 		target: LlamaModelInfo,
 	): Promise<void> => {
+		const [, , { runWithProgress }] = await commandModules();
 		const loaded = catalog.filter((model) => model.id !== target.id && modelIsLoaded(model));
 		let replace = false;
 		if (loaded.length > 0) {
@@ -141,6 +144,8 @@ export default async function llamaExtension(pi: ExtensionAPI): Promise<void> {
 	};
 
 	const downloadModel = async (ctx: ExtensionCommandContext, ui: LlamaUi, client: LlamaClient): Promise<void> => {
+		const [{ formatBytes }, { findHuggingFaceToken, HuggingFaceClient }, { runWithProgress }] =
+			await commandModules();
 		const huggingFace = new HuggingFaceClient(await findHuggingFaceToken());
 		const selected = await ui.searchModels((query, signal) => huggingFace.search(query, signal));
 		if (!selected) return;
@@ -195,6 +200,7 @@ export default async function llamaExtension(pi: ExtensionAPI): Promise<void> {
 			}
 			const client = await configuredClient(ctx);
 			if (!client) return;
+			const [, , { showLlamaUi }] = await commandModules();
 			await showLlamaUi(ctx, async (ui) => {
 				const readCatalog = async (): Promise<LlamaModelInfo[] | undefined> => {
 					while (true) {
