@@ -75,18 +75,97 @@ function compareKeys(left: string, right: string): number {
  * This is intentionally unsuitable for database backends and long-running sessions that may not fit in memory.
  * Those backends should query indexed durable state and update durable aggregates within each commit transaction.
  */
+/** Skeleton kept for every entry regardless of retention window. */
+export interface RetainedEntrySkeleton {
+	id: string;
+	parentId: string | null;
+	seq: number;
+	timestamp: number;
+	type: Entry["type"];
+	customType?: string;
+}
+
+/** Walks the parent chain from start to the root (or a skeleton gap) in path order. */
+function walkParentChain<T extends { id: string; parentId: string | null }>(
+	query: StorageBranchScan,
+	start: T,
+	resolve: (id: string) => T | undefined,
+): T[] {
+	const path: T[] = [];
+	let current: T | undefined = start;
+	while (current !== undefined) {
+		path.push(current);
+		if (current.parentId === null) break;
+		current = resolve(current.parentId);
+	}
+	if (query.order === "oldestFirst") path.reverse();
+	return path;
+}
+
+/** Applies stopAt + type/customType/cursor filters and the limit. */
+function applyBranchQuerySemantics<T extends { id: string; seq: number; type: Entry["type"]; customType?: string }>(
+	path: T[],
+	query: StorageBranchScan,
+): T[] {
+	const stopped: T[] = [];
+	for (const candidate of path) {
+		stopped.push(candidate);
+		if (candidate.id === query.stopAtId || candidate.type === query.stopAtType) break;
+	}
+	const filtered = stopped
+		.filter((candidate) => query.type === undefined || candidate.type === query.type)
+		.filter((candidate) => query.customType === undefined || candidate.customType === query.customType)
+		.filter(
+			(candidate) =>
+				query.cursor === undefined ||
+				(query.order === "oldestFirst" ? candidate.seq > query.cursor.seq : candidate.seq < query.cursor.seq),
+		);
+	return query.limit === undefined ? filtered : filtered.slice(0, Math.max(0, query.limit));
+}
+
+export function skeletonOf(entry: Entry): RetainedEntrySkeleton {
+	return {
+		id: entry.id,
+		parentId: entry.parentId,
+		seq: entry.seq,
+		timestamp: entry.timestamp,
+		type: entry.type,
+		...(entry.customType === undefined ? {} : { customType: entry.customType }),
+	};
+}
+
+/** Hydration source for windowed retention: loads full entries from durable state. */
+export interface RetentionHydration {
+	loadEntries(ids: readonly string[]): Promise<Entry[]>;
+}
+
+/** Retention window configuration (see MS-21 s1: windowed InMemoryStorageState). */
+export interface RetentionOptions {
+	/** Keep full Entry objects only for the most recent `entryWindow` committed
+	 * entries; skeletons are always kept. Requires a hydration source. */
+	entryWindow?: number;
+	hydration?: RetentionHydration;
+}
+
 export class InMemoryStorageState {
 	private readonly entries: Map<string, Entry>;
 	private readonly entriesBySeq: Entry[];
+	private readonly skeletons: Map<string, RetainedEntrySkeleton>;
+	private readonly retention: { entryWindow: number; hydration: RetentionHydration } | undefined;
 	private readonly scalarValues: Map<string, StoredValue<unknown>>;
 	private readonly listValues: Map<string, StoredListSnapshot>;
 	private readonly usage: Map<string, UsageRow>;
 	private stats: SessionStats;
 	private nextSeq: number;
 
-	constructor() {
+	constructor(retention?: RetentionOptions) {
 		this.entries = new Map();
 		this.entriesBySeq = [];
+		this.skeletons = new Map();
+		this.retention =
+			retention?.hydration !== undefined && retention.entryWindow !== undefined && retention.entryWindow >= 1
+				? { entryWindow: retention.entryWindow, hydration: retention.hydration }
+				: undefined;
 		this.scalarValues = new Map();
 		this.listValues = new Map();
 		this.usage = new Map();
@@ -102,8 +181,8 @@ export class InMemoryStorageState {
 
 	validateCommitted(writes: readonly CommittedWrite[]): void {
 		validateCommittedWrites(writes, this.nextSeq, {
-			hasEntryOrUsageId: (id) => this.entries.has(id) || this.usage.has(id),
-			hasEntryId: (id) => this.entries.has(id),
+			hasEntryOrUsageId: (id) => this.skeletons.has(id) || this.usage.has(id),
+			hasEntryId: (id) => this.skeletons.has(id),
 		});
 	}
 
@@ -115,7 +194,9 @@ export class InMemoryStorageState {
 					const { kind: _kind, ...entry } = write;
 					this.entries.set(entry.id, entry);
 					this.entriesBySeq.push(entry);
+					this.skeletons.set(entry.id, skeletonOf(entry));
 					if (entry.type === "message") this.stats = { ...this.stats, messageCount: this.stats.messageCount + 1 };
+					this.evictBeyondWindow();
 					break;
 				}
 				case "usage": {
@@ -151,6 +232,7 @@ export class InMemoryStorageState {
 			if (!isEntryCopied(entry.id)) continue;
 			destination.entries.set(entry.id, entry);
 			destination.entriesBySeq.push(entry);
+			destination.skeletons.set(entry.id, skeletonOf(entry));
 			if (entry.type === "message") messageCount++;
 		}
 		destination.stats = { ...destination.stats, messageCount };
@@ -198,7 +280,7 @@ export class InMemoryStorageState {
 		const entryIds = new Set<string>();
 		const plan = selectBranchFork(options, {
 			tip: this.getValue(branchTip(options.branch))?.value,
-			getParent: (entryId) => this.entries.get(entryId)?.parentId,
+			getParent: (entryId) => this.skeletons.get(entryId)?.parentId ?? this.entries.get(entryId)?.parentId,
 			selectEntry: (entryId) => entryIds.add(entryId),
 		});
 		if (
@@ -208,6 +290,57 @@ export class InMemoryStorageState {
 			throw new Error(`Source branch ${JSON.stringify(options.branch)} is not a configured AgentLane`);
 		}
 		return { ...plan, entryIds };
+	}
+
+	/** Evict full entries beyond the window; skeletons are never evicted. */
+	private evictBeyondWindow(): void {
+		if (this.retention === undefined) return;
+		while (this.entriesBySeq.length > this.retention.entryWindow) {
+			const evicted = this.entriesBySeq.shift();
+			if (evicted === undefined) break;
+			this.entries.delete(evicted.id);
+		}
+	}
+
+	/** Materialize full entries (hydration path). No eviction pressure until
+	 * the next commit's eviction pass, so forks and full-history walks stay
+	 * correct. Returns the entries that were actually missing. */
+	hydrateInto(fullEntries: readonly Entry[]): Entry[] {
+		const materialized: Entry[] = [];
+		for (const entry of fullEntries) {
+			if (this.skeletons.has(entry.id) && !this.entries.has(entry.id)) {
+				this.entries.set(entry.id, entry);
+				let index = this.entriesBySeq.length;
+				while (index > 0 && this.entriesBySeq[index - 1]!.seq > entry.seq) index--;
+				this.entriesBySeq.splice(index, 0, entry);
+				materialized.push(entry);
+			}
+		}
+		return materialized;
+	}
+
+	/** True if the id exists at all (window or skeleton). */
+	hasEntry(id: string): boolean {
+		return this.skeletons.has(id);
+	}
+
+	/** Skeleton lookup: structure without payload. */
+	getSkeleton(id: string): RetainedEntrySkeleton | undefined {
+		return this.skeletons.get(id);
+	}
+
+	/** All skeletons in seq order (structure walks; cheap by design). */
+	getSkeletons(): RetainedEntrySkeleton[] {
+		return [...this.skeletons.values()].sort((left, right) => left.seq - right.seq);
+	}
+
+	/** IDs of entries whose full payload is not currently materialized. */
+	unmaterializedIds(ids: readonly string[]): string[] {
+		const missing: string[] = [];
+		for (const id of ids) {
+			if (this.skeletons.has(id) && !this.entries.has(id)) missing.push(id);
+		}
+		return missing;
 	}
 
 	private applyValueSetOrListAppend(write: CommittedValueSetWrite | CommittedListAppendWrite): void {
@@ -273,42 +406,28 @@ export class InMemoryStorageState {
 	scanBranch(query: StorageBranchScan): Entry[] {
 		const start = this.entries.get(query.start);
 		if (start === undefined) throw new Error(`Unknown branch start: ${query.start}`);
+		return applyBranchQuerySemantics(
+			walkParentChain(query, start, (id) => this.entries.get(id)),
+			query,
+		);
+	}
 
-		const path: Entry[] = [];
-		let entry: Entry | undefined = start;
-		while (entry !== undefined) {
-			path.push(entry);
-			if (entry.parentId === null) break;
-			entry = this.entries.get(entry.parentId);
-			if (entry === undefined) throw new Error("Corrupt branch: missing parent");
+	/** Structure scan served from skeletons alone (window-safe, no hydration). */
+	scanBranchStructureFromSkeletons(query: StorageBranchScan): EntryStructure[] {
+		const start = this.skeletons.get(query.start);
+		if (start === undefined) {
+			// Unknown start on an evicted window would already be a skeleton miss;
+			// delegate so the error text matches scanBranch exactly.
+			throw new Error(`Unknown branch start: ${query.start}`);
 		}
-		if (query.order === "oldestFirst") path.reverse();
-
-		const stopped: Entry[] = [];
-		for (const candidate of path) {
-			stopped.push(candidate);
-			if (candidate.id === query.stopAtId || candidate.type === query.stopAtType) break;
-		}
-		const filtered = stopped
-			.filter((candidate) => query.type === undefined || candidate.type === query.type)
-			.filter((candidate) => query.customType === undefined || candidate.customType === query.customType)
-			.filter(
-				(candidate) =>
-					query.cursor === undefined ||
-					(query.order === "oldestFirst" ? candidate.seq > query.cursor.seq : candidate.seq < query.cursor.seq),
-			);
-		return query.limit === undefined ? filtered : filtered.slice(0, Math.max(0, query.limit));
+		return applyBranchQuerySemantics(
+			walkParentChain(query, start, (id) => this.skeletons.get(id)),
+			query,
+		);
 	}
 
 	scanBranchStructure(query: StorageBranchScan): EntryStructure[] {
-		return this.scanBranch(query).map((entry) => ({
-			id: entry.id,
-			parentId: entry.parentId,
-			seq: entry.seq,
-			timestamp: entry.timestamp,
-			type: entry.type,
-			...(entry.customType === undefined ? {} : { customType: entry.customType }),
-		}));
+		return this.scanBranch(query).map(skeletonOf);
 	}
 
 	scanEntries(query: EntryScan): Entry[] {
