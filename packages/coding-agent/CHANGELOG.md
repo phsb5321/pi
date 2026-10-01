@@ -38,7 +38,7 @@
 
 ### Changed
 
-- Syntax highlighting grammars now load on first use: each language loads its exact grammar when it is first rendered — from code blocks or file renderers alike — and the full language catalog is only a warm-up preload instead of a startup cost.
+- Syntax highlighting grammars now load per language on first use: each language loads its exact grammar when it is first rendered, from code blocks or file renderers alike, and the full language catalog is no longer loaded at startup.
 
 ### Fixed
 
