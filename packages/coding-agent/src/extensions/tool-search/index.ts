@@ -7,10 +7,11 @@
  */
 
 import type { ExtensionFactory } from "../../core/extensions/types.ts";
-import { createToolSearchToolDefinition } from "./tool.ts";
+import { loadToolSearchTool } from "./tool.lazy.ts";
 
 export function createToolSearchExtension(): ExtensionFactory {
-	return (pi) => {
+	return async (pi) => {
+		const { createToolSearchToolDefinition } = await loadToolSearchTool();
 		pi.registerTool({ ...createToolSearchToolDefinition({ tools: pi }), defaultActive: false });
 	};
 }
