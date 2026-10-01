@@ -234,3 +234,15 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   Instrument binding: mem-probe v1.2.0 @ 749ab56dd. Also: +45.8 MiB per
   10.5 h work-time growth (ratio med 1.46) = strongest live evidence for
   session-retention (MS-21).
+- 2026-10-01 03:00 — **Boot-frame session + peaks re-acceptance.** Session
+  valid (60 proof-OK rows, interleaved n=6, D1 495/495). All boot deltas
+  ≤6 MiB vs S_measured 12.4 → existing no-win rule decides: **boot-frame
+  rows are informational-only** (G3 bar proxy-contradicted — third proxy
+  lesson: static-graph shrink ≠ boot PSS win; recorded, bar moot because
+  Δ < S gates nothing at any bar). MS-20's gate now rests on the G4
+  interactive bundle (bar re-derives at gate time) + S5/S7 + the /llama
+  first-command option; if G4 is thin, program weight shifts to MS-21/22
+  per the S4a re-rank flag (now measured fact). v1.2.2 peaks RE-ACCEPTED
+  @40f950a80 (argmax-exact, in-window ts, tolerant receipts, 2.0s sampler
+  in-row) — MS-21 label path unblocked. Instrument matrix: idle/mid-turn
+  v1.2.0@749ab56dd · boot v1.2.1 rows byte-preserved · peaks v1.2.2@
