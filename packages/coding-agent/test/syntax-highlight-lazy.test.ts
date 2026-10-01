@@ -1,7 +1,9 @@
+import { readdirSync } from "fs";
 import hljs from "highlight.js/lib/core.js";
 import { createRequire } from "module";
+import { dirname } from "path";
 import { describe, expect, it } from "vitest";
-import { highlight, supportsLanguage } from "../src/utils/syntax-highlight.ts";
+import { highlight, loadAllHighlightLanguages, supportsLanguage } from "../src/utils/syntax-highlight.ts";
 
 const require = createRequire(import.meta.url);
 
@@ -30,6 +32,7 @@ const startupLanguages = [
 ];
 
 const grammarModule = (name: string) => `highlight.js/lib/languages/${name}.js`;
+const catalogModule = "highlight.js/lib/index.js";
 
 describe("lazy grammar registration", () => {
 	it("does not load grammar modules before first use", () => {
@@ -43,22 +46,34 @@ describe("lazy grammar registration", () => {
 		}
 	});
 
-	// Pins availability parity with the pinned highlight.js grammars: every
-	// declared name and alias must be renderable on demand (the fallback chain
-	// covers map drift; the map is the fast path that avoids the catalog).
-	it("accepts every name and alias the startup grammars declare before the full catalog loads", () => {
-		for (const name of startupLanguages) {
-			const factory = require(grammarModule(name)) as HighlightJsLanguageFactory;
+	// The complete map pin: every name and alias in the pinned catalog is
+	// renderable on demand by loading exactly its own grammar, the full
+	// catalog is never evaluated by resolution, and every name resolves to
+	// the same grammar the full catalog would pick (disputed aliases too).
+	it("resolves every catalog name and alias to its exact grammar, matching the full catalog", async () => {
+		const languagesDir = dirname(require.resolve(grammarModule("bash")));
+		const ids = readdirSync(languagesDir)
+			.filter((file) => file.endsWith(".js"))
+			.map((file) => file.slice(0, -3))
+			.sort();
+		expect(ids.length).toBeGreaterThanOrEqual(191);
+
+		const resolved: Array<[string, string | undefined]> = [];
+		for (const id of ids) {
+			const factory = require(grammarModule(id)) as HighlightJsLanguageFactory;
 			const definition = factory(hljs) as unknown as { aliases?: string[] };
-			expect(supportsLanguage(name)).toBe(true);
-			for (const alias of definition.aliases ?? []) {
-				expect(supportsLanguage(alias)).toBe(true);
+			for (const key of [id, ...(definition.aliases ?? [])]) {
+				const name = key.toLowerCase();
+				expect(supportsLanguage(name)).toBe(true);
+				resolved.push([name, hljs.getLanguage(name)?.name]);
 			}
 		}
-		// A rare canonical name loads exactly its own grammar, not the catalog.
-		expect(supportsLanguage("ada")).toBe(true);
-		expect(require.cache[require.resolve(grammarModule("ada"))]).toBeDefined();
-		expect(require.cache[require.resolve("highlight.js/lib/index.js")]).toBeUndefined();
+		expect(require.cache[require.resolve(catalogModule)]).toBeUndefined();
+
+		await loadAllHighlightLanguages();
+		for (const [name, beforeName] of resolved) {
+			expect(hljs.getLanguage(name)?.name).toBe(beforeName);
+		}
 	});
 
 	// Prototype keys must stay unsupported exactly as before lazy registration.
@@ -74,7 +89,6 @@ describe("lazy grammar registration", () => {
 		expect(viaAlias).toBe(canonical);
 	});
 
-	// Aliases of rare grammars resolve through the one-time catalog load.
 	it("renders rare aliases identically to their canonical name", () => {
 		expect(supportsLanguage("yml")).toBe(true);
 		const canonical = highlight("key: value", { language: "yaml", ignoreIllegals: true });
