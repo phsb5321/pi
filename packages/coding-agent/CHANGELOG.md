@@ -11,6 +11,10 @@
 - Fixed MCP OAuth sign-in accepting an authorization response whose `iss` parameter names another authorization server; the code is now rejected before it is exchanged (RFC 9207).
 - Fixed MCP OAuth sign-in failing with `Invalid scope` when the token response contains `"scope": ""`, and similar failures for other empty or `null` optional OAuth fields ([#10266](https://github.com/earendil-works/pi/issues/10266)).
 
+### Changed
+
+- Mermaid diagrams now load their renderer on the first mermaid code block instead of at CLI startup.
+
 ## [0.99.2] - 2026-09-30
 
 ### New Features
