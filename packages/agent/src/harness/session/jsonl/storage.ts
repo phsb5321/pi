@@ -146,25 +146,45 @@ export class JsonlStorage implements Storage {
 		header: JsonlStorageHeader,
 		context: Context,
 	): Promise<JsonlStorage> {
-		const content = fileValue(
-			await options.fileSystem.readTextFile(options.path, context),
-			`Failed to read JSONL storage ${options.path}`,
-		);
-		const { lines, torn } = splitCompleteLines(content);
 		if (header.storageVersion !== JSONL_STORAGE_VERSION) {
 			throw new Error(`Session ${header.id} uses unsupported storage version ${header.storageVersion}`);
 		}
 		const storage = new JsonlStorage(options, header, { kind: "v4" });
-		for (let index = 1; index < lines.length; index++) {
-			const line = lines[index]!;
-			try {
-				storage.replayCommitted(parseJsonlTransaction(line));
-			} catch (error) {
-				throw new Error(`Invalid JSONL storage ${options.path}: line ${index + 1}`, { cause: error });
+		const reader = fileValue(
+			await options.fileSystem.openTextLineReader(options.path, context),
+			`Failed to read JSONL storage ${options.path}`,
+		);
+		let torn = false;
+		try {
+			let index = 0;
+			for (;;) {
+				const line = fileValue(await reader.readLine(context), `Failed to read JSONL storage ${options.path}`);
+				if (line === undefined) break;
+				index++;
+				if (index === 1) continue; // header line, already parsed by open()
+				if (!line.terminated) {
+					torn = true;
+					break;
+				}
+				try {
+					storage.replayCommitted(parseJsonlTransaction(line.text));
+				} catch (error) {
+					throw new Error(`Invalid JSONL storage ${options.path}: line ${index}`, { cause: error });
+				}
 			}
+		} finally {
+			await reader.close(context);
 		}
 		if (header.nextSeq !== undefined) storage.storageState.advanceNextSeq(header.nextSeq);
 		if (torn) {
+			// Crash-recovery path only: rewrite without the torn tail. Rare enough
+			// that re-reading the file here is fine; the open path above stays
+			// streaming (one line in memory at a time instead of the whole file).
+			const content = fileValue(
+				await options.fileSystem.readTextFile(options.path, context),
+				`Failed to read JSONL storage ${options.path}`,
+			);
+			const { lines } = splitCompleteLines(content);
 			await publishFileAtomically(options.fileSystem, options.path, context, (append) =>
 				append(`${lines.join("\n")}\n`),
 			);
