@@ -378,7 +378,14 @@ export function getLatestCompactionEntry(entries: SessionEntry[]): CompactionEnt
 	return null;
 }
 
-function buildEntryIndex(entries: SessionEntry[], byId?: Map<string, SessionEntry>): Map<string, SessionEntry> {
+/** Last element of an iterable scan (default leaf when no leafId is given). */
+function lastEntry(entries: Iterable<SessionEntry>): SessionEntry | undefined {
+	let last: SessionEntry | undefined;
+	for (const entry of entries) last = entry;
+	return last;
+}
+
+function buildEntryIndex(entries: Iterable<SessionEntry>, byId?: Map<string, SessionEntry>): Map<string, SessionEntry> {
 	if (byId) return byId;
 	const index = new Map<string, SessionEntry>();
 	for (const entry of entries) {
@@ -388,7 +395,7 @@ function buildEntryIndex(entries: SessionEntry[], byId?: Map<string, SessionEntr
 }
 
 function buildSessionPath(
-	entries: SessionEntry[],
+	entries: Iterable<SessionEntry>,
 	leafId?: string | null,
 	byId?: Map<string, SessionEntry>,
 ): SessionEntry[] {
@@ -400,7 +407,7 @@ function buildSessionPath(
 	if (leafId) {
 		leaf = index.get(leafId);
 	}
-	leaf ??= entries[entries.length - 1];
+	leaf ??= lastEntry(entries);
 	if (!leaf) {
 		return [];
 	}
@@ -474,7 +481,7 @@ export function sessionEntryToContextMessages(entry: SessionEntry): AgentMessage
  * compaction entry. Older summarized entries are omitted.
  */
 export function buildContextEntries(
-	entries: SessionEntry[],
+	entries: Iterable<SessionEntry>,
 	leafId?: string | null,
 	byId?: Map<string, SessionEntry>,
 ): SessionEntry[] {
@@ -541,7 +548,7 @@ function projectContextEntry(entry: SessionEntry, edit: ContextEditEntry | undef
 
 /** Build provenance-preserving, compaction-aware model context. */
 export function buildSessionProjection(
-	entries: SessionEntry[],
+	entries: Iterable<SessionEntry>,
 	leafId?: string | null,
 	byId?: Map<string, SessionEntry>,
 ): SessionProjection {
@@ -574,7 +581,7 @@ export function buildSessionProjection(
 
 /** Build the finalized model context from the canonical session projection. */
 export function buildSessionContext(
-	entries: SessionEntry[],
+	entries: Iterable<SessionEntry>,
 	leafId?: string | null,
 	byId?: Map<string, SessionEntry>,
 ): SessionContext {
@@ -1483,7 +1490,7 @@ export class SessionManager {
 	 * Uses tree traversal from current leaf.
 	 */
 	buildContextEntries(): SessionEntry[] {
-		return buildContextEntries(this.getEntries(), this.leafId, this.byId);
+		return buildContextEntries(this.scanEntries(), this.leafId, this.byId);
 	}
 
 	/**
@@ -1491,7 +1498,7 @@ export class SessionManager {
 	 * Uses tree traversal from current leaf.
 	 */
 	buildSessionProjection(): SessionProjection {
-		return buildSessionProjection(this.getEntries(), this.leafId, this.byId);
+		return buildSessionProjection(this.scanEntries(), this.leafId, this.byId);
 	}
 
 	buildSessionContext(): SessionContext {
@@ -1521,13 +1528,31 @@ export class SessionManager {
 		return this.fileEntries.filter((e): e is SessionEntry => e.type !== "session");
 	}
 
+	/** First compaction entry with the given summary (compaction flows' saved-entry lookup). */
+	findCompactionBySummary(summary: string): CompactionEntry | undefined {
+		for (const entry of this.scanEntries()) {
+			if (entry.type === "compaction" && entry.summary === summary) return entry;
+		}
+		return undefined;
+	}
+
+	/**
+	 * Iterate session entries (excludes header) without copying the array.
+	 * Hot per-turn paths use this instead of getEntries() (MS-21 s3).
+	 */
+	*scanEntries(): IterableIterator<SessionEntry> {
+		for (const entry of this.fileEntries) {
+			if (entry.type !== "session") yield entry as SessionEntry;
+		}
+	}
+
 	/**
 	 * Get the session as a tree structure. Returns a shallow defensive copy of all entries.
 	 * A well-formed session has exactly one root (first entry with parentId === null).
 	 * Orphaned entries (broken parent chain) are also returned as roots.
 	 */
 	getTree(): SessionTreeNode[] {
-		const entries = this.getEntries();
+		const entries = [...this.scanEntries()];
 		const nodeMap = new Map<string, SessionTreeNode>();
 		const roots: SessionTreeNode[] = [];
 
