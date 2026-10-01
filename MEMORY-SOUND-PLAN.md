@@ -307,3 +307,18 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   heap growth + aged mass), (2) slack class via copy-churn removal +
   heap caps, (3) shared message content secondary. Controls 4/4 (3
   instrument traps caught); engine-substrate taxonomy note open to p8.
+- 2026-10-01 18:30 — **LEDGER FINAL (run-3 correction)**: residual is NOT
+  V8 slack in the replay frame (slack +0.2 flat) — it is non-heap anon:
+  worker-stack ~13.5 (render depth) + glibc brk ~10.5-15.2; p3's +33.3
+  slack label is valid for the 3-day age/work frame only. FINAL: ~15 UI
+  caches + 3.2 shared + 2.2-3.4 engine (other-or-unselected) + 0.2 H3 +
+  23.6 non-heap + 6.0 real-seat line (partly overlapping) -> remainder
+  1-3 MiB (2-6%). NEW LEVER: TUI render-depth/windowing (the 13.5 stack
+  class). S3 consequence (adjudicated): copy->scan cannot move the idle
+  needle — its frame is mid-turn burst + age-work slack series. ALSO:
+  R1 swap-reclaim EXECUTED (scoped /tmp purge: SwapFree 68kB->6.74 GiB,
+  /tmp 24->12 GiB; per-entry proofs); G4 gate run BLOCKED-ON-ENVIRONMENT
+  (18:10-18:18 PSI storms from reclaim churn killed the cohort; pressure
+  gate correctly forbade relaunch; resume = calm window, recipe ready);
+  S1 PR-PREP ready (ms/pr-hljs@bc2d8dc1c lineage clean, parity
+  byte-identical; NOT opened — lgtm gate stands).
