@@ -273,3 +273,15 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   @40f950a80 (argmax-exact, in-window ts, tolerant receipts, 2.0s sampler
   in-row) — MS-21 label path unblocked. Instrument matrix: idle/mid-turn
   v1.2.0@749ab56dd · boot v1.2.1 rows byte-preserved · peaks v1.2.2@
+- 2026-10-01 17:25 — **THE +45.8 MiB GROWTH IS EXPLAINED** (p8 G-03
+  history-replay, provider-free, matched pair at a0a883aa4): work-content
+  retention, not wall-age (706-entry worked session = +43.5 MiB settled
+  vs 16-entry; wall-age at fixed history FLAT over 27 min). Exclusive
+  ledger (heap delta +21.98): **UI render caches +15.06 (68%)** + shared
+  message content +6.76 (30%) + H3 +0.16 + T3 +0. Residual ~21.5 = V8
+  slack + non-heap (to p3). IMPLICATION: cache-eviction is double-
+  vindicated (68% of growth AND the aged-seat mass); accumulation is
+  per-rendered-work, so eviction at settled points caps the growth curve.
+  Deviations disclosed honestly (run-1 snapshot-order inflation discarded
+  with receipt — the probe-before-snapshot rule, reinforced). G-03
+  compliance verified (payload on-host, provider-free).
