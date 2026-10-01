@@ -1,5 +1,15 @@
-import { parse } from "yaml";
+import { createRequire } from "module";
 import { stripBom } from "./text.ts";
+
+const require = createRequire(import.meta.url);
+
+type ParseYaml = (input: string) => unknown;
+let parseYaml: ParseYaml | undefined;
+
+function loadParseYaml(): ParseYaml {
+	if (!parseYaml) parseYaml = (require("yaml") as { parse: ParseYaml }).parse;
+	return parseYaml;
+}
 
 type ParsedFrontmatter<T extends Record<string, unknown>> = {
 	frontmatter: T;
@@ -33,7 +43,7 @@ export const parseFrontmatter = <T extends Record<string, unknown> = Record<stri
 	if (!yamlString) {
 		return { frontmatter: {} as T, body };
 	}
-	const parsed = parse(yamlString);
+	const parsed = loadParseYaml()(yamlString);
 	return { frontmatter: (parsed ?? {}) as T, body };
 };
 
