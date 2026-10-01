@@ -8,7 +8,7 @@
 
 import type { ExtensionAPI, ExtensionFactory } from "../../core/extensions/types.ts";
 import type { CodemodeMode } from "../../core/settings-manager.ts";
-import { createCodemodeToolDefinition } from "./tool.ts";
+import { loadCodemodeTool } from "./tool.lazy.ts";
 
 export interface CodemodeExtensionOptions {
 	/** Overrides the `codemode.mode` setting. */
@@ -29,7 +29,8 @@ function readInlineBudget(pi: ExtensionAPI): number | undefined {
 }
 
 export function createCodemodeExtension(options: CodemodeExtensionOptions = {}): ExtensionFactory {
-	return (pi) => {
+	return async (pi) => {
+		const { createCodemodeToolDefinition } = await loadCodemodeTool();
 		pi.registerTool({
 			...createCodemodeToolDefinition({
 				appendEntry: (customType, data) => pi.appendEntry(customType, data),
