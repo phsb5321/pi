@@ -231,6 +231,22 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   confirmed) — p6's frozen-frame session AUTHORIZED to start now against
   the local bundle, exploiting the quiet window; captures + aging run
   while the PAT is pending.
+- 2026-10-01 13:50 — **M1 HOLDER-ATTRIBUTION ERRATUM** (p8 runtime probe
+  at a0a883aa4, positive controls JsonlStorage=2/IMS=3 detected when
+  planted, so the probe detects when present): normal CLI constructs
+  SessionManager=1/AgentSession=1 but **JsonlStorage=0/InMemoryStorage-
+  State=0**; all 5 re-parsed M1 snapshots show ZERO harness store
+  instances. p3's classifier measured string bytes then STATICALLY named
+  holders — the ~24 MiB H1-H4 attribution is UNSUPPORTED (byte totals
+  stand as content classes; holder NAMES void). Consequently s1/s2 do
+  not act on the CLI path and s3 removes transient copies only.
+  **FIFTH METHOD RULE: attribution requires retainer evidence (GC-root
+  chains), never co-location heuristics.** Same-seat growth (+45.8 MiB/
+  10.5 h) remains valid (instrument-level). S1's merged 9.7 MiB win is
+  unaffected (module-loading mechanism, end-to-end measured). MS-21
+  redesign input = retainer analysis of the growth strings (p8 primary,
+  p3 cross-check). The frozen-frame session RUNS as the memory-level
+  arbiter of this finding.
 - 2026-10-01 01:20 — **M0 EXIT SIGNED** (gate repo-gate/
   memory-sound-m0-gate-2026-10-01). Criteria: build+check green @
   749ab56dd (MS-01, p6 B1 cross-confirm); fork seat launched + probed
