@@ -220,6 +220,17 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   bar + fix. LESSON: proxy numbers (isolated RSS, chunk smoke, per-dep
   sizing) systematically OVERSTATE seat-PSS wins; only acceptance-run
   and MS-10 numbers are citable.
+- 2026-10-01 13:10 — **Push-outage amendment (provisional binding).** Under
+  the host-wide GitHub auth outage (no valid token; [pending] Pedro PAT),
+  acceptance runs MAY bind to a LOCAL sha as PROVISIONAL-PUSH-HOLD: the
+  verdict activates by one-line provenance addendum once the identical
+  sha is push-verified; sha drift voids it (existing supersession rule).
+  Owner freezes the branch at the bound sha while provisional. Drives:
+  ms/21-bundle@a0a883aa4 (s1+s2+s3 merged clean + type-import cleanup;
+  full test.sh green in quiet window, Sqlite timeouts = load artifacts
+  confirmed) — p6's frozen-frame session AUTHORIZED to start now against
+  the local bundle, exploiting the quiet window; captures + aging run
+  while the PAT is pending.
 - 2026-10-01 01:20 — **M0 EXIT SIGNED** (gate repo-gate/
   memory-sound-m0-gate-2026-10-01). Criteria: build+check green @
   749ab56dd (MS-01, p6 B1 cross-confirm); fork seat launched + probed
