@@ -40,7 +40,7 @@ import type {
 import { mcpNamespace } from "../../core/mcp-servers.ts";
 import type { ModelRegistry } from "../../core/model-registry.ts";
 import { openBrowser } from "../../utils/open-browser.ts";
-import { CODEMODE_TOOL_NAME, isCodemodeTool } from "../codemode/tool.ts";
+import { loadCodemodeTool } from "../codemode/tool.lazy.ts";
 import { isToolSearchTool, TOOL_SEARCH_TOOL_NAME } from "../tool-search/tool.ts";
 import {
 	getMcpToolExposure,
@@ -267,7 +267,8 @@ function describeTransport(entry: McpServerEntry): string {
 const MCP_USAGE = "Usage: /mcp, /mcp login [server], /mcp logout [server], /mcp reconnect [server]";
 
 export function createMcpExtension(options: McpExtensionOptions = {}): ExtensionFactory {
-	return (pi: ExtensionAPI) => {
+	return async (pi: ExtensionAPI) => {
+		const { CODEMODE_TOOL_NAME, isCodemodeTool } = await loadCodemodeTool();
 		let servers: McpServer[] = [];
 		/** Servers from `mcp.json`, which take precedence over registered servers of the same name. */
 		let configuredEntries: McpServerEntry[] = [];
