@@ -12,7 +12,9 @@ Format: name, commit@sha, accepted reason, corrective action. Owner: p2.
   381-probe parity, D1).
 - **Corrective action:** retroactive §2 conformance suite + §3 matrix row
   (expected `invisible` — pure module-load timing, session storage untouched).
-  Dispatched p9 01/10 15:0x. Status: **OPEN → closes on filed runs**.
+  Status: **CLOSED 01/10 15:5x** — `evidence/MS-20/s1-retro/`: §2 105/105
+  green + SIGKILL paths 35 passed/1 skipped; §3 row `invisible` (77-probe
+  render parity byte-identical, no surface change).
 
 ## G-02 — Synthetic-cohort C6 band deviation (recurring class)
 
