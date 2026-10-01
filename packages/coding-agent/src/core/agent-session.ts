@@ -122,7 +122,6 @@ import type { ResourceExtensionPaths, ResourceLoader } from "./resource-loader.t
 import { exportSessionToJsonl } from "./session-export.ts";
 import {
 	type BranchSummaryEntry,
-	type CompactionEntry,
 	type ContextEditEntry,
 	getLatestCompactionEntry,
 	type SessionEntry,
