@@ -40,8 +40,6 @@ import type {
 import { mcpNamespace } from "../../core/mcp-servers.ts";
 import type { ModelRegistry } from "../../core/model-registry.ts";
 import { openBrowser } from "../../utils/open-browser.ts";
-import { CODEMODE_TOOL_NAME, isCodemodeTool } from "../codemode/tool.ts";
-import { isToolSearchTool, TOOL_SEARCH_TOOL_NAME } from "../tool-search/tool.ts";
 import {
 	getMcpToolExposure,
 	type LoadedMcpConfig,
@@ -51,18 +49,13 @@ import {
 	type McpServerEntry,
 	updateMcpServerConfig,
 } from "./config.ts";
+import { loadMcpModules } from "./modules.lazy.ts";
 import type { McpOAuthCredentialStore, McpSignInPrompt } from "./oauth.ts";
-import {
-	createMcpResourceToolDefinitions,
-	LIST_MCP_RESOURCE_TEMPLATES_TOOL,
-	LIST_MCP_RESOURCES_TOOL,
-	READ_MCP_RESOURCE_TOOL,
-} from "./resources.ts";
 import { loadMcpRuntime } from "./runtime.lazy.ts";
 import type * as McpRuntime from "./runtime.ts";
 import type { McpServerConnection, McpServerLog, McpTransportFactory } from "./runtime.ts";
-import { createMcpToolDefinition, createMcpToolName, type McpToolDetails } from "./tools.ts";
-import { type McpMenu, type McpUi, showMcpManager } from "./ui.ts";
+import type { McpToolDetails } from "./tools.ts";
+import type { McpMenu, McpUi } from "./ui.ts";
 
 export type { McpTransportFactory } from "./runtime.ts";
 
@@ -88,12 +81,6 @@ export interface McpExtensionOptions {
 }
 
 const DEFAULT_STARTUP_WAIT_MS = 10_000;
-
-const RESOURCE_TOOL_NAMES: ReadonlySet<string> = new Set([
-	LIST_MCP_RESOURCES_TOOL,
-	LIST_MCP_RESOURCE_TEMPLATES_TOOL,
-	READ_MCP_RESOURCE_TOOL,
-]);
 
 /** A configured server. Disabled servers have no connection. */
 interface McpServer {
@@ -267,7 +254,24 @@ function describeTransport(entry: McpServerEntry): string {
 const MCP_USAGE = "Usage: /mcp, /mcp login [server], /mcp logout [server], /mcp reconnect [server]";
 
 export function createMcpExtension(options: McpExtensionOptions = {}): ExtensionFactory {
-	return (pi: ExtensionAPI) => {
+	return async (pi: ExtensionAPI) => {
+		const [
+			{ CODEMODE_TOOL_NAME, isCodemodeTool },
+			{ isToolSearchTool, TOOL_SEARCH_TOOL_NAME },
+			{
+				createMcpResourceToolDefinitions,
+				LIST_MCP_RESOURCE_TEMPLATES_TOOL,
+				LIST_MCP_RESOURCES_TOOL,
+				READ_MCP_RESOURCE_TOOL,
+			},
+			{ createMcpToolDefinition, createMcpToolName },
+			{ showMcpManager },
+		] = await loadMcpModules();
+		const RESOURCE_TOOL_NAMES: ReadonlySet<string> = new Set([
+			LIST_MCP_RESOURCES_TOOL,
+			LIST_MCP_RESOURCE_TEMPLATES_TOOL,
+			READ_MCP_RESOURCE_TOOL,
+		]);
 		let servers: McpServer[] = [];
 		/** Servers from `mcp.json`, which take precedence over registered servers of the same name. */
 		let configuredEntries: McpServerEntry[] = [];
