@@ -477,3 +477,14 @@ GO/NO-GO), then implementation per the same binding rules 1–3.
 
 - 2026-10-02 15:35 — W-track encoded (above). Distribution: p9 W1 (=E now),
   p3 W4+W6 (extends its A-measurement), pD W2+W3+W5 after its G4 verdict.
+- 2026-10-02 15:40 — **G4 BUNDLE GATE PASS + MERGED** (pD, ticket
+  evidence/MS-20/g4-bundle-2026-10-02/): combined U-gate −7.1 idle /
+  −5.2 mid (n=6 interleaved, S measured 7.6/4.4, bar cleared), rules
+  2-3 green (6x conformance, all rows invisible), D1 385/385.
+  **FIFTH PROXY NON-MATERIALIZATION: member class-sum ~26.8 does not
+  add** (S1 9.7 + S4b2 ~10 + S7 7.1 → combined 7.1) — savings share
+  overlapping mechanisms; ONLY measured combined numbers book fleet
+  claims, never sums. S7 class landed via its own recapture (mid −4.5,
+  idle −7.1). Merged memory-sound@3d12a7c9a (branch push discipline miss
+  caught + fixed — declare-time push is universal, new seats included).
+  Full stack now in-memory: S1+S5+S9+S11+S4b2+S7 + C env line.
