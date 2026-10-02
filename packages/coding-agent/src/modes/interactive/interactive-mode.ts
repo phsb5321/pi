@@ -275,6 +275,8 @@ function isUsageSessionEntry(item: RenderSessionItem): item is Extract<SessionEn
 }
 
 const DEAD_TERMINAL_ERROR_CODES = new Set(["EIO", "EPIPE", "ENOTCONN"]);
+/** Quiet period after the working state settles before rebuildable render caches are evicted. */
+const RENDER_CACHE_EVICTION_SETTLE_MS = 5_000;
 
 function isDeadTerminalError(error: unknown): boolean {
 	if (!error || typeof error !== "object" || !("code" in error)) {
@@ -434,6 +436,7 @@ export interface InteractiveModeOptions {
 export class InteractiveMode {
 	private runtimeHost: AgentSessionRuntime;
 	private renderer: TuiMainScreen | TuiAltScreen;
+	private renderCacheEvictionTimer: ReturnType<typeof setTimeout> | undefined;
 	private ui: TUI;
 	private mainScreenRenderState: TuiMainScreenRenderState | undefined;
 	private loadedResourcesContainer: Container;
@@ -2300,12 +2303,45 @@ export class InteractiveMode {
 		if (!visible) {
 			this.clearStatusIndicator("working");
 			this.ui.requestRender();
+			this.scheduleRenderCacheEviction();
 			return;
+		}
+		if (this.renderCacheEvictionTimer) {
+			clearTimeout(this.renderCacheEvictionTimer);
+			this.renderCacheEvictionTimer = undefined;
 		}
 		if (this.session.isStreaming && this.activeStatusIndicator?.kind !== "working") {
 			this.showWorkingStatusIndicator();
 		}
 		this.ui.requestRender();
+	}
+
+	/**
+	 * Settled-point eviction (never mid-turn): after the working state quiets, drop rebuildable
+	 * render caches so idle seats do not hold them; the next render rebuilds them byte-identically
+	 * from the tool call, result, and messages.
+	 */
+	private scheduleRenderCacheEviction(): void {
+		if (this.renderCacheEvictionTimer) clearTimeout(this.renderCacheEvictionTimer);
+		this.renderCacheEvictionTimer = setTimeout(() => {
+			this.renderCacheEvictionTimer = undefined;
+			if (!this.session.isIdle || this.session.isStreaming) {
+				this.scheduleRenderCacheEviction();
+				return;
+			}
+			this.evictRenderCaches();
+		}, RENDER_CACHE_EVICTION_SETTLE_MS);
+		this.renderCacheEvictionTimer.unref?.();
+	}
+
+	private evictRenderCaches(): void {
+		const visit = (component: Component): void => {
+			if (component instanceof ToolExecutionComponent) component.evictRenderCaches();
+			if (component instanceof Container) {
+				for (const child of component.children) visit(child);
+			}
+		};
+		visit(this.chatContainer);
 	}
 
 	private setWorkingIndicator(options?: WorkingIndicatorOptions): void {

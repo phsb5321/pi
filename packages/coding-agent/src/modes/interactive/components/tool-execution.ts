@@ -152,6 +152,27 @@ export class ToolExecutionComponent extends Container {
 		};
 	}
 
+	/** Drop rebuildable render caches (renderer component reuse chains, converted images, image
+	 * children) at a settled point. The next render recreates them byte-identically from the call
+	 * and result; `rendererState` stays because it carries renderer-owned user state. */
+	evictRenderCaches(): void {
+		this.callRendererComponent = undefined;
+		this.resultRendererComponent = undefined;
+		this.convertedImages.clear();
+		this.clearImageChildren();
+	}
+
+	private clearImageChildren(): void {
+		for (const img of this.imageComponents) {
+			this.removeChild(img);
+		}
+		this.imageComponents = [];
+		for (const spacer of this.imageSpacers) {
+			this.removeChild(spacer);
+		}
+		this.imageSpacers = [];
+	}
+
 	private createCallFallback(): Component {
 		return new Text(formatToolCallWithArgs(this.toolName, this.args, theme, this.expanded), 0, 0);
 	}
@@ -372,14 +393,7 @@ export class ToolExecutionComponent extends Container {
 			hasContent = true;
 		}
 
-		for (const img of this.imageComponents) {
-			this.removeChild(img);
-		}
-		this.imageComponents = [];
-		for (const spacer of this.imageSpacers) {
-			this.removeChild(spacer);
-		}
-		this.imageSpacers = [];
+		this.clearImageChildren();
 
 		if (this.result) {
 			const imageBlocks = this.result.content.filter((c) => c.type === "image");
