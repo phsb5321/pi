@@ -488,3 +488,24 @@ GO/NO-GO), then implementation per the same binding rules 1–3.
   idle −7.1). Merged memory-sound@3d12a7c9a (branch push discipline miss
   caught + fixed — declare-time push is universal, new seats included).
   Full stack now in-memory: S1+S5+S9+S11+S4b2+S7 + C env line.
+- 2026-10-02 15:5x — **W1 COMPRESSIBILITY GATE PASS** (p9, first W-track
+  deliverable): 706-entry worked corpus 2.19x deflate / 2.73x brotli
+  (lossless, >=2x PASS); drag = base64 image blobs (incompressible class
+  — keep raw); text carriers 2.4-3.0x. SLICE SHAPE DECIDED: compress
+  text carriers only (message strings, tool-result text, render/export),
+  blobs external/raw, working hot tail uncompressed (codec touches
+  settled/sent history only). Decode p50 7.6-14.5 ms/MiB. ms/e-offheap
+  implementation GREENLIT under the five-artifact rule. Corpus caveat
+  noted (on-host real payloads of the same classes; swap-in harness
+  ready for p8s corpus).
+- 2026-10-02 15:5x — **SIXTH CORRECTION — CROSS-DAY VARIANCE**: S9/S11
+  one-turn deltas DO NOT REPRODUCE across days (today +0.7/+0.1 vs
+  yesterday +7.3/+7.2, identical code; BASE drifted 77.7->68.9 = host-
+  state drift shared by arms). RULE ESCALATION: booked class numbers
+  require **cross-day multi-run aggregation (≥3 same-window A/B sessions)
+  of WITHIN-SESSION deltas** — single-run deltas flip sign across days
+  and never book. S9/S11 fleet claims (and the derived G4/E budget
+  inputs) move to PENDING RE-AGGREGATION; merged code stands (behavior-
+  identical, conformance green — claim uncertainty, not code risk).
+  Re-aggregation run assigned p3 after its A/W6 tables; cross-day
+  methodology = paired same-session arms, drift cancels in-delta.
