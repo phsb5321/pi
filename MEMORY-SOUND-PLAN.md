@@ -454,3 +454,26 @@ against MS-04-v2 methodology at fleet pilot.
 - 2026-10-02 15:25 — TARGET SET + RE-PLAN (above). Ownership: A-in-process
   measurement = p3; A implementation = p4 post-chain; E implementation =
   p9 NOW; chain/C = p4 in flight; D = tail after A; board = p7.
+
+## W-TRACK (Pedro amendment 02/10 15:32 — first-class alongside A/C/D)
+
+Working instances are in scope: the idle track is NOT the whole program.
+Worked-cohort baseline rows: **mid-turn 185.6 MiB (fleet) / 244.2
+(home-projects) / +45.8 growth class**. Brief: `docs/WORKING-INSTANCE-BRIEF.md`.
+The ≤4 GiB bar is verified against BOTH idle and worked classes at pilot.
+
+| # | Direction | Owner | Note |
+|---|---|---|---|
+| **W1** | Context retention (compressed/off-heap WHILE working) | p9 | **= E re-scoped, priority raised to working-instance #1**; lossless only; kill-9 byte-identical; compressibility experiment targets WORKED payloads |
+| **W2** | Compaction + overflow | pD | adopt upstream Package 20, tune thresholds for 300-seat fleets, measure worked cohort |
+| **W3** | Mid-turn cache policy | pD | eviction DURING a turn (S9 settle-only was one-turn-cohort); extend upstream preview caps |
+| **W4** | Peak shaping | p3 | heap/arena caps sized for turn bursts + post-turn stranding reclaim (T2 getEntries copy churn) |
+| **W5** | Resend mode | pD | full-history resend → delta/windowed where transport allows; measure per-turn cost |
+| **W6** | Active marginal in A | p3 | the WORKED bracket of the shared-isolate marginal (idle 5–15 known; worked unknown) |
+
+Deliverables: `docs/WORKING-W<N>.md` per direction (measured ceiling on the
+WORKED cohort — mid-turn PSS+SwapPss + peaks — effort, matrix row, PR shape,
+GO/NO-GO), then implementation per the same binding rules 1–3.
+
+- 2026-10-02 15:35 — W-track encoded (above). Distribution: p9 W1 (=E now),
+  p3 W4+W6 (extends its A-measurement), pD W2+W3+W5 after its G4 verdict.
