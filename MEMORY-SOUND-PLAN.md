@@ -404,3 +404,19 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   top) + C's 3.5 GiB + E's 7.3-8.8. Post-pin growth-curve verification
   uses MS-04-v2 bands. Pre-1.0 harness suite doesn't port (API rework —
   conformance corpus needs a 1.0 port ticket).
+- 2026-10-02 15:10 — **S11 WORKED-COHORT: HONEST NEGATIVE** (p9, 3 runs,
+  real 705-message seed, all proofs OK): the 10-12.5 worked-seat class is
+  NOT reproducible on v1.0 — upstream's tui-retention fix subsumed it
+  (S11 marginal on worked seats ±0.4-2.0 = noise). **FRAMING CONFIRMED:
+  S9/S11 fleet claims cite the ONE-TURN cohort only** (+7.3/+6.9 S9,
+  +7.2/+7.5 S11) with the worked-seat negative disclosed IN the tables;
+  merged S9+S11 stands (no worked-seat regression; merge values were
+  one-turn). Fleet story re-centered: C 3.5 GiB + E 7.3-8.8 + S1
+  9.7-class + S9/S11 one-turn ~5 GiB class + v1.0 adoption itself
+  (aged-curve kill). Two hardening commits landed ms/s11-windowing@
+  9a63e9370 (scrollContentLines windowing bounds the visible-scroll
+  retention bomb unconditionally + mounted-leaf cache drop; golden-frame
+  re-validated 16+14 clean) — GATE BEFORE MERGE (fresh mem table +
+  conformance on the new sha; settle-trigger seam recorded: arms on
+  first turn). Conformance port DECISION accepted: pre-1.0 trio RETIRED
+  formally (v1.0 suites cover the guarantees; re-homing = duplicate).
