@@ -360,3 +360,15 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   (4) **fleet pin moves 0.99.0 -> 1.0.0 VIA OUR FORK BUILD** (npm lacks
   1.0; git source is the only route = exactly the ADOPTION plan above,
   R3 owns the pin flip, gate: Delta row + conformance green).
+- 2026-10-01 21:30 — FREEZE-VS-SYNC RULING (p4 question): **sha-binding
+  freeze wins for any branch with a PENDING sha-bound acceptance;
+  sync-discipline (1.0 base) governs all MERGE-CANDIDANT branches.**
+  ms/21-bundle stays FROZEN at a0a883aa4 permanently (its arbiter verdict
+  is bound; it never merges); ms/g4-bundle stays frozen until its run
+  fires (staged, auto-fire). Merge candidates (pr-hljs, s3-as-slack-slice,
+  offheap, cache-eviction, mermaid) live on the 1.0 base. FINDING
+  (p4, logged): upstream 7fd478a2e DELETED the experimental harness —
+  the s1/s2 measured-no-win targets no longer exist upstream; parked
+  branches are historical reference only; the redesign rows (A/B/S11)
+  target live surfaces and are unaffected. Upstream deleted our dead
+  path before we did — the no-win verdict is confirmed from both sides.
