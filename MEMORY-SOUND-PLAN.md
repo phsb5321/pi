@@ -372,3 +372,12 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   branches are historical reference only; the redesign rows (A/B/S11)
   target live surfaces and are unaffected. Upstream deleted our dead
   path before we did — the no-win verdict is confirmed from both sides.
+- 2026-10-01 21:45 — **R3 STRUCTURAL DECISION** (record: MS-DECISION-
+  structural-2026-10-01.md): (1) sequence adopted w/ F2-first +
+  A-measurements-early amendments; (2) **A = WORKER-ISOLATED K=1** —
+  in-process REJECTED tonight (estimates + blast-radius/event-loop class),
+  defer rejected; (3) **C+F2 TONIGHT YES** — chain: NixOS#2543 (zai
+  lane contract) -> #2536 (wrapper identity) -> smart-switch deploy ->
+  F2 pin (strictly after wrapper). Deploy+zram record:
+  MS-DECISION-deploy-2026-10-01.md. All decision tracks R1-R3 now
+  EXECUTED or executing — zero [pending] human items in the program.
