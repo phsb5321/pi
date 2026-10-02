@@ -160,6 +160,16 @@ export class ToolExecutionComponent extends Container {
 		this.resultRendererComponent = undefined;
 		this.convertedImages.clear();
 		this.clearImageChildren();
+		// The rendered result components stay mounted (layout and mouse unchanged); drop only their
+		// rebuildable caches so the rendered ANSI bytes leave memory until the next render.
+		const dropMounted = (component: Component): void => {
+			(component as { dropRenderedLines?: () => void }).dropRenderedLines?.();
+			if (component instanceof Container) {
+				for (const child of component.children) dropMounted(child);
+			}
+		};
+		dropMounted(this.selfRenderContainer);
+		dropMounted(this.contentBox);
 	}
 
 	private clearImageChildren(): void {

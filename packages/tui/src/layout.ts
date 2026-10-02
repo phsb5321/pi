@@ -30,6 +30,10 @@ export interface LayoutBox {
 	lineOffset?: number;
 	scrollView?: ScrollView;
 	scrollContentLines?: readonly string[];
+	/** Rows above the content start that `scrollContentLines` covers (windowed retention). */
+	scrollContentOffset?: number;
+	/** Full scroll content height; `scrollContentLines` may hold only the peek window. */
+	scrollContentLength?: number;
 	layer: number;
 }
 
@@ -102,6 +106,10 @@ function translateBox(box: LayoutBox, deltaY: number): void {
  * overscroll (S11 design canon: blankness-preserving stubs make dropping safe and re-entry
  * re-renders from source). */
 const EVICT_MARGIN_ROWS = 64;
+
+/** Rows kept around the viewport for the image-peek walk: kitty image span headroom plus one
+ * frame of overscroll (KICKOFF bound: scrollTop-K .. scrollTop+viewport). */
+const SCROLL_PEEK_WINDOW = 256;
 
 type DroppableRender = { dropRenderedLines?: () => void };
 
@@ -177,13 +185,21 @@ function layoutComponent(
 		if (node.state.primary || !context.primaryScrollView) context.primaryScrollView = scrollView;
 		const rect = { x, y, width: safeWidth, height: viewportHeight };
 		const childClip = intersect(clip, rect);
+		const contentLines = renderCached(context, node.component, contentWidth);
+		const peekTop = Math.max(0, node.state.scrollTop - SCROLL_PEEK_WINDOW);
+		const peekBottom = Math.min(
+			contentLines.length,
+			node.state.scrollTop + viewportHeight + SCROLL_PEEK_WINDOW,
+		);
 		const box: LayoutBox = {
 			component,
 			rect,
 			clip: childClip,
 			children: [childBox],
 			scrollView,
-			scrollContentLines: renderCached(context, node.component, contentWidth),
+			scrollContentLines: contentLines.slice(peekTop, peekBottom),
+			scrollContentOffset: peekTop,
+			scrollContentLength: contentLines.length,
 			layer: 0,
 		};
 		childBox.parent = box;
@@ -304,7 +320,7 @@ function replaceScrollbarCell(
 export function getScrollbarGeometry(box: LayoutBox, includeHiddenAuto = false): ScrollbarGeometry | undefined {
 	if (!box.scrollView || box.rect.width <= 0 || box.rect.height <= 0) return undefined;
 
-	const contentHeight = box.children[0]?.rect.height ?? box.scrollContentLines?.length ?? 0;
+	const contentHeight = box.children[0]?.rect.height ?? box.scrollContentLength ?? 0;
 	const trackHeight = box.rect.height;
 	const canRevealHiddenAuto = includeHiddenAuto && box.scrollView.scrollbar === "auto" && contentHeight > trackHeight;
 	if (!box.scrollView.isScrollbarVisible && !canRevealHiddenAuto) return undefined;
@@ -382,7 +398,7 @@ function paintBox(box: LayoutBox, screen: string[], totalWidth: number): void {
 
 	if (box.scrollView && box.scrollContentLines && box.scrollView.scrollTop > 0 && box.rect.height > 0) {
 		for (let imageRow = box.scrollView.scrollTop - 1; imageRow >= 0; imageRow--) {
-			const imageLine = box.scrollContentLines[imageRow] ?? "";
+			const imageLine = box.scrollContentLines[imageRow - (box.scrollContentOffset ?? 0)] ?? "";
 			const metadata = getKittyImageMetadata(imageLine);
 			if (metadata) {
 				const hiddenRows = box.scrollView.scrollTop - imageRow;
