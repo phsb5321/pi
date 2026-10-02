@@ -3,6 +3,7 @@ import { renderLatex } from "../latex.ts";
 import { getCapabilities, hyperlink, isImageLine } from "../terminal-image.ts";
 import type { Component } from "../tui.ts";
 import { applyBackgroundToLine, flattenLines, visibleWidth, wrapTextWithAnsi } from "../utils.ts";
+import { MemoizedRender } from "./render-memo.ts";
 
 const STRICT_STRIKETHROUGH_REGEX = /^(~~)(?=[^\s~])((?:\\.|[^\\])*?(?:\\.|[^\s~\\]))\1(?=[^~]|$)/;
 
@@ -233,7 +234,7 @@ interface InlineStyleContext {
 	stylePrefix: string;
 }
 
-export class Markdown implements Component {
+export class Markdown extends MemoizedRender implements Component {
 	private text: string;
 	private paddingX: number; // Left/right padding
 	private paddingY: number; // Top/bottom padding
@@ -242,10 +243,6 @@ export class Markdown implements Component {
 	private options: MarkdownOptions;
 	private defaultStylePrefix?: string;
 
-	// Cache for rendered output
-	private cachedText?: string;
-	private cachedWidth?: number;
-	private cachedLines?: string[];
 	// Parsed tokens depend only on the source, so they survive theme and width invalidation. Held weakly: a token tree is
 	// about ten times the size of its source, and every message of a long transcript keeps a Markdown component. The
 	// tokens survive a burst of re-renders, such as a theme preview, and are collected afterwards.
@@ -259,6 +256,7 @@ export class Markdown implements Component {
 		defaultTextStyle?: DefaultTextStyle,
 		options?: MarkdownOptions,
 	) {
+		super();
 		this.text = text;
 		this.paddingX = paddingX;
 		this.paddingY = paddingY;
@@ -273,16 +271,12 @@ export class Markdown implements Component {
 	}
 
 	invalidate(): void {
-		this.cachedText = undefined;
-		this.cachedWidth = undefined;
-		this.cachedLines = undefined;
+		this.renderMemo.clear();
 	}
 
 	render(width: number): string[] {
-		// Check cache
-		if (this.cachedLines && this.cachedText === this.text && this.cachedWidth === width) {
-			return this.cachedLines;
-		}
+		const memoized = this.renderMemo.hit(this.text, width);
+		if (memoized) return memoized;
 
 		// Calculate available width for content (subtract horizontal padding)
 		const contentWidth = Math.max(1, width - this.paddingX * 2);
@@ -292,9 +286,7 @@ export class Markdown implements Component {
 		if (!text || text.trim() === "") {
 			const result: string[] = [];
 			// Update cache
-			this.cachedText = this.text;
-			this.cachedWidth = width;
-			this.cachedLines = result;
+			this.renderMemo.store(this.text, width, result);
 			return result;
 		}
 
@@ -370,10 +362,7 @@ export class Markdown implements Component {
 		const result = emptyLines.concat(contentLines, emptyLines);
 		flattenLines(result);
 
-		// Update cache
-		this.cachedText = this.text;
-		this.cachedWidth = width;
-		this.cachedLines = result;
+		this.renderMemo.store(this.text, width, result);
 
 		return result.length > 0 ? result : [""];
 	}
