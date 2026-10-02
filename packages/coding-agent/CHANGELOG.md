@@ -34,6 +34,7 @@
 - Codemode costs far fewer prompt tokens: with the default tools and codemode active, a GPT-5.6 request shrinks from about 5,300 to 3,300 tokens. The `codemode` description lists the script globals in one line each and points to the new [Codemode](docs/codemode.md) reference for the `models` API, which the model reads when it needs it. Declared tools say in one line how scripts call them and what the call resolves to, instead of repeating their full declaration, and the system prompt's codemode guidance and MCP server section are shorter.
 - Codemode errors now say how to recover: reading a tool or `models` member that does not exist names the close matches (`tools.Bash` suggests `tools.bash`), `models.classify()` and `models.generateImages()` reject malformed arguments with the expected shape, an unknown model points to `models.getAvailableOfType()`, an oversized `store()` value explains what the store is for, and a script that generates images without showing them gets a note. Scripts that probed for a tool with `typeof tools.name` must use `"name" in tools`.
 - Tool result render caches (renderer reuse chains, converted images, image children) are dropped once the session settles and rebuilt on the next render.
+- The main screen's previous-frame diff lines are dropped at the same settled point; the next paint does a full repaint of identical output.
 - `/login` and `/logout` now label providers without credentials as "not configured" instead of "unconfigured".
 - OAuth browser pages now show the color Pi logo.
 

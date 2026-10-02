@@ -2342,6 +2342,13 @@ export class InteractiveMode {
 			}
 		};
 		visit(this.chatContainer);
+		// Frame-diff cache: drop the painted-frame lines through the existing state API so the
+		// next paint does a full repaint of identical output. State captured before this restores
+		// identical identity and content.
+		if (this.renderer instanceof TuiMainScreen) {
+			const state = this.renderer.captureRenderState();
+			this.renderer.restoreRenderState({ ...state, previousLines: [] });
+		}
 	}
 
 	private setWorkingIndicator(options?: WorkingIndicatorOptions): void {
