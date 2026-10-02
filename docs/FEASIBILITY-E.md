@@ -1,70 +1,76 @@
-# FEASIBILITY — E: session state off-heap / compressed (durable path)
+# FEASIBILITY — E: off-heap / compressed conversation state
 
-Fork-only doc (memory-sound program), 01/10/2026 21:3x BRT, owner w28:p8
-(assigned by p2 21:21; brief had named p6). Never PR this file upstream.
-Binding rules apply at claim time: every implementation claim ships the
-`docs/PROGRAM-RULES.md` trio (mem-probe table idle+mid, kill-9 conformance,
-matrix row); bars per the class-point rule. Class labels per R1 ARTIFACT1:
-the replay-delta non-heap remainder is the **glibc arena/brk class**
-(10.5–15.2 MiB/seat; thread stacks ≈ 0.25 MiB) — the earlier "stack class"
-label is refuted and is NOT part of this row.
+Fork-only doc (memory-sound program), 01/10/2026 23:0x BRT, owner w28:p6.
+Never PR this file upstream. Binding rules apply at claim time: every
+implementation claim ships the `docs/PROGRAM-RULES.md` trio (mem-probe
+table idle+mid, kill-9 conformance, matrix row); bars per the class-point
+rule (exposure-controlled gate runs set points; single runs never do).
+
+Target class: **the +45.8 MiB/10.5h worked-session conversation state**
+(retention ledger: closes at +43.5 ≈ observational +45.8 ±5 %; the class
+the MS-21 windowing slices measured NO-WIN against — the reachable
+attack is the payload state itself, not its access paths).
 
 ---
 
-## Attack
+## E — off-heap / compressed conversation state
 
-Stop retaining the whole conversation as decoded JS objects in the V8 heap:
-**window + compress + spill** the session state through the upstream durable
-path (`packages/durable` Package 20 compaction + overflow), materializing
-messages on read. Two mechanisms, one facade:
-
-1. **Compressed spill for old entries** — decoded message objects for entries
-   outside the working window are dropped; the canonical bytes live once in
-   the Session writer (already on disk) or an in-RAM lz4/zstd blob
-   (`node:zlib` deflate/gzip built-in; lz4-class libs for latency). Read path
-   decodes on demand into the same object shapes.
-2. **Off-heap backing for buffers** — image/tool buffers already sit in
-   `external`/ArrayBuffer (flat across the replay arms, +0.0 MiB); string
-   prose is the compressible class. Off-heap alone frees V8 heap, not RSS —
-   **compression is the RSS lever**, off-heap is the GC-pressure lever.
-
-Evidence base (all cited rows measured on this host):
-
-| datum | value | source |
-|---|---|---|
-| worked-session growth (+45.8 MiB/10.5 h class) | live heap +22.3 (UI caches 15.06 / shared message content 3.2 / engine 2.2–3.4 / H3 0.2) + non-heap 23.6 (arena/brk per R1) | growth ledger + run-3 split, `MS-21-growth-ledger/close-2026-10-01.md` |
-| conversation-shaped content per 706-entry seat | ≈ 8–10 MiB self-bytes (prose+json+wrappers, shared classes) | replay analysis, p3 object pass |
-| long-lived fleet cohort (88 seats, 0.5–5.1 d) | P50 167 MiB total vs fresh 62–99 | MS-03 |
-| JSONL on disk | 2.9 MiB / 706 entries | replay fixture |
-| external/arrayBuffers | 0 Δ across replay arms | run-3 `memoryUsage` |
-
-## Field table
+Attack: move the retained conversation payload (message strings, tool
+result blobs, render/export strings — the H1/H3 payload carriers) out of
+the V8 heap: either **compressed retention** (byte-lossless deflate/
+brotli backing, lazy decompress-on-access behind a value-equal facade)
+or **off-heap backing** (V8 external strings / ArrayBuffer-backed string
+stores). Substrate change only: the conversation surface (message
+objects, values, ordering) stays identical.
 
 | field | |
 |---|---|
-| **Measured ceiling** | Compressible class = conversation-shaped state (prose/json/entry JSON), 8–10 MiB per heavy seat and 1–5 MiB per light seat. At typical text compression 3–6× (lz4/zstd-class; **ratio unmeasured on pi transcripts — first acceptance gate item**): save ≈ 6–8 MiB/heavy + 1–4 MiB/light. Fleet (88 long-lived + 218 young): **≈ 1.2–3.5 GiB**, and the **growth-curve cap** prevents recurrence of the +45.8 MiB/10.5 h class on worked seats (value grows with fleet workload). Ceiling rounded to the compiled row's **1–4 GiB + cap**. If measured ratio < 2× or decode CPU > ~2% of a turn, ceiling drops below 1 GiB → NO-GO. |
-| **Effort + risk** | Effort **M** (storage windowing + decode-on-read + conformance). Risk **M**: (1) **restore correctness** — branch/leaf semantics are already load-bearing (MS-22: `resetLeaf()`/branch-only navigation not persisted; tip reopen works) and kill-9 byte-identical restore is a RULE-2 artifact; (2) identity/aliasing — decoded-on-read must pin exposed objects (§11 contract #4); (3) CPU latency on scroll/read paths; (4) interplay with eviction (double-free of decoded state must not lose the canonical bytes). |
-| **Matrix row** | **invisible** when only backing storage changes (same API, same objects, identity pinned while exposed; §11 candidate #4). Becomes **opt-in hook** the moment decoded state is evicted while plugins may hold references — then `onQuiesce`/`onResume` (§11 proposal) is the contract. Not forbidden. |
-| **Upstream PR shape** | Mechanics are U3 (transparent windowed storage behind the Session/JSONL surface); the spill policy default is U2 (maintainer input on when/how far to window). Shape: U3 PRs for compressed backing + windowed read path in `packages/agent` harness storage; U2 issue for the default policy; fork carries fleet tuning. The candidate is already in the plan's backlog ("Stop retaining whole session JSONL in RAM — windowed/spilled reads via durable compaction+overflow (Package 20)"). |
-| **Dependencies** | `packages/durable` Package 20 (compaction + overflow — landed upstream); S9/S10 windowing shares the pot with B3/S11 (render side) — E is the state side, no ownership overlap; idle-eviction family (row A eviction pairing) for the full growth cap; kill-9 conformance harness (`packages/agent/src/harness/session/testing/conformance/`) with a transcript-compression case; measured compression ratio + decode-CPU gate (first acceptance item); mem-probe tables per rules. |
-| **GO/NO-GO** | **CONDITIONAL-GO** (order #5 in the compiled sequence: after F2 adoption, before A). Conditions: (1) measured ratio ≥ 2× on real pi transcripts (owned fixtures only — G-03 discipline extends: private payload stays on-host); (2) kill-9 byte-identical conformance passes with compressed state (same transcript, same restored plugin-visible state); (3) decode CPU bounded mid-turn (memory table's mid-turn column must not regress by more than the measured noise S); (4) matrix row accepted as **invisible** (or **opt-in hook** with the quiesce contract if decoded-state eviction ships). |
+| **Measured ceiling** | **≈ 25–30 MiB/seat attackable** of the +45.8 class (the payload carriers: retained content ~15 + blobs 9.3 + array/object/identifier growth ~11 from the M1 ledger; slack/swap is out of scope) → **fleet ≈ 7.3–8.8 GiB** (306 seats) before compression ratio. Compressed at observed text ratios (deflate on prose/JSON ≈ 3–4×): net save **≈ 18–25 MiB/seat → 5.4–7.3 GiB fleet**. ESTIMATED — the compressibility measurement is the GO experiment below. |
+| **Effort + risk** | Effort **M–L**: storage-substrate swap behind the harness session state (the facade + lazy codec) + conformance hardening. Risk **M**: decompress cost at render/turn boundaries (mitigate: decompress window, cache the hot tail); string-pool churn on round-trip; the JSONL write path must serialize from the facade (value-equal) — enforced by the kill-9 suite. Off-heap-external-string variant risk **S–M** (zero codec cost) but platform-specific V8 APIs. |
+| **Matrix row** | **invisible** — the class definition's own "off-heap backing" example; same surface, different substrate. Evidence-gate per the S3 ruling: held-reference identity probe extended to message objects across a compress/decompress cycle (strings are value-typed in JS — equal strings compare equal — but run the probe at object granularity to keep the standard). Demotes to **needs-restart** if any API hands out backing-store references (identity probe governs). |
+| **Upstream PR shape** | **U2** (substrate adoption behind the existing Storage/session interfaces — needs maintainer buy-in for the default) with U3 mechanics separable. Rides the durable compaction+overflow momentum (Package 20) — the natural upstream home is `packages/durable` storage substrate + `packages/agent` harness session state. Issue first + `lgtm` per CONTRIBUTING; the codec flag (on/off + codec choice) keeps it revertible. |
+| **Dependencies** | `node:zlib` (brotli/deflate — zero new deps) or V8 external-string backing; the kill-9 conformance harness (exists, `storage-conformance` class); the held-reference identity probe (exists, S3 standard); Package 20 durable overflow (landed). Calm-window measurement run (host protocol). |
+| **GO/NO-GO** | **CONDITIONAL-GO.** The ceiling is the largest single attackable class left (25–30 MiB/seat vs the ~40 MiB stack already banked), the matrix row is invisible with a proven test standard, and kill-9 byte-identity is achievable by construction (below). Conditions: (1) compressibility experiment measures ≥ 2× on real worked-session payloads (else the class compresses to nothing and it is NO-GO); (2) the object-granularity identity probe passes; (3) the decompress-at-turn cost shows ≤ S latency impact. **NO-GO** for any lossy variant (byte-identity forbids it) and NO-GO without the binding trio at claim time. |
 
-## Why now (and why it is not B3/S11 or C)
+### Assessment against the three required axes
 
-- **B3/S11 windowing** removes render-side retention (the 15.06 MiB UI-cache
-  class); **C** removes the arena/brk class (3.1–4.5 GiB compiled). E removes
-  the **state** class and is the only lever that **caps the growth curve**:
-  windowed+spilled conversation stops the 706-entry trajectory regardless of
-  render implementation. The three compound; none substitutes.
-- The upstream durable path already exists (Package 20 compaction+overflow;
-  Session writers own canonical bytes) — E is adoption + policy, not new
-  machinery, which is why its U-rank splits U3/U2 that way.
+**Kill-9 byte-identical conformance — YES, achievable by construction.**
+The JSONL on disk is the source of truth and its write path does not
+change: compression/off-heap backing is a memory-retention substrate, not
+a serialization change. kill -9 loses memory state equally in both
+variants; resume rebuilds from the JSONL; the transcript comparison is
+byte-identical iff the facade serializes value-equal (deflate is
+byte-lossless; external strings are exact). The kill-9 harness + the
+capture/restore identity probe (already proven 4/4 on the S9 class)
+enforce it. One real seam: kill -9 mid-append has identical torn-write
+semantics as today (unchanged code path) — no new failure mode.
 
-## Shared conclusion
+**Plugin-visible state — INVISIBLE, under the S3 identity standard.**
+The conversation surface is value-typed (message objects + strings);
+the backing swap is unobservable unless an API exposes backing-store
+identity. Strings are value-typed in JS, so equal-content swaps are
+invisible even to `===`. The demotion test (held-reference probe across
+a compress cycle at object granularity) is the gate: it passing keeps
+the row invisible; any reference escape demotes to needs-restart
+(plugin-visible; arbitration). The render-cache precedent (S9/S11, 14
+seams clean) is the closest sibling — same discipline.
 
-E is the growth-curve cap with a modest immediate ceiling (1–4 GiB) and the
-strongest conformance story of the tier (the byte-identical kill-9 artifact is
-already the program's rule-2 gate). GO it at position #5 — behind the cheap
-env/pin wins, ahead of the shared-runtime bet — provided the compression ratio
-and decode-CPU gates measure in. If the ratio fails, E shrinks to a U3
-windowed-read-only slice and the cap is partially delivered by B3/S11 anyway.
+**Upstream durable path — CLEAR, U2 on the Package 20 rail.** The
+durable compaction+overflow work (upstream, just landed) is the
+substrate conversation state should ride: compressed retention slots
+into the same overflow/spill story (cold payload → compressed/off-heap,
+hot tail → live). The PR is a substrate option behind existing
+interfaces (no new required hooks, no signature changes) — the U2 ask is
+adoption/default policy, not architecture. Fork-first proof via the
+binding trio; upstream issue cites the measured table.
+
+### Experiment (recipe-ready, one calm window)
+
+3 arms × n≥3 worked sessions (the +45.8 class needs transcript-length
+scaling — the S11 lesson: one-turn synthetic understates; use the
+seeded 485-entry/2 MB class, then a 2×-seed arm to confirm scaling):
+A = base, B = deflate-backed facade, C = external-string backing.
+Measure: mem-probe idle+mid table (PSS+SwapPss, SwapPss separate),
+compress-ratio + decompress-latency counters, kill-9 conformance +
+object-granularity identity probe + custom-component smoke per arm.
+Bars: class-point rule (gate run sets the point; this table informs it).
