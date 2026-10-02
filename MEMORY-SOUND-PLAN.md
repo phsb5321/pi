@@ -390,3 +390,17 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   mimalloc = C2 fallback). Evidence 38 files, seats reaped. The
   MALLOC_ARENA_MAX=1 wrapper line joins the R3 deploy chain (C+F2
   tonight) as its first measured structural win.
+- 2026-10-02 14:25 — **MS-04-v2 REBASELINE (F2 reference)** (p3): base
+  upstream/main@7fbbd5f4a. HEADLINE: upstream v1.0 KILLED the aged-idle
+  curve (history idle 100-101 vs old 173.5/246.1 = −73..−146 MiB) —
+  upstream's tui-retention fix + durable Package 21 adopted our
+  flattenLines/WeakRef insight. Cost moved to TRANSIENT classes: history
+  mid_peak 314-336 + per-turn stranding +33.3 post-burst (the R3 slack
+  mechanism, reproduced in ONE turn). Bands: fresh idle 97.4-98.0 /
+  history idle 100.1-101.3 / fresh mid_peak 128.6-135.1. Conformance on
+  base 188/188. STRATEGIC RE-KEY: the aged-seat class (MS-21's original
+  target) is closed BY UPSTREAM; residual program value = turn peaks +
+  stranding (S9/S11 +7.3/+7.2 measured on this same base = coherent on
+  top) + C's 3.5 GiB + E's 7.3-8.8. Post-pin growth-curve verification
+  uses MS-04-v2 bands. Pre-1.0 harness suite doesn't port (API rework —
+  conformance corpus needs a 1.0 port ticket).
