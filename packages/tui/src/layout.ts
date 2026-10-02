@@ -98,6 +98,30 @@ function translateBox(box: LayoutBox, deltaY: number): void {
 	for (const child of box.children) translateBox(child, deltaY);
 }
 
+/** Rows kept hot above and below the eviction window: image-peek scan headroom plus one frame of
+ * overscroll (S11 design canon: blankness-preserving stubs make dropping safe and re-entry
+ * re-renders from source). */
+const EVICT_MARGIN_ROWS = 64;
+
+type DroppableRender = { dropRenderedLines?: () => void };
+
+function dropBoxRenderCache(box: LayoutBox): void {
+	(box.component as DroppableRender).dropRenderedLines?.();
+	box.lines = [];
+	box.scrollContentLines = undefined;
+	for (const child of box.children) dropBoxRenderCache(child);
+}
+
+/** Free rendered lines for boxes whose rows lie fully outside `clip ± M` (windowing pass, run
+ * after paint). Height/blankness memos keep layout, scans, and hit-testing exact. */
+function evictOutsideWindow(box: LayoutBox, top: number, bottom: number): void {
+	if (box.rect.y + box.rect.height <= top || box.rect.y >= bottom) {
+		dropBoxRenderCache(box);
+		return;
+	}
+	for (const child of box.children) evictOutsideWindow(child, top, bottom);
+}
+
 function updateClips(box: LayoutBox, parentClip: LayoutRect): void {
 	box.clip = intersect(parentClip, box.rect);
 	for (const child of box.children) updateClips(child, box.clip);
@@ -398,6 +422,8 @@ export function renderLayoutFrame(
 	});
 	const lines = Array.from({ length: safeHeight }, () => "");
 	paintBox(rootBox, lines, safeWidth);
+	const evictMargin = safeHeight + EVICT_MARGIN_ROWS;
+	evictOutsideWindow(rootBox, -evictMargin, safeHeight + evictMargin);
 	return {
 		root: rootBox,
 		width: safeWidth,
