@@ -4,9 +4,8 @@ One table from `FEASIBILITY-{A,B,C,D,F}.md` + R3 structural research
 (p8 ranking, p3 decomposition, R1 class-label ARTIFACT1). Fleet = 306
 seats / 43.08 GiB (MS-04). Classes re-based on R1: the "13.5 MiB stack
 class" is REFUTED — it is glibc arenas+brk (one class with the 10.5-15.2
-brk line); thread stacks ≈ 0.25 MiB. **E (session state off-heap/
-compressed) has no FEASIBILITY-E.md yet — ceiling taken from p8 (2):
-1–4 GiB + growth-curve cap; file pending.**
+brk line); thread stacks ≈ 0.25 MiB. E file landed
+(FEASIBILITY-E.md: window+compress+spill via durable Package 20).**
 
 ## Go/no-go table (fleet GiB ceilings)
 
@@ -16,8 +15,8 @@ compressed) has no FEASIBILITY-E.md yet — ceiling taken from p8 (2):
 | **F2 adoption** (fleet pin → fork build) | **GO** | enables all below | S / U1 (pin plumbing exists) | Nix piVersion → fork build; tonight-able | Δ row + conformance green (endgame rule) |
 | **B3 windowing** (= S11) | **GO** | 1.5–2.7 GiB realized (bound 4.4; shared pot w/ S9/S10) | M / U3 | blankness-preserving stubs + height memos + clip±M (R1 design; naive cache-drop = re-render storm — forbidden shape) | post-S9; matrix row invisible (internal symbols) |
 | **D module-graph** (tree-shake + V8 snapshot) | **CONDITIONAL-GO** | 1.5–3 GiB | M / U2–U3 | bundle trimming + snapshot; proxy-prone (boot lesson) | measure-first before any claim |
-| **E session state** (compressed/windowed, durable) | **CONDITIONAL-GO** | 1–4 GiB + caps +45.8 growth curve | M / U2–U3 | durable compaction/overflow path | FEASIBILITY-E.md pending |
-| **A shared runtime** (packages/server, N sessions) | **CONDITIONAL-GO** | **23–32 GiB** (largest) | L / U2 (upstream substrate EXISTS) | one process, N sessions, thin presentations | **prereq: thin presentation** (p3: MS-24 marginal LOSES 2.2× today — +117 vs +45-55/seat); thin-client bracket separates 23 vs 32; server-mode kill-9 conformance case pre-pilot; plugin rows catalogued (worker retirement hooks, in-process Component model = breaking if mishandled) |
+| **E session state** (compressed/windowed, durable) | **CONDITIONAL-GO** | 1–4 GiB + caps +45.8 growth curve | M / U2–U3 | durable Package 20 window+compress+spill | gates: >=2x ratio on pi transcripts, kill-9 byte-identical, decode-CPU <= S |
+| **A shared runtime** (packages/server, N sessions) | **CONDITIONAL-GO — verdict keys on ISOLATION MODEL** | **worker-isolated: 73–88 MiB/seat → savings 15–20 GiB** (bracket MEASURED 21:3x: marginal ~61 MiB flat at K=8/16/24 — barrel recompiles per isolate ~37 MB datum; 22 MiB committed slack shrinkable via heap caps; GC-lag refuted). **in-process shared-isolate: 5–15 MiB/session → 23–32 GiB survives ONLY here** | L / U2 (substrate EXISTS) | one process, N sessions, thin presentations (surrogate 11.5 MiB + render caches) | in-process = needs-restart + blast-radius row (converges p3 MS-24 2.2× loss); server-mode kill-9 conformance pre-pilot; plugin rows catalogued |
 | B1 native renderer | **NO-GO** | +6–9 GiB but U0 | XL | breaks extension UI (Component/EditorFactory surface) | forbidden matrix row — needs G-ruling + Pedro sign-off to even consider |
 | B2 shared-process TUI over PTYs | **NO-GO at program scope** | — (folded into A's presentation model) | L | TUI attach behind packages/server RFC | conditional as A's attach model only |
 | A child-process variant | **NO-GO** | none (≈ standalone) | — | — | — |
@@ -37,6 +36,10 @@ compressed) has no FEASIBILITY-E.md yet — ceiling taken from p8 (2):
    presentation bracket must measure first (p3's 2.2× loss is the
    counterweight), then the packages/server RFC path, then the kill-9
    server conformance case.
+
+## Corrections log
+
+- 21:3x bracket (p8): worker floor 6→61 MiB marginal (old K=8=24.1 = partial-import fixture artifact, corrected); Row A fleet ceiling re-keyed by isolation model; GC-lag refuted. If the worker model is kept, the 22 MiB/worker committed slack is the heap-cap recovery lever.
 
 ## Ownership (dedup ruling, S11 collision resolved)
 
