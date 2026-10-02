@@ -420,3 +420,37 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   conformance on the new sha; settle-trigger seam recorded: arms on
   first turn). Conformance port DECISION accepted: pre-1.0 trio RETIRED
   formally (v1.0 suites cover the guarantees; re-homing = duplicate).
+
+## TARGET (Pedro 02/10 15:22 — superseding, program-level)
+
+**Orders of magnitude: 10x+ fleet RAM reduction. Acceptance bar: 43.08 GiB
+→ ≤4 GiB.** The bar is arithmetic: worker-isolated A (61 MiB marginal ×
+306) can NEVER reach it; the enabling move is **A shared runtime,
+in-process shared-isolate (5–15 MiB/session)**. R3's earlier rejection of
+in-process (blast-radius/estimates) is SUPERSEDED — conflict noted in one
+line, newest instruction governs. The blast-radius concerns do not vanish:
+they become A's gate (server-mode kill-9 conformance case, plugin matrix
+rows, event-loop isolation tests) — measured, not waived.
+
+### Work order (re-plan)
+1. **A in-process shared-isolate — THE enabler. NOW.** Measure the 5–15
+   MiB/session marginal (the estimate must become a table), then build on
+   packages/server multi-presentation + thin presentations. Gate: server
+   kill-9 conformance + plugin rows + event-loop isolation.
+2. **C allocator deploy — NOW in parallel** (chain in flight; the env
+   line lands with #2536).
+3. **E off-heap conversation state — implement NOW in parallel**
+   (FEASIBILITY-E: 7.3–8.8 GiB class; with A it shrinks per-session state
+   toward the 5 MiB floor).
+4. **D module-graph — tail** (tree-shake + V8 snapshot; proxy-prone,
+   measure-first).
+
+Budget shape to ≤4 GiB: shared runtime + thin presentation ≈ 2–4 GiB
+(306 × 5–15 MiB state-compressed via E) + host overhead; C keeps the
+server-side arenas down; S1/S9/S11/C stack compresses per-session state
+further. Every step carries rules 1–3 tables; the bar itself is verified
+against MS-04-v2 methodology at fleet pilot.
+
+- 2026-10-02 15:25 — TARGET SET + RE-PLAN (above). Ownership: A-in-process
+  measurement = p3; A implementation = p4 post-chain; E implementation =
+  p9 NOW; chain/C = p4 in flight; D = tail after A; board = p7.
