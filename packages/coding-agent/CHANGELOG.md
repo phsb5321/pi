@@ -62,6 +62,14 @@
 
 - Skills and prompt templates are now discovered and parsed when they are first read instead of at session creation, and their YAML and ignore-match dependencies load with them.
 
+### Changed
+
+- The llama.cpp extension's Hugging Face and UI modules now load on the first `/llama` command instead of at extension initialization (first-command latency shifts accordingly; the client module stays extension-loadable because the provider value-imports it).
+
+### Changed
+
+- Mermaid diagrams now load their renderer on the first mermaid code block instead of at CLI startup.
+
 ## [0.99.2] - 2026-09-30
 
 ### New Features

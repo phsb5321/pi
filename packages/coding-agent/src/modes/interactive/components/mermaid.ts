@@ -1,10 +1,20 @@
 import { Marked, type Token } from "@earendil-works/pi-tui";
-import { type MermaidArt, render, type Span } from "grok-mermaid";
+import type { MermaidArt, Span } from "grok-mermaid";
+import { createRequire } from "module";
 import type { MarkdownTransformer } from "../../../core/extensions/types.ts";
 import type { MermaidRenderingMode } from "../../../core/settings-manager.ts";
 import type { Theme } from "../theme/theme.ts";
 
+const require = createRequire(import.meta.url);
 const markdownParser = new Marked();
+
+type RenderMermaid = (source: string) => MermaidArt | undefined;
+let renderMermaid: RenderMermaid | undefined;
+
+function loadRenderMermaid(): RenderMermaid {
+	if (!renderMermaid) renderMermaid = (require("grok-mermaid") as { render: RenderMermaid }).render;
+	return renderMermaid;
+}
 
 interface MermaidTransformerOptions {
 	getMode: () => MermaidRenderingMode;
@@ -72,7 +82,7 @@ export function createMermaidMarkdownTransformer(options: MermaidTransformerOpti
 			.lexer(markdown)
 			.map((token) => {
 				if (!isMermaid(token)) return token.raw;
-				const art = render(token.text);
+				const art = loadRenderMermaid()(token.text);
 				if (!art || art.width > context.availableWidth) return token.raw;
 				if (!context.isStreaming && art.warnings.length > 0) {
 					const suffix = art.warnings.length > 1 ? ` (+${art.warnings.length - 1} more)` : "";
