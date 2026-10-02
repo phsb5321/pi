@@ -381,3 +381,12 @@ mid-turn PSS+SwapPss MiB | Δ vs baseline |
   F2 pin (strictly after wrapper). Deploy+zram record:
   MS-DECISION-deploy-2026-10-01.md. All decision tracks R1-R3 now
   EXECUTED or executing — zero [pending] human items in the program.
+- 2026-10-01 21:55 — **C GATE PASS (allocator, measured)** (p3 burst A/B,
+  matched-age n=3/arm, 2Hz peak-series): idle Δ −13.2 MiB (spread
+  0.2-0.5) + mid_peak Δ −20.4 (non-overlapping ranges) → fleet ≈ 3.5 GiB
+  = the FEASIBILITY-C ceiling exactly. Fail-closed exclusions honored
+  (a1 tool-proof; phase-noise instant-round discarded). Declare queue:
+  five artifacts + G-02 row + stress-latency (arena-lock serialization;
+  mimalloc = C2 fallback). Evidence 38 files, seats reaped. The
+  MALLOC_ARENA_MAX=1 wrapper line joins the R3 deploy chain (C+F2
+  tonight) as its first measured structural win.
