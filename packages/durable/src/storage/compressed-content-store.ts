@@ -1,5 +1,3 @@
-import { brotliCompressSync, brotliDecompressSync, deflateSync, inflateSync } from "node:zlib";
-
 /**
  * Windowed compressed content store (W1): the working tail of the conversation stays plain in
  * heap, settled entries move to compressed buffers (Node Buffers allocate off the V8 heap), and
@@ -8,45 +6,43 @@ import { brotliCompressSync, brotliDecompressSync, deflateSync, inflateSync } fr
  */
 export type ContentKind = "text" | "blob";
 
+/** Byte-lossless codec for settled text (provided by the runtime layer; the root stays portable). */
+export interface LosslessCodec {
+	compress(text: string): Uint8Array;
+	decompress(bytes: Uint8Array): string;
+}
+
 export interface ContentStoreOptions {
 	/** Entries kept plain; the working set. Default 64. */
 	windowSize?: number;
-	/** Lossless codec for settled text. Default "brotli". */
-	codec?: "brotli" | "deflate";
+	/** Lossless codec for settled text; without one every entry stays plain. */
+	codec?: LosslessCodec;
 }
 
 interface Entry {
 	kind: ContentKind;
 	plain?: string | Uint8Array;
-	compressed?: Buffer;
-}
-
-function compress(text: string, codec: "brotli" | "deflate"): Buffer {
-	return codec === "brotli"
-		? brotliCompressSync(Buffer.from(text, "utf8"))
-		: deflateSync(Buffer.from(text, "utf8"));
-}
-
-function decompress(buffer: Buffer, codec: "brotli" | "deflate"): string {
-	const bytes = codec === "brotli" ? brotliDecompressSync(buffer) : inflateSync(buffer);
-	return bytes.toString("utf8");
+	compressed?: Uint8Array;
 }
 
 export class CompressedContentStore {
 	private readonly entries = new Map<string, Entry>();
 	private readonly windowIds: string[] = [];
 	private readonly windowSize: number;
-	private readonly codec: "brotli" | "deflate";
+	private readonly codec: LosslessCodec | undefined;
 
 	constructor(options: ContentStoreOptions = {}) {
 		this.windowSize = Math.max(1, options.windowSize ?? 64);
-		this.codec = options.codec ?? "brotli";
+		this.codec = options.codec;
 	}
 
 	set(id: string, value: string | Uint8Array, kind: ContentKind = "text"): void {
 		const prior = this.entries.get(id);
 		if (prior) this.forget(id);
-		this.entries.set(id, kind === "blob" ? { kind, plain: Uint8Array.from(value as Uint8Array) } : { kind, plain: value });
+		this.entries.set(
+			id,
+			kind === "blob" ? { kind, plain: Uint8Array.from(value as Uint8Array) } : { kind, plain: value },
+		);
 		if (kind === "text") {
 			this.windowIds.push(id);
 			this.settle();
@@ -63,7 +59,7 @@ export class CompressedContentStore {
 			}
 			return Uint8Array.from(entry.plain as Uint8Array);
 		}
-		const text = decompress(entry.compressed as Buffer, this.codec);
+		const text = (this.codec as LosslessCodec).decompress(entry.compressed as Uint8Array);
 		entry.plain = text;
 		entry.compressed = undefined;
 		this.promote(id);
@@ -75,18 +71,24 @@ export class CompressedContentStore {
 		this.entries.delete(id);
 	}
 
+	clear(): void {
+		this.entries.clear();
+		this.windowIds.length = 0;
+	}
+
 	/** Retained bytes (compressed entries count their backing buffer; blobs their raw bytes). */
 	stats(): { entries: number; plainText: number; compressedEntries: number; retainedBytes: number } {
+		const encoder = new TextEncoder();
 		let plainText = 0;
 		let compressedEntries = 0;
 		let retainedBytes = 0;
 		for (const entry of this.entries.values()) {
 			if (entry.compressed) {
 				compressedEntries += 1;
-				retainedBytes += entry.compressed.length;
+				retainedBytes += entry.compressed.byteLength;
 			} else if (typeof entry.plain === "string") {
 				plainText += 1;
-				retainedBytes += Buffer.byteLength(entry.plain, "utf8");
+				retainedBytes += encoder.encode(entry.plain).byteLength;
 			} else if (entry.plain) {
 				retainedBytes += entry.plain.byteLength;
 			}
@@ -107,8 +109,8 @@ export class CompressedContentStore {
 			const id = this.windowIds.shift() as string;
 			const entry = this.entries.get(id);
 			if (!entry || entry.plain === undefined) continue;
-			if (typeof entry.plain === "string") {
-				entry.compressed = compress(entry.plain, this.codec);
+			if (typeof entry.plain === "string" && this.codec) {
+				entry.compressed = this.codec.compress(entry.plain);
 				entry.plain = undefined;
 			}
 		}

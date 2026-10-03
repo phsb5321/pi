@@ -44,8 +44,9 @@ const BUDGETS = {
 	"packages/durable": {
 		".": {
 			// Tool argument validation reaches TypeBox; provider-session creation reaches pi-ai's lean UUID utility; the
-			// memory and SQLite storages share scan order and cursor handling.
-			maxFiles: 63,
+			// memory and SQLite storages share scan order and cursor handling; the portable compressed-content store adds one
+			// module (its Node codec stays outside this graph).
+			maxFiles: 64,
 			forbid: ["packages/ai/src/index.ts", "packages/ai/src/utils/typebox-helpers.ts"],
 		},
 	},
