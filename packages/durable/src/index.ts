@@ -96,6 +96,7 @@ export type {
 export { UsageDoc, type UsageState } from "./harness/usage.ts";
 export type { ConversationView } from "./harness/view.ts";
 export { createSession } from "./session/session.ts";
+export type { LosslessCodec } from "./storage/compressed-content-store.ts";
 export { MemoryStorage } from "./storage/memory.ts";
 export { defineTask } from "./tasks.ts";
 export type {
