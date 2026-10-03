@@ -10,6 +10,8 @@ import {
 } from "../documents.ts";
 import { StorageRejected } from "../errors.ts";
 import { idFromNumber } from "../ids.ts";
+import { CompressedContentStore, type LosslessCodec } from "../storage/compressed-content-store.ts";
+
 import type {
 	CommitChange,
 	CommitPublication,
@@ -45,6 +47,9 @@ import {
 } from "./observation.ts";
 import { type LoadedDocument, Transaction, type TransactionHost, type TransactionScope } from "./transaction.ts";
 
+/** Documents kept with live trackers; the rest settle into compressed backing. */
+const WORKING_DOCUMENT_WINDOW = 64;
+
 /** Open a Session kernel over one storage backend. */
 export function createSession(storage: Storage): Session {
 	return new SessionImpl(storage);
@@ -59,6 +64,8 @@ export function createSession(storage: Storage): Session {
 export class SessionImpl implements Session {
 	readonly #storage: Storage;
 	readonly #documents = new Map<string, LoadedDocument>();
+	/** Settled document payloads, compressed lossless; materialized back on access (W1). */
+	readonly #settled: CompressedContentStore;
 	readonly #commitListeners = new Set<(publication: CommitPublication, context: Context) => void>();
 	readonly #closeListeners = new Set<() => void>();
 	readonly #host: TransactionHost;
@@ -66,17 +73,20 @@ export class SessionImpl implements Session {
 	#closing: Promise<void> | undefined;
 	#poison: { readonly error: unknown } | undefined;
 
-	constructor(storage: Storage) {
+	constructor(storage: Storage, documentCodec?: LosslessCodec) {
 		this.#storage = storage;
+		this.#settled = new CompressedContentStore({ windowSize: WORKING_DOCUMENT_WINDOW, codec: documentCodec });
 		this.#host = {
 			storage,
-			cached: (id) => this.#documents.get(id),
+			cached: (id) => this.#documents.get(id) ?? this.#materializeSettled(id),
 			load: (definition, addressId, address, context) => this.#loadDocument(definition, addressId, address, context),
 			install: (document) => {
+				this.#settled.delete(document.addressId);
 				this.#documents.set(document.addressId, document);
 			},
 			evict: (id, recordId) => {
-				if (this.#documents.get(id)?.record.id === recordId) this.#documents.delete(id);
+				const document = this.#documents.get(id) ?? this.#materializeSettled(id);
+				if (document?.record.id === recordId) this.#documents.delete(id);
 			},
 			conversationCreated: (tx, record) => this.conversationCreated(tx, record),
 		};
@@ -357,6 +367,7 @@ export class SessionImpl implements Session {
 					this.#enqueue(async () => {
 						this.#commitListeners.clear();
 						this.#documents.clear();
+						this.#settled.clear();
 						await this.#storage.close(cleanup);
 					}),
 				);
@@ -398,7 +409,53 @@ export class SessionImpl implements Session {
 	unloadDocuments(): Promise<void> {
 		return this.#enqueue(async () => {
 			this.#documents.clear();
+			this.#settled.clear();
 		});
+	}
+
+	/** Move documents outside the working window into compressed backing (settle-on-commit). */
+	#settleDocuments(): void {
+		while (this.#documents.size > WORKING_DOCUMENT_WINDOW) {
+			const [addressId] = this.#documents.keys();
+			const document = this.#documents.get(addressId);
+			if (document === undefined) break;
+			this.#settled.set(
+				addressId,
+				JSON.stringify({
+					record: document.record,
+					storedVersion: document.storedVersion,
+					valueVersion: document.valueVersion,
+					deltasSinceBase: document.deltasSinceBase,
+					value: document.tracker.value,
+				}),
+			);
+			this.#documents.delete(addressId);
+		}
+	}
+
+	/** Rebuild a settled document with a fresh tracker; values are value-equal and references
+	 * never escape the store (JSON round-trip on both sides). */
+	#materializeSettled(addressId: string): LoadedDocument | undefined {
+		const packed = this.#settled.get(addressId);
+		if (typeof packed !== "string") return undefined;
+		const restored = JSON.parse(packed) as {
+			record: LoadedDocument["record"];
+			storedVersion: number;
+			valueVersion: number;
+			deltasSinceBase: number;
+			value: JsonObject;
+		};
+		const loaded: LoadedDocument = {
+			addressId,
+			record: restored.record,
+			storedVersion: restored.storedVersion,
+			valueVersion: restored.valueVersion,
+			deltasSinceBase: restored.deltasSinceBase,
+			tracker: track(restored.value),
+		};
+		this.#settled.delete(addressId);
+		this.#documents.set(addressId, loaded);
+		return loaded;
 	}
 
 	async #runCommit<T>(
@@ -408,6 +465,7 @@ export class SessionImpl implements Session {
 	): Promise<T> {
 		this.#assertHealthy();
 		context.abortSignal?.throwIfAborted();
+		this.#settleDocuments();
 		const tx = new Transaction(this.#host, context, scope);
 		let result: T;
 		try {
@@ -505,7 +563,7 @@ export class SessionImpl implements Session {
 		address: DocumentAddress,
 		context: Context,
 	): Promise<LoadedDocument | undefined> {
-		const cached = this.#documents.get(addressId);
+		const cached = this.#documents.get(addressId) ?? this.#materializeSettled(addressId);
 		// A tracker serves only tokens of the version its value was materialized for; others reload from Storage.
 		if (cached?.valueVersion === definition.version) return cached;
 		if (cached !== undefined) this.#documents.delete(addressId);
