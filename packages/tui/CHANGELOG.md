@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fold autocomplete item text once per filter operation to reduce allocations while preserving fuzzy-match scores and ordering.
+
 ## [1.0.0] - 2026-10-01
 
 ### Added
