@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { type ExecFileException, execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { unlink } from "node:fs/promises";
 import * as os from "node:os";
@@ -651,12 +651,31 @@ type SessionsLoader = (onProgress?: SessionListProgress, signal?: AbortSignal) =
 /**
  * Delete a session file, trying the `trash` CLI first, then falling back to unlink
  */
+// INPUT-FREEZE fix: trash via async spawn. The previous spawnSync blocked
+// the interactive event loop for the whole subprocess (FUSE/volume latency),
+// freezing keystroke echo during session delete. Result shape preserved for
+// the error-hint and fallback logic below.
+function runTrashAsync(
+	trashArgs: string[],
+): Promise<{ error?: ExecFileException; status: number | null; stdout: string; stderr: string }> {
+	return new Promise((resolve) => {
+		execFile(
+			"trash",
+			trashArgs,
+			{ encoding: "utf-8", timeout: 10000, maxBuffer: 1024 * 1024 },
+			(error, stdout, stderr) => {
+				resolve({ error: error ?? undefined, status: error ? null : 0, stdout, stderr });
+			},
+		);
+	});
+}
+
 async function deleteSessionFile(
 	sessionPath: string,
 ): Promise<{ ok: boolean; method: "trash" | "unlink"; error?: string }> {
 	// Try `trash` first (if installed)
 	const trashArgs = sessionPath.startsWith("-") ? ["--", sessionPath] : [sessionPath];
-	const trashResult = spawnSync("trash", trashArgs, { encoding: "utf-8" });
+	const trashResult = await runTrashAsync(trashArgs);
 
 	const getTrashErrorHint = (): string | null => {
 		const parts: string[] = [];
