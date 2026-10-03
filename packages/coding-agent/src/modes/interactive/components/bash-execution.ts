@@ -3,12 +3,8 @@
  */
 
 import { Container, Loader, Spacer, Text, type TUI } from "@earendil-works/pi-tui";
-import {
-	DEFAULT_MAX_BYTES,
-	DEFAULT_MAX_LINES,
-	type TruncationResult,
-	truncateTail,
-} from "../../../core/tools/truncate.ts";
+import { BoundedOutputTail } from "../../../core/tools/output-tail.ts";
+import type { TruncationResult } from "../../../core/tools/truncate.ts";
 import { stripAnsi } from "../../../utils/ansi.ts";
 import { theme } from "../theme/theme.ts";
 import { DynamicBorder } from "./dynamic-border.ts";
@@ -20,7 +16,7 @@ const PREVIEW_LINES = 20;
 
 export class BashExecutionComponent extends Container {
 	private command: string;
-	private outputLines: string[] = [];
+	private output = new BoundedOutputTail();
 	private status: "running" | "complete" | "cancelled" | "error" = "running";
 	private exitCode: number | undefined = undefined;
 	private loader: Loader;
@@ -82,15 +78,7 @@ export class BashExecutionComponent extends Container {
 		// Note: binary data is already sanitized in tui-renderer.ts executeBashCommand
 		const clean = stripAnsi(chunk).replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
-		// Append to output lines
-		const newLines = clean.split("\n");
-		if (this.outputLines.length > 0 && newLines.length > 0) {
-			// Append first chunk to last line (incomplete line continuation)
-			this.outputLines[this.outputLines.length - 1] += newLines[0];
-			this.outputLines.push(...newLines.slice(1));
-		} else {
-			this.outputLines.push(...newLines);
-		}
+		this.output.append(clean);
 
 		this.updateDisplay();
 	}
@@ -118,14 +106,10 @@ export class BashExecutionComponent extends Container {
 
 	private updateDisplay(): void {
 		// Apply truncation for LLM context limits (same limits as bash tool)
-		const fullOutput = this.outputLines.join("\n");
-		const contextTruncation = truncateTail(fullOutput, {
-			maxLines: DEFAULT_MAX_LINES,
-			maxBytes: DEFAULT_MAX_BYTES,
-		});
+		const contextOutput = this.output.tailText;
 
 		// Get the lines to potentially display (after context truncation)
-		const availableLines = contextTruncation.content ? contextTruncation.content.split("\n") : [];
+		const availableLines = contextOutput ? contextOutput.split("\n") : [];
 
 		// Apply preview truncation based on expanded state
 		const previewLogicalLines = availableLines.slice(-PREVIEW_LINES);
@@ -193,7 +177,7 @@ export class BashExecutionComponent extends Container {
 			}
 
 			// Add truncation warning (context truncation, not preview truncation)
-			const wasTruncated = this.truncationResult?.truncated || contextTruncation.truncated;
+			const wasTruncated = this.truncationResult?.truncated || this.output.truncated;
 			if (wasTruncated && this.fullOutputPath) {
 				statusParts.push(theme.fg("warning", `Output truncated. Full output: ${this.fullOutputPath}`));
 			}
@@ -205,10 +189,19 @@ export class BashExecutionComponent extends Container {
 	}
 
 	/**
-	 * Get the raw output for creating BashExecutionMessage.
+	 * Get the retained raw suffix of normalized output (at most the context byte
+	 * limit + 4 UTF-16 code units). Transcript storage uses executeBash's result,
+	 * not this display component. See `isOutputTruncated` for display truncation.
 	 */
 	getOutput(): string {
-		return this.outputLines.join("\n");
+		return this.output.output;
+	}
+
+	/**
+	 * Whether the display omits part of the streamed output under context limits.
+	 */
+	isOutputTruncated(): boolean {
+		return this.output.truncated;
 	}
 
 	/**
