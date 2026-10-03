@@ -4,7 +4,7 @@
 
 ### Added
 
-- Opt-in lossless settled-document backing for the session kernel, with a portable codec contract and a low-latency Node Brotli adapter. Retired and replaced documents cannot reappear from the cache; promotion, unload, and close release stale backing. Runtime adoption and measured fleet memory savings remain separate acceptance work.
+- Opt-in lossless settled-document backing through `createSession(storage, codec)` and `Harness.open(..., { documentCodec })`, with a portable codec contract and a low-latency Node Brotli adapter. Live observers keep their documents materialized until the last observer detaches. Retired and replaced documents cannot reappear from the cache; promotion, unload, and close release stale backing. Runtime adoption and measured fleet memory savings remain separate acceptance work.
 
 ## [1.0.0] - 2026-10-01
 

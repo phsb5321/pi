@@ -51,8 +51,8 @@ import { type LoadedDocument, Transaction, type TransactionHost, type Transactio
 const WORKING_DOCUMENT_WINDOW = 64;
 
 /** Open a Session kernel over one storage backend. */
-export function createSession(storage: Storage): Session {
-	return new SessionImpl(storage);
+export function createSession(storage: Storage, documentCodec?: LosslessCodec): Session {
+	return new SessionImpl(storage, documentCodec);
 }
 
 /**
@@ -65,7 +65,8 @@ export class SessionImpl implements Session {
 	readonly #storage: Storage;
 	readonly #documents = new Map<string, LoadedDocument>();
 	/** Settled document payloads, compressed lossless; materialized back on access (W1). */
-	readonly #settled: CompressedContentStore;
+	readonly #settled: CompressedContentStore | undefined;
+	readonly #observedDocuments = new Map<string, number>();
 	readonly #commitListeners = new Set<(publication: CommitPublication, context: Context) => void>();
 	readonly #closeListeners = new Set<() => void>();
 	readonly #host: TransactionHost;
@@ -75,13 +76,13 @@ export class SessionImpl implements Session {
 
 	constructor(storage: Storage, documentCodec?: LosslessCodec) {
 		this.#storage = storage;
-		this.#settled = new CompressedContentStore({ windowSize: WORKING_DOCUMENT_WINDOW, codec: documentCodec });
+		this.#settled = documentCodec ? new CompressedContentStore({ windowSize: 1, codec: documentCodec }) : undefined;
 		this.#host = {
 			storage,
 			cached: (id) => this.#documents.get(id) ?? this.#materializeSettled(id),
 			load: (definition, addressId, address, context) => this.#loadDocument(definition, addressId, address, context),
 			install: (document) => {
-				this.#settled.delete(document.addressId);
+				this.#settled?.delete(document.addressId);
 				this.#documents.set(document.addressId, document);
 			},
 			evict: (id, recordId) => {
@@ -367,7 +368,8 @@ export class SessionImpl implements Session {
 					this.#enqueue(async () => {
 						this.#commitListeners.clear();
 						this.#documents.clear();
-						this.#settled.clear();
+						this.#settled?.clear();
+						this.#observedDocuments.clear();
 						await this.#storage.close(cleanup);
 					}),
 				);
@@ -409,16 +411,16 @@ export class SessionImpl implements Session {
 	unloadDocuments(): Promise<void> {
 		return this.#enqueue(async () => {
 			this.#documents.clear();
-			this.#settled.clear();
+			this.#settled?.clear();
 		});
 	}
 
 	/** Move documents outside the working window into compressed backing (settle-on-commit). */
 	#settleDocuments(): void {
-		while (this.#documents.size > WORKING_DOCUMENT_WINDOW) {
-			const [addressId] = this.#documents.keys();
-			const document = this.#documents.get(addressId);
-			if (document === undefined) break;
+		if (this.#settled === undefined) return;
+		for (const [addressId, document] of this.#documents) {
+			if (this.#documents.size <= WORKING_DOCUMENT_WINDOW) break;
+			if (this.#observedDocuments.has(addressId)) continue;
 			this.#settled.set(
 				addressId,
 				JSON.stringify({
@@ -436,7 +438,7 @@ export class SessionImpl implements Session {
 	/** Rebuild a settled document with a fresh tracker; values are value-equal and references
 	 * never escape the store (JSON round-trip on both sides). */
 	#materializeSettled(addressId: string): LoadedDocument | undefined {
-		const packed = this.#settled.get(addressId);
+		const packed = this.#settled?.get(addressId);
 		if (typeof packed !== "string") return undefined;
 		const restored = JSON.parse(packed) as {
 			record: LoadedDocument["record"];
@@ -453,7 +455,7 @@ export class SessionImpl implements Session {
 			deltasSinceBase: restored.deltasSinceBase,
 			tracker: track(restored.value),
 		};
-		this.#settled.delete(addressId);
+		this.#settled?.delete(addressId);
 		this.#documents.set(addressId, loaded);
 		return loaded;
 	}
@@ -536,11 +538,21 @@ export class SessionImpl implements Session {
 		checkRecordVersion(definition, loaded.record, loaded.storedVersion);
 		let unsubscribeCommit = (): void => {};
 		let unsubscribeClose = (): void => {};
+		const addressId = loaded.addressId;
+		let attached = false;
 		const detach = (): void => {
 			unsubscribeCommit();
 			unsubscribeClose();
+			if (attached) {
+				attached = false;
+				const remaining = (this.#observedDocuments.get(addressId) ?? 1) - 1;
+				if (remaining === 0) this.#observedDocuments.delete(addressId);
+				else this.#observedDocuments.set(addressId, remaining);
+			}
 		};
 		const observer = create(loaded.tracker.value, detach);
+		this.#observedDocuments.set(addressId, (this.#observedDocuments.get(addressId) ?? 0) + 1);
+		attached = true;
 		const observed = { version: loaded.valueVersion };
 		unsubscribeCommit = this.subscribeCommits((publication, context) => {
 			for (const change of publication.changes) {

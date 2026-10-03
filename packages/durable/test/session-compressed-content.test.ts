@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { defineDoc } from "../src/documents.ts";
-import { SessionImpl } from "../src/session/session.ts";
+import { createSession, SessionImpl } from "../src/session/session.ts";
 import { nodeLosslessCodec } from "../src/storage/lossless-codec-node.ts";
 import { MemoryStorage } from "../src/storage/memory.ts";
-import type { ConversationId } from "../src/types.ts";
+import type { ConversationId, Session } from "../src/types.ts";
 import { context } from "./session-support.ts";
 
 const NoteDoc = defineDoc<{ text: string }>({
@@ -15,7 +15,7 @@ const NoteDoc = defineDoc<{ text: string }>({
 	initial: () => ({ text: "" }),
 });
 
-async function createNote(session: SessionImpl, text: string): Promise<ConversationId> {
+async function createNote(session: Session, text: string): Promise<ConversationId> {
 	const conversation = await session.commit(
 		(tx) => tx.createConversation({ ownership: { kind: "ownerless" } }),
 		context,
@@ -32,7 +32,7 @@ describe("W1 compressed conversation state", () => {
 			compress: vi.fn(nodeLosslessCodec.compress),
 			decompress: vi.fn(nodeLosslessCodec.decompress),
 		};
-		const session = new SessionImpl(new MemoryStorage(), codec);
+		const session = createSession(new MemoryStorage(), codec);
 		const ids: ConversationId[] = [];
 		for (let i = 0; i < 140; i++) ids.push(await createNote(session, `note ${i} `.repeat(50)));
 		// A later commit settles older documents past the working window.
@@ -56,6 +56,30 @@ describe("W1 compressed conversation state", () => {
 		expect(await session.snapshot(NoteDoc, rootId, context)).toEqual({ text: "replacement" });
 	});
 
+	it("keeps watched documents live until the last observer detaches", async () => {
+		const compressed: string[] = [];
+		const codec = {
+			compress: (text: string) => {
+				compressed.push(text);
+				return nodeLosslessCodec.compress(text);
+			},
+			decompress: nodeLosslessCodec.decompress,
+		};
+		const session = new SessionImpl(new MemoryStorage(), codec);
+		const id = await createNote(session, "watched-marker");
+		const first = (await session.watchDoc(NoteDoc, id, context))!;
+		const second = (await session.watchDoc(NoteDoc, id, context))!;
+		for (let i = 0; i < 140; i++) await createNote(session, `filler ${i}`);
+		expect(compressed.some((text) => text.includes("watched-marker"))).toBe(false);
+		await first.stop();
+		await createNote(session, "still watched");
+		expect(compressed.some((text) => text.includes("watched-marker"))).toBe(false);
+		await second.stop();
+		for (let i = 0; i < 3; i++) await createNote(session, `after detach ${i}`);
+		expect(compressed.some((text) => text.includes("watched-marker"))).toBe(true);
+		expect(await session.snapshot(NoteDoc, id, context)).toEqual({ text: "watched-marker" });
+	});
+
 	it("escapes no backing references on document promotion (identity probe)", async () => {
 		const session = new SessionImpl(new MemoryStorage(), nodeLosslessCodec);
 		const rootId = await createNote(session, "original");
@@ -64,8 +88,7 @@ describe("W1 compressed conversation state", () => {
 		const value = await session.snapshot(NoteDoc, rootId, context);
 		expect(value).toEqual({ text: "original" });
 		(value as { text: string }).text = "HACKED";
-		// Drop the live trackers without another commit: a fresh materialization must return
-		// the store's settled bytes, not the caller's mutated object.
+		// Unload forces a fresh read of persisted state rather than the caller's object.
 		await session.unloadDocuments();
 		expect(await session.snapshot(NoteDoc, rootId, context)).toEqual({ text: "original" });
 	});
