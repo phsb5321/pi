@@ -44,6 +44,13 @@ is_uint "$TIMEOUT" && [ "$TIMEOUT" -ge 1 ] || { echo "mem-probe-bounded: --timeo
 [ "$TIMEOUT" -le 120 ] || { echo "mem-probe-bounded: timeout capped at 120s" >&2; exit 64; }
 is_uint "$SEED" || { echo "mem-probe-bounded: --seed needs digits (JSON-safe receipt)" >&2; exit 64; }
 case "$CONDITION" in advisory|idle|mid-turn) ;; *) echo "mem-probe-bounded: --condition must be advisory|idle|mid-turn" >&2; exit 64 ;; esac
+# Canonicalize numeric values: "08" is digits but invalid as a JSON number.
+COHORT=$((10#$COHORT)) TIMEOUT=$((10#$TIMEOUT))
+
+# Per-file hard byte cap: inherited RLIMIT_FSIZE bounds EVERY file the probe
+# writes (capture files included — stream caps alone cannot). prlimit uses
+# bytes; Bash ulimit units vary and measured128 as128 KiB on this host.
+CAP_BYTES=65536
 
 here=$(cd "$(dirname "$0")" && pwd)
 probe="$here/mem-probe"
@@ -58,21 +65,22 @@ tmp=$(mktemp -d "${TMPDIR:-/tmp}/mpb.XXXXXX"); trap 'rm -rf "$tmp"' EXIT
 printf '%s\n' "${pick[@]}" > "$tmp/pids"
 
 start=$(date +%s.%N)
-set +e
 if [ "$CONDITION" = advisory ]; then
   args=(--condition idle --advisory --seat-pids "$tmp/pids" --json)
 else
   args=(--condition "$CONDITION" --seat-pids "$tmp/pids" --out "$tmp/capture")
 fi
-nice -n 15 ionice -c3 timeout -k 2 "$TIMEOUT" "$probe" "${args[@]}" 2> >(head -c 65536 > "$tmp/err") | head -c 65536 > "$tmp/out"
+set +e
+( prlimit --fsize="$CAP_BYTES:$CAP_BYTES" -- nice -n 15 ionice -c3 timeout -k 2 "$TIMEOUT" "$probe" "${args[@]}" 2> >(head -c 65536 > "$tmp/err") ) | head -c 65536 > "$tmp/out"
 rc=$?
 set -e
 end=$(date +%s.%N)
 
 wall=$(awk -v a="$start" -v b="$end" 'BEGIN{printf "%.3f", b-a}')
+capture_bytes=$(find "$tmp" -maxdepth 2 -type f -name 'capture*' -printf '%s\n' 2>/dev/null | awk '{s+=$1} END{print s+0}')
 {
-  printf '{"instrument":"mem-probe-bounded","seed":"%s","cohort":%s,"pids":%s,"timeout_s":%s,"condition":"%s","wall_s":%s,"exit":%s,"out_bytes":%s,"stamp":"%s"}\n' \
-    "$SEED" "$COHORT" "${#pick[@]}" "$TIMEOUT" "$CONDITION" "$wall" "$rc" "$(wc -c < "$tmp/out")" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  printf '{"instrument":"mem-probe-bounded","seed":"%s","cohort":%s,"pids":%s,"timeout_s":%s,"condition":"%s","wall_s":%s,"exit":%s,"out_bytes":%s,"capture_bytes":%s,"stamp":"%s"}\n' \
+    "$SEED" "$COHORT" "${#pick[@]}" "$TIMEOUT" "$CONDITION" "$wall" "$rc" "$(wc -c < "$tmp/out")" "$capture_bytes" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } >> "${OUT:-$here/mem-probe-bounded.receipts.jsonl}"
 
 cat "$tmp/out"

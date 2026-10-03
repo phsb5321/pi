@@ -45,3 +45,14 @@ The `🖥️ Desktop & Server Ops` workspace is part of the durable resource pla
 its jobs (rebuilds, server ops, RAM work) join the stagger schedule and the
 caps. Public implementation is coordinated with Infra (`home/w1W:p12`); private
 coordination records live in the vault.
+
+## Wrapper acceptance — 03/10/2026
+
+The wrapper validates and canonicalizes bounded numeric arguments, preserves
+probe exit codes, caps both output streams and inherits an explicit65,536-byte
+RLIMIT_FSIZE for capture files through the existing Linux `prlimit` utility.
+A real native run caught Bash's128-block limit allowing131,072 bytes; the
+byte-based limit now passes the same regression. Deterministic pgrep/shuf/probe
+fixtures never inspect live seats. Native synthetic acceptance passed in2.64s,
+1.44CPU-seconds and10.3MiB peak under256MiB/oneCPU/30s bounds. This does not
+constitute a worked-seat fleet memory measurement or approve a sampling wave.
