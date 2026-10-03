@@ -3,6 +3,29 @@ import { CompressedContentStore } from "../src/storage/compressed-content-store.
 import { nodeLosslessCodec } from "../src/storage/lossless-codec-node.ts";
 
 describe("CompressedContentStore", () => {
+	it("retains only compressed bytes instead of each zlib output slab", () => {
+		const text = "abc".repeat(1000);
+		const compressed = nodeLosslessCodec.compress(text);
+		expect(compressed.buffer.byteLength).toBe(compressed.byteLength);
+		expect(compressed.byteLength).toBeLessThan(100);
+		expect(nodeLosslessCodec.decompress(compressed)).toBe(text);
+	});
+
+	it("counts shared compressed backing once, including unused view capacity", () => {
+		const backing = new Uint8Array(4096);
+		const store = new CompressedContentStore({
+			windowSize: 1,
+			codec: {
+				compress: () => backing.subarray(0, 10),
+				decompress: () => "value",
+			},
+		});
+		store.set("a", "value");
+		store.set("b", "value");
+		store.set("c", "value");
+		expect(store.stats().retainedBytes).toBe(4096 + 5);
+	});
+
 	it("counts UTF-8 bytes without Node globals", () => {
 		vi.stubGlobal("Buffer", undefined);
 		try {

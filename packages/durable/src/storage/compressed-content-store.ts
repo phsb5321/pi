@@ -82,10 +82,14 @@ export class CompressedContentStore {
 		let plainText = 0;
 		let compressedEntries = 0;
 		let retainedBytes = 0;
+		const compressedBuffers = new Set<ArrayBufferLike>();
 		for (const entry of this.entries.values()) {
 			if (entry.compressed) {
 				compressedEntries += 1;
-				retainedBytes += entry.compressed.byteLength;
+				if (!compressedBuffers.has(entry.compressed.buffer)) {
+					compressedBuffers.add(entry.compressed.buffer);
+					retainedBytes += entry.compressed.buffer.byteLength;
+				}
 			} else if (typeof entry.plain === "string") {
 				plainText += 1;
 				retainedBytes += encoder.encode(entry.plain).byteLength;

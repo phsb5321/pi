@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Copy compressed Node output into exact-sized backing so a tiny result cannot retain a16 KiB zlib slab. Retained-byte reporting counts each unique compressed backing allocation, including unused view capacity. A synthetic on/off canary verifies API parity; fleet savings remain unproven.
+
 ### Added
 
 - Opt-in lossless settled-document backing through `createSession(storage, codec)` and `Harness.open(..., { documentCodec })`, with a portable codec contract and a low-latency Node Brotli adapter. Live observers keep their documents materialized until the last observer detaches. Retired and replaced documents cannot reappear from the cache; promotion, unload, and close release stale backing. Runtime adoption and measured fleet memory savings remain separate acceptance work.
