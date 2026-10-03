@@ -5,7 +5,11 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
 	clearConfigValueCache,
 	resolveConfigValue,
+	resolveConfigValueAsync,
+	resolveConfigValueOrThrowAsync,
 	resolveConfigValueUncached,
+	resolveConfigValueUncachedAsync,
+	resolveHeadersOrThrowAsync,
 } from "../src/core/resolve-config-value.ts";
 import * as shellModule from "../src/utils/shell.ts";
 
@@ -116,6 +120,89 @@ describe("resolveConfigValue", () => {
 			expect(resolveConfigValueUncached(`!name='World'; echo "Hello, ${expansion}!"`)).toBe("Hello, World!");
 		} finally {
 			if (platformDescriptor) Object.defineProperty(process, "platform", platformDescriptor);
+		}
+	});
+});
+
+describe.skipIf(process.platform === "win32")("asynchronous command configuration", () => {
+	afterEach(() => clearConfigValueCache());
+
+	test("lets event-loop timers advance while a real key command waits", async () => {
+		let ticks = 0;
+		const timer = setInterval(() => ticks++, 10);
+		try {
+			expect(await resolveConfigValueOrThrowAsync("!sleep 0.2; printf '  key  '", "key")).toBe("key");
+			expect(ticks).toBeGreaterThan(2);
+		} finally {
+			clearInterval(timer);
+		}
+	});
+
+	test("preserves cached values while uncached requests execute again", async () => {
+		const directory = join(tmpdir(), `pi-async-config-${Date.now()}`);
+		mkdirSync(directory);
+		const file = join(directory, "value");
+		const command = `!cat "${file}"`;
+		try {
+			writeFileSync(file, "first");
+			expect(resolveConfigValue(command)).toBe("first");
+			writeFileSync(file, "second");
+			expect(resolveConfigValue(command)).toBe("first");
+			expect(await resolveConfigValueUncachedAsync(command)).toBe("second");
+		} finally {
+			rmSync(directory, { recursive: true });
+		}
+	});
+
+	test("coalesces simultaneous cached calls and respects clearing in flight", async () => {
+		const directory = join(tmpdir(), `pi-async-concurrent-${Date.now()}`);
+		mkdirSync(directory);
+		const file = join(directory, "calls");
+		const command = `!printf x >> "${file}"; sleep 0.1; printf key`;
+		try {
+			expect(await Promise.all([resolveConfigValueAsync(command), resolveConfigValueAsync(command)])).toEqual([
+				"key",
+				"key",
+			]);
+			expect(readFileSync(file, "utf-8")).toBe("x");
+			clearConfigValueCache();
+			const pending = resolveConfigValueAsync(command);
+			clearConfigValueCache();
+			await pending;
+			await resolveConfigValueAsync(command);
+			expect(readFileSync(file, "utf-8")).toBe("xxx");
+		} finally {
+			rmSync(directory, { recursive: true });
+		}
+	});
+
+	test("preserves literal, scoped environment, empty and failure contracts", async () => {
+		for (const [input, expected] of [
+			["literal", "literal"],
+			["$KEY", "scoped"],
+			["!printf ''", undefined],
+			["!exit 3", undefined],
+		] as const) {
+			expect(await resolveConfigValueUncachedAsync(input, { KEY: "scoped" })).toBe(expected);
+		}
+		await expect(resolveConfigValueOrThrowAsync("!exit 3", "test key")).rejects.toThrow(
+			"Failed to resolve test key from shell command: exit 3",
+		);
+	});
+
+	test("resolves provider header commands without blocking and bounds output", async () => {
+		let ticked = false;
+		const timer = setTimeout(() => {
+			ticked = true;
+		}, 20);
+		try {
+			expect(await resolveHeadersOrThrowAsync({ "X-Key": "!sleep 0.1; printf header" }, "provider")).toEqual({
+				"X-Key": "header",
+			});
+			expect(ticked).toBe(true);
+			expect(await resolveConfigValueUncachedAsync("!head -c 1048577 /dev/zero")).toBeUndefined();
+		} finally {
+			clearTimeout(timer);
 		}
 	});
 });
