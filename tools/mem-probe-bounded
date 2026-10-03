@@ -22,17 +22,28 @@ set -euo pipefail
 COHORT=10 SEED=$(date +%H%M) TIMEOUT=30 CONDITION=advisory OUT=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --cohort) COHORT="$2"; shift 2 ;;
-    --seed) SEED="$2"; shift 2 ;;
-    --timeout) TIMEOUT="$2"; shift 2 ;;
-    --condition) CONDITION="$2"; shift 2 ;;
-    --out) OUT="$2"; shift 2 ;;
+    --cohort|--seed|--timeout|--condition|--out)
+      [ "$#" -ge 2 ] || { echo "mem-probe-bounded: $1 needs a value" >&2; exit 64; }
+      case "$1" in
+        --cohort) COHORT="$2" ;; --seed) SEED="$2" ;; --timeout) TIMEOUT="$2" ;;
+        --condition) CONDITION="$2" ;; --out) OUT="$2" ;;
+      esac
+      shift 2 ;;
     --advisory) CONDITION=advisory; shift ;;
     *) echo "mem-probe-bounded: unknown arg $1" >&2; exit 64 ;;
   esac
 done
-[ "$COHORT" -gt 25 ] && { echo "mem-probe-bounded: cohort capped at 25" >&2; exit 64; }
-[ "$TIMEOUT" -gt 120 ] && { echo "mem-probe-bounded: timeout capped at 120s" >&2; exit 64; }
+
+# Fail-closed value validation: positive integers only, bounds enforced,
+# seed numeric (JSON-safe receipt), condition enum. 0/negative timeout is
+# forbidden — GNU timeout 0 would DISABLE the bound.
+is_uint() { case "$1" in ''|*[!0-9]*) return 1 ;; *) return 0 ;; esac; }
+is_uint "$COHORT" && [ "$COHORT" -ge 1 ] || { echo "mem-probe-bounded: --cohort needs a positive integer" >&2; exit 64; }
+[ "$COHORT" -le 25 ] || { echo "mem-probe-bounded: cohort capped at 25" >&2; exit 64; }
+is_uint "$TIMEOUT" && [ "$TIMEOUT" -ge 1 ] || { echo "mem-probe-bounded: --timeout needs a positive integer" >&2; exit 64; }
+[ "$TIMEOUT" -le 120 ] || { echo "mem-probe-bounded: timeout capped at 120s" >&2; exit 64; }
+is_uint "$SEED" || { echo "mem-probe-bounded: --seed needs digits (JSON-safe receipt)" >&2; exit 64; }
+case "$CONDITION" in advisory|idle|mid-turn) ;; *) echo "mem-probe-bounded: --condition must be advisory|idle|mid-turn" >&2; exit 64 ;; esac
 
 here=$(cd "$(dirname "$0")" && pwd)
 probe="$here/mem-probe"
@@ -41,7 +52,7 @@ probe="$here/mem-probe"
 # Bounded rotating cohort: deterministic shuffle of live pi pids, take N.
 mapfile -t all < <(pgrep -x pi 2>/dev/null | sort -n)
 [ "${#all[@]}" -eq 0 ] && { echo "mem-probe-bounded: no seats" >&2; exit 0; }
-mapfile -t pick < <(printf '%s\n' "${all[@]}" | shuf --random-source=<(yes "$SEED") -n "$COHORT")
+mapfile -t pick < <(printf '%s\n' "${all[@]}" | shuf --random-source=<(yes "$SEED" 2>/dev/null) -n "$COHORT")
 
 tmp=$(mktemp -d "${TMPDIR:-/tmp}/mpb.XXXXXX"); trap 'rm -rf "$tmp"' EXIT
 printf '%s\n' "${pick[@]}" > "$tmp/pids"
@@ -53,7 +64,7 @@ if [ "$CONDITION" = advisory ]; then
 else
   args=(--condition "$CONDITION" --seat-pids "$tmp/pids" --out "$tmp/capture")
 fi
-nice -n 15 ionice -c3 timeout -k 2 "$TIMEOUT" "$probe" "${args[@]}" 2>"$tmp/err" | head -c 65536 > "$tmp/out"
+nice -n 15 ionice -c3 timeout -k 2 "$TIMEOUT" "$probe" "${args[@]}" 2> >(head -c 65536 > "$tmp/err") | head -c 65536 > "$tmp/out"
 rc=$?
 set -e
 end=$(date +%s.%N)
@@ -65,4 +76,5 @@ wall=$(awk -v a="$start" -v b="$end" 'BEGIN{printf "%.3f", b-a}')
 } >> "${OUT:-$here/mem-probe-bounded.receipts.jsonl}"
 
 cat "$tmp/out"
-[ "$rc" -ne 0 ] && { cat "$tmp/err" >&2; exit "$rc"; }
+if [ "$rc" -ne 0 ]; then cat "$tmp/err" >&2; fi
+exit "$rc"
