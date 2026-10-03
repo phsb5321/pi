@@ -12,7 +12,7 @@ import { getAgentDir } from "../config.ts";
 import { raceWithAbortSignal } from "../utils/abort.ts";
 import { getFileRevision, normalizePath } from "../utils/paths.ts";
 import { stripBom } from "../utils/text.ts";
-import { isCommandConfigValue, resolveConfigValue } from "./resolve-config-value.ts";
+import { isCommandConfigValue, resolveConfigValueAsync } from "./resolve-config-value.ts";
 
 type AuthStorageData = Record<string, Credential>;
 
@@ -263,7 +263,10 @@ export class ReadOnlyAuthStorage implements CredentialStore {
 		if (credential.type !== "api_key" || !credential.key || isCommandConfigValue(credential.key)) {
 			return structuredClone(credential);
 		}
-		return { ...credential, key: resolveConfigValue(credential.key, credential.env) };
+		return {
+			...credential,
+			key: await raceWithAbortSignal(resolveConfigValueAsync(credential.key, credential.env), options?.signal),
+		};
 	}
 
 	async list(options?: AuthOperationOptions): Promise<readonly CredentialInfo[]> {
@@ -443,7 +446,10 @@ export class AuthStorage implements CredentialStore {
 		options?.signal?.throwIfAborted();
 		if (credential?.type !== "api_key") return credential;
 		if (credential.key === undefined) return credential;
-		return { ...credential, key: resolveConfigValue(credential.key, credential.env) };
+		return {
+			...credential,
+			key: await raceWithAbortSignal(resolveConfigValueAsync(credential.key, credential.env), options?.signal),
+		};
 	}
 
 	async modify(
