@@ -15,6 +15,7 @@ import type {
 	UserMessage,
 } from "@earendil-works/pi-ai";
 import type { ExecutionEnv, ShellOutputSkip, ShellOutputWindow } from "../env/index.ts";
+import type { LosslessCodec } from "../storage/compressed-content-store.ts";
 import type {
 	ConversationId,
 	ConversationOwnership,
@@ -451,6 +452,8 @@ export type EnvTarget = {
 };
 
 export type HarnessOptions<Tool extends ToolRegistration = ToolRegistration> = {
+	/** Optional lossless backing for inactive documents; omitted preserves the plain cache. */
+	readonly documentCodec?: LosslessCodec;
 	/** pi-ai model access used by generation. */
 	readonly models: Models;
 	readonly registry: RegistryReader<Tool>;
