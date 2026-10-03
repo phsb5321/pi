@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- API key and provider header commands now resolve asynchronously, keeping terminal input responsive while credential helpers wait. Session deletion also invokes the trash helper asynchronously with bounded output and a timeout.
+
 ### Changed
 
 - `/arminsayshi` now plays a 3D version in fullscreen mode, with one cube per pixel of Armin. The 3D pi logo easter egg on header logo click is replaced by it.

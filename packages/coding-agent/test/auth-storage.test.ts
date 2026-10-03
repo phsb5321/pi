@@ -43,6 +43,27 @@ describe("AuthStorage", () => {
 		expect(await storage.read("anthropic")).toEqual({ type: "api_key", key: "command-key" });
 	});
 
+	test.skipIf(process.platform === "win32")(
+		"aborts one waiting key reader without cancelling the shared helper",
+		async () => {
+			const storage = AuthStorage.inMemory({
+				synthetic: { type: "api_key", key: "!sleep 0.2; printf async-abort-key" },
+			});
+			const controller = new AbortController();
+			const cancelled = storage.read("synthetic", { signal: controller.signal });
+			const retained = storage.read("synthetic");
+			const rejection = expect(cancelled).rejects.toMatchObject({ name: "AbortError" });
+			const timer = setTimeout(() => controller.abort(), 20);
+			try {
+				await rejection;
+				expect(await retained).toMatchObject({ key: "async-abort-key" });
+			} finally {
+				clearTimeout(timer);
+				await retained;
+			}
+		},
+	);
+
 	test("returns OAuth credentials unchanged", async () => {
 		const credential = {
 			type: "oauth" as const,
