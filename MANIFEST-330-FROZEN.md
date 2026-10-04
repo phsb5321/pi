@@ -59,3 +59,33 @@ Runtime DEFAULT OFF (nothing ambient), no child Node per session
 (zero paid calls), privacy/model constraints unchanged, PR4 + all WIP
 preserved, no session/model resets, heavy gates run offhost only,
 DECLARE-CHECKLIST line 1 (push + ls-remote VERIFY) at publish time.
+
+## Battery-2 (04/10 11:5x) — COMPOSED REAL-SDK ACCEPTANCE: PASS
+
+Composed candidate @59e7842de through the real SDK/application host path
+(real openDurable engines, per-session SQLite, provider-free):
+cancellation/history/extensions + SDK host services isolation ALL PASS;
+p9 adversarial overlay + standalone 11/11; strict no-network canary under
+unshare -Urn (kernel-level) + zero-socket counters. **Process-tree memory
+CONTRACT defined+asserted**: one pid tree / 1 process / N sessions,
+mem-probe whole-tree measured-only — NPROC=1, PSS 34.3 MiB (46.8 class,
+bound 128). W1/E axis: CTXDEFER (no per-session context at host start;
+all deferred to open/per-call) + per-session-cwd resolver (cwd isolation).
+**LIVE CANARY STAGED, DEFAULT OFF** — opt-in PI_SHARED_LIVE_CANARY=1,
+real turns gated on PI_SHARED_LIVE_MODEL + pilot authorization; head
+237427f1e (pushed + verified); EXACT REVERT = `git revert f4c584a67`.
+Evidence: `evidence/MS-20/pre-pilot-battery-2/` (01-04 + README).
+Next slice: pilot-authorized live turn + resolver battery.
+
+## Superseded by COMPOSITION-1206 (04/10 12:15)
+
+Frozen source-of-record = `pi-upstream-composition-1206/COMPOSITION-1206.md`
+(head **93219cd84**, pushed+verified; exact commits + lockfiles + hashes;
+one-build-owner = serialized offhost budget only). REVERT of the live-canary
+staging = `git revert f4c584a67` (corrected: 0e17d59fe is pD's client
+commit). Claims boundary: PROVEN = synthetic seam isolation + kernel
+no-network + memory-contract mechanics N=3 (NPROC=1, 34.3 MiB) + real-engine
+abort-no-active-turn/view-only; NOT PROVEN = real streaming/tool/cancel-of-
+active-turn/restart/parked-history-reclaim (retirement OFF). Live activation
+NOT authorized. N1/8/32 measurement HELD until W3 containment (tmux
+sibling-scope escape, p3/infra).
