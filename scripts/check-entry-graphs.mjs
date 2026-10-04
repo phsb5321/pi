@@ -44,7 +44,8 @@ const BUDGETS = {
 	"packages/durable": {
 		".": {
 			// The built-in tool task validates arguments with pi-ai's TypeBox-based validation, so TypeBox is allowed.
-			maxFiles: 60,
+			// One portable compressed-cache module; its Node codec remains outside this entry graph.
+			maxFiles: 61,
 			forbid: ["packages/ai/src/index.ts", "packages/ai/src/utils/typebox-helpers.ts"],
 		},
 	},

@@ -172,7 +172,7 @@ class HarnessImpl<Tool extends ToolRegistration> extends SessionImpl implements 
 	#closed = false;
 
 	constructor(storage: Storage, options: HarnessOptions<Tool>, context: Context) {
-		super(storage);
+		super(storage, options.documentCodec);
 		this.#storage = storage;
 		this.#options = options;
 		this.#report = options.onReport ?? (() => {});

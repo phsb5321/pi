@@ -36,6 +36,12 @@
 			"import": "./dist/storage/memory.js",
 			"default": "./dist/storage/memory.js"
 		},
+		"./storage/compressed-content/node": {
+			"source": "./src/storage/lossless-codec-node.ts",
+			"types": "./dist/storage/lossless-codec-node.d.ts",
+			"import": "./dist/storage/lossless-codec-node.js",
+			"default": "./dist/storage/lossless-codec-node.js"
+		},
 		"./storage/jsonl": {
 			"source": "./src/storage/jsonl/index.ts",
 			"types": "./dist/storage/jsonl/index.d.ts",
