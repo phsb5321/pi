@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Opt-in bounded host composition with concurrent-open reservations, explicit harness-idle retirement, and failed-close capacity retention. The adapter preserves host topology and does not enable fleet sharing.
+
 ## [1.0.0] - 2026-10-01
 
 ### Breaking Changes

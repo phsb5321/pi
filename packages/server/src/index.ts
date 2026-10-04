@@ -5,4 +5,5 @@ export * from "./retained-history.ts";
 export * from "./shared-process.ts";
 export * from "./listener.ts";
 export * from "./server.ts";
+export * from "./shared-process.ts";
 export * from "./types.ts";
