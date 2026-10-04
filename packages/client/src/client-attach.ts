@@ -1,9 +1,9 @@
 import type { JsonValue, RemoteServiceTransport, ServiceCall } from "@earendil-works/chord";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import type { SessionTarget } from "@earendil-works/pi-protocol";
-import type { Client } from "./index.ts";
 import { createClientServiceTransport } from "./client.ts";
 import { DisconnectedError } from "./errors.ts";
+import type { Client } from "./index.ts";
 
 export const SESSION_MANAGEMENT_SERVICE = "pi.session-management";
 
@@ -45,11 +45,14 @@ export interface AttachSessionsOptions {
  * outside tests or an explicit canary entry); no model/provider calls.
  */
 export async function attachSession(client: Client, sessionId: string): Promise<AttachedSession> {
-	const attaching = client.request({ serverId: client.serverId }, {
-		serviceId: SESSION_MANAGEMENT_SERVICE,
-		member: "attach",
-		args: [sessionId],
-	});
+	const attaching = client.request(
+		{ serverId: client.serverId },
+		{
+			serviceId: SESSION_MANAGEMENT_SERVICE,
+			member: "attach",
+			args: [sessionId],
+		},
+	);
 	await attaching;
 	const target = client.attachment;
 	if (target === undefined || target.sessionId !== sessionId) {
@@ -65,11 +68,14 @@ export async function attachSession(client: Client, sessionId: string): Promise<
 		invoke: (call) => transport.invoke(call, BACKGROUND_CONTEXT),
 		async detach() {
 			if (!client.connected || client.attachment?.sessionId !== sessionId) return;
-			await client.request({ serverId: client.serverId }, {
-				serviceId: SESSION_MANAGEMENT_SERVICE,
-				member: "detach",
-				args: [],
-			});
+			await client.request(
+				{ serverId: client.serverId },
+				{
+					serviceId: SESSION_MANAGEMENT_SERVICE,
+					member: "detach",
+					args: [],
+				},
+			);
 		},
 	};
 }

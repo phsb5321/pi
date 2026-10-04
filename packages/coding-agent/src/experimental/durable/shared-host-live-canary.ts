@@ -23,10 +23,9 @@
 import { mkdirSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import type { SessionMetadata } from "@earendil-works/pi-server";
-import { createSharedHostMain } from "./shared-host-main.ts";
 import { openAttachedSessions } from "./shared-host-acceptance-kit.ts";
+import { createSharedHostMain } from "./shared-host-main.ts";
 
 const LIVE = process.env.PI_SHARED_LIVE_CANARY === "1";
 const LIVE_MODEL = process.env.PI_SHARED_LIVE_MODEL;
@@ -81,7 +80,9 @@ async function runLive(): Promise<number> {
 }
 
 if (!LIVE) {
-	process.stdout.write("shared-host-live-canary: staged, DEFAULT OFF (set PI_SHARED_LIVE_CANARY=1 to opt in; PI_SHARED_LIVE_MODEL requires pilot authorization)\n");
+	process.stdout.write(
+		"shared-host-live-canary: staged, DEFAULT OFF (set PI_SHARED_LIVE_CANARY=1 to opt in; PI_SHARED_LIVE_MODEL requires pilot authorization)\n",
+	);
 	process.exit(0);
 }
 

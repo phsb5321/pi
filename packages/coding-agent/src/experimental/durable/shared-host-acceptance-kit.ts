@@ -4,7 +4,7 @@
  * open/attach/invoke wiring over the seam (one copy).
  */
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
-import type { InProcessSessionIdentity, SessionMetadata } from "@earendil-works/pi-server";
+import type { SessionMetadata } from "@earendil-works/pi-server";
 
 export type Invoke = (id: string, member: string, args?: unknown[]) => Promise<unknown>;
 
@@ -13,7 +13,11 @@ export interface OpenableHost {
 		openSession(
 			metadata: SessionMetadata,
 			context: unknown,
-		): Promise<{ attachClient: (context: unknown) => Promise<{ invokeService: (call: unknown, publish: unknown, ctx: unknown) => Promise<unknown> }> }>;
+		): Promise<{
+			attachClient: (
+				context: unknown,
+			) => Promise<{ invokeService: (call: unknown, publish: unknown, ctx: unknown) => Promise<unknown> }>;
+		}>;
 	};
 }
 
@@ -35,10 +39,14 @@ export function makeChecks(): { check: (label: string, condition: boolean) => vo
 }
 
 export async function openAttachedSessions(host: OpenableHost, ids: readonly string[]): Promise<Invoke> {
-	const attachments = new Map<string, { invokeService: (call: unknown, publish: unknown, ctx: unknown) => Promise<unknown> }>();
+	const attachments = new Map<
+		string,
+		{ invokeService: (call: unknown, publish: unknown, ctx: unknown) => Promise<unknown> }
+	>();
 	for (const id of ids) {
 		const handle = await host.host.openSession({ id }, BACKGROUND_CONTEXT);
 		attachments.set(id, await handle.attachClient(BACKGROUND_CONTEXT));
 	}
-	return (id, member, args = []) => attachments.get(id)!.invokeService({ member, args }, async () => undefined, BACKGROUND_CONTEXT);
+	return (id, member, args = []) =>
+		attachments.get(id)!.invokeService({ member, args }, async () => undefined, BACKGROUND_CONTEXT);
 }

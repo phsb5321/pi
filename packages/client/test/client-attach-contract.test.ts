@@ -1,9 +1,9 @@
 import type { JsonValue } from "@earendil-works/chord";
-import type { RequestEnvelope, ServerId } from "@earendil-works/pi-protocol";
+import type { RequestEnvelope, ServerId, SessionTarget } from "@earendil-works/pi-protocol";
 import { describe, expect, test } from "vitest";
 import { attachSession, attachSessions, requireSessionTarget } from "../src/client-attach.ts";
+import { Client, DisconnectedError } from "../src/index.ts";
 import { createLazyThinClient } from "../src/thin-client.ts";
-import { Client, DisconnectedError, type SessionTarget } from "../src/index.ts";
 import { MemoryByteServer } from "./support.ts";
 
 const serverId: ServerId = "00000000-0000-4000-8000-000000000001";

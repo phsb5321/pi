@@ -22,15 +22,15 @@ import { unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createThinClient } from "@earendil-works/pi-client";
 import {
-	SharedHostCore,
 	createInProcessRuntime,
 	type InProcessEngineFactory,
 	type InProcessSessionAttachment,
 	type InProcessSessionEngine,
 	type InProcessSessionIdentity,
+	SharedHostCore,
 } from "@earendil-works/pi-server";
-import { createThinClient } from "@earendil-works/pi-client";
 
 // ── the thin-client interface (pD implements the real leg against this) ─────
 export interface ThinClient {
@@ -70,7 +70,7 @@ function syntheticEngine(identity: InProcessSessionIdentity): InProcessSessionEn
 			return {
 				async invokeService(call) {
 					const member = (call as { member?: unknown }).member;
-					const args = Array.isArray((call as { args?: unknown }).args) ? (call as { args: unknown[] }).args : [];
+					const args = call.args;
 					if (member === "submit") {
 						transcript.push(String(args[0] ?? ""));
 						return { ok: true };
@@ -110,7 +110,8 @@ function printMeasured(): void {
 			encoding: "utf8",
 		});
 		const out = String(run.stdout ?? "");
-		if (out.trim().length === 0) throw new Error(`mem-probe produced no measured output (status ${String(run.status)})`);
+		if (out.trim().length === 0)
+			throw new Error(`mem-probe produced no measured output (status ${String(run.status)})`);
 		for (const line of out.split("\n")) {
 			if (line.length > 0) process.stdout.write(`mem-probe: ${line}\n`);
 		}

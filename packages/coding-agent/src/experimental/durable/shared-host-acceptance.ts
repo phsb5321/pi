@@ -29,10 +29,8 @@
 import { existsSync, mkdirSync, mkdtempSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
-import type { SessionMetadata } from "@earendil-works/pi-server";
-import { createSharedHostMain } from "./shared-host-main.ts";
 import { makeChecks, openAttachedSessions } from "./shared-host-acceptance-kit.ts";
+import { createSharedHostMain } from "./shared-host-main.ts";
 
 const harness = makeChecks();
 const check = harness.check;
@@ -80,13 +78,21 @@ check(
 // Item 2 (no cross-session leaks): each view stayed bound to its opener.
 check(
 	"serverServices: views never leak across sessions (identity bound to opener)",
-	views.every((entry, index) => entry.session.id === sessionIds[index] && entry.session.id !== sessionIds[(index + 1) % ids.length]),
+	views.every(
+		(entry, index) =>
+			entry.session.id === sessionIds[index] && entry.session.id !== sessionIds[(index + 1) % ids.length],
+	),
 );
 check(
 	"serverServices: engine identities are per session (3 distinct, seam-tracked)",
 	(() => {
-		const identities = (host.runtime as never as { control: { identities: () => Array<{ sessionId: string }> } }).control.identities();
-		return identities.length === ids.length && new Set(identities.map((identity) => identity.sessionId)).size === ids.length;
+		const identities = (
+			host.runtime as never as { control: { identities: () => Array<{ sessionId: string }> } }
+		).control.identities();
+		return (
+			identities.length === ids.length &&
+			new Set(identities.map((identity) => identity.sessionId)).size === ids.length
+		);
 	})(),
 );
 
@@ -102,7 +108,14 @@ check(
 console.log(
 	`CTXDEFER ${JSON.stringify({
 		hostStart: ["SharedHostCore", "InProcessRuntime (seam)"],
-		perSessionOnOpen: ["selectSession", "ExecutionEnvs", "ModelRuntime.create", "SettingsManager.create", "createCodingRegistry", "Harness.open"],
+		perSessionOnOpen: [
+			"selectSession",
+			"ExecutionEnvs",
+			"ModelRuntime.create",
+			"SettingsManager.create",
+			"createCodingRegistry",
+			"Harness.open",
+		],
 		perCall: ["conversation reads (view.entries via DurableView)", "controller ops"],
 		note: "W1/E durable-context axis: all durable context work is deferred to per-session open / per-call; the host start carries none. Staged per-session-cwd resolver completes cwd-level config isolation (next commit).",
 	})}`,

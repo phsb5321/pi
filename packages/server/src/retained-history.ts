@@ -41,8 +41,8 @@ export type HydrateSession = (
 	identity: InProcessSessionIdentity,
 ) => Promise<{
 	engine: InProcessSessionEngine;
-	releaseResidency: () => void;
-	resumeResidency: () => void;
+	releaseResidency: () => void | Promise<void>;
+	resumeResidency: () => void | Promise<void>;
 }>;
 
 /**
@@ -50,7 +50,7 @@ export type HydrateSession = (
  * the engine once per generation; `releaseResidency` drops the reclaimable
  * engine/context residency at park; the first call after park rehydrates.
  */
-export type ParkableEngine = InProcessSessionEngine & { park(): void };
+export type ParkableEngine = InProcessSessionEngine & { park(): Promise<void> };
 
 export function withRetainedHistory(
 	hydrate: HydrateSession,
@@ -63,9 +63,15 @@ export function withRetainedHistory(
 		async open(metadata: SessionMetadata, identity: InProcessSessionIdentity) {
 			const { engine, releaseResidency, resumeResidency } = await hydrate(metadata, identity);
 			let parked = false;
+			let closed = false;
+			let closing: Promise<void> | undefined;
+			const assertOpen = (): void => {
+				if (closed) throw new Error("retained-history: engine is closed");
+			};
 			let rehydrating: Promise<void> | undefined;
 
 			const ensureHydrated = async (): Promise<void> => {
+				assertOpen();
 				if (!parked) return;
 				if (rehydrating) return rehydrating;
 				const attempt = (async () => {
@@ -76,7 +82,7 @@ export function withRetainedHistory(
 					}
 					inFlightHydrations += 1;
 					try {
-						resumeResidency();
+						await resumeResidency();
 						policy.onHydrate?.(metadata.id);
 						parked = false;
 					} finally {
@@ -97,25 +103,30 @@ export function withRetainedHistory(
 			};
 
 			/** Park the session: release reclaimable engine/context residency. */
-			const park = (): void => {
+			const park = async (): Promise<void> => {
+				assertOpen();
 				if (parked) return;
 				parked = true;
-				releaseResidency();
+				// Wrapper-wide await (PORT-PI-1241): async reclaim proof requires the
+				// release/resume callbacks to be awaited, not fired and forgotten.
+				await releaseResidency();
 				policy.onPark?.(metadata.id);
 			};
 
 			const attach: Attach = async (context) => {
 				await ensureHydrated();
+				assertOpen();
 				const attachment = await engine.attach(context);
 				return {
 					async invokeService(call, publish, callContext) {
 						// Reserved member: the policy-level park entry rides the existing
 						// service seam (no new protocol surface).
 						if (String((call as { member?: unknown }).member ?? "") === "rh:park") {
-							park();
+							await park();
 							return { parked: true };
 						}
 						await ensureHydrated();
+						assertOpen();
 						// Stream/publish, input (args), and cancellation (abortSignal) pass
 						// through unchanged across park/rehydrate.
 						return attachment.invokeService(call, publish, callContext);
@@ -127,13 +138,23 @@ export function withRetainedHistory(
 			};
 
 			return {
+				...engine,
 				identity: engine.identity,
 				terminated: engine.terminated,
 				attach,
 				async close(context) {
 					// Writer-once: close releases the writer exactly once regardless of
 					// park state (crash recovery semantics unchanged).
-					await engine.close(context);
+					if (closing !== undefined) return closing;
+					closed = true;
+					closing = (async () => {
+						try {
+							await rehydrating;
+						} finally {
+							await engine.close(context);
+						}
+					})();
+					return closing;
 				},
 				// The park entry point for policy-level retire hooks; the service-level
 				// `rh:park` member is the seam-compatible reach for it.

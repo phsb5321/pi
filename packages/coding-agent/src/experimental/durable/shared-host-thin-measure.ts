@@ -18,6 +18,7 @@ import { unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createLazyThinClient, createThinClient, type ThinClient } from "@earendil-works/pi-client";
 import {
 	createInProcessRuntime,
 	type InProcessEngineFactory,
@@ -25,7 +26,6 @@ import {
 	type InProcessSessionEngine,
 	type InProcessSessionIdentity,
 } from "@earendil-works/pi-server";
-import { createLazyThinClient, createThinClient, type ThinClient } from "@earendil-works/pi-client";
 
 function minimalEngine(identity: InProcessSessionIdentity): InProcessSessionEngine {
 	const lines: string[] = [];
@@ -34,7 +34,10 @@ function minimalEngine(identity: InProcessSessionIdentity): InProcessSessionEngi
 		settle = resolve;
 	});
 	const handlers: Record<string, (args: unknown[]) => unknown> = {
-		submit: (args) => (lines.push(String(args[0] ?? "")), { ok: true }),
+		submit: (args) => {
+			lines.push(String(args[0] ?? ""));
+			return { ok: true };
+		},
 		observe: () => [...lines],
 	};
 	const attachment: InProcessSessionAttachment = {
