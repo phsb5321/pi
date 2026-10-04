@@ -87,7 +87,38 @@ export function composeSharedHost(
 	hooks: SharedHostHooks | undefined,
 ): { runtime: InProcessRuntime; core: SharedHostCore; close(): Promise<void> } {
 	const core = new SharedHostCore({ maxSessions: policy.maxSessions }, hooks);
-	const runtime = createInProcessRuntime(factory, {
+	// Presentation glue (1504 fix): the runtime's attach/release IS the
+	// production presentation lifecycle — binding it to core.attach/detach
+	// makes core.isQuiescent prove PRODUCTION quiescence instead of manual
+	// bookkeeping.
+	const glued: InProcessEngineFactory = {
+		async open(metadata, identity) {
+			const engine = await factory.open(metadata, identity);
+			return {
+				...engine,
+				async attach(attachContext) {
+					core.attach(metadata.id);
+					try {
+						const attachment = await engine.attach(attachContext);
+						return {
+							...attachment,
+							async release(releaseContext) {
+								try {
+									return await attachment.release(releaseContext);
+								} finally {
+									core.detach(metadata.id);
+								}
+							},
+						};
+					} catch (error) {
+						core.detach(metadata.id);
+						throw error;
+					}
+				},
+			};
+		},
+	};
+	const runtime = createInProcessRuntime(glued, {
 		maxSessions: policy.maxSessions,
 		// Retirement stays OFF at the entry (host policy decides later);
 		// the seam enforces writer ownership and the cap regardless.

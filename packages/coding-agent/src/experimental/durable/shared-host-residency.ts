@@ -61,6 +61,16 @@ export interface ResidencyState {
 	readonly live: boolean;
 	/** False after a park: the engine/context reference was dropped (GC-able). */
 	readonly openedRetained: boolean;
+	/** Weak reference to the live engine object (GC evidence for reclaims). */
+	readonly openedRef?: WeakRef<object>;
+}
+
+/** In-process probe of the adapter's ACTUAL state (no dispatch, no rehydrate). */
+export interface ResidencyProbe {
+	readonly busy: number;
+	readonly nativeActive: boolean;
+	readonly live: boolean;
+	readonly openedRetained: boolean;
 }
 
 export interface ResidencyHydrateOptions {
@@ -103,20 +113,42 @@ export function sdkResidencyHydrate(options: ResidencyHydrateOptions): HydrateSe
 		};
 		let cached: ResidentRecord = snapshot(opened);
 		writeFileSync(recordPath(root, metadata.id), `${JSON.stringify(cached)}\n`);
-		const emit = (): void => options.onState?.(metadata.id, { released, resumed, live, openedRetained: opened !== null });
+		let busy = 0;
+		let openedRef: WeakRef<object> | undefined = new WeakRef(opened as object);
+		const emit = (): void =>
+			options.onState?.(metadata.id, { released, resumed, live, openedRetained: opened !== null, openedRef });
+		// ACTUAL native work signal: in-flight dispatches plus the live turn
+		// state (pi.live tool slots pending/running or an unsettled submission).
+		const nativeActive = (): boolean => {
+			const current = opened;
+			if (current === null) return false;
+			const liveDoc = current.view.current().docs["pi.live"] as
+				| { tools?: Array<{ status?: string }>; submissions?: Array<{ settled?: unknown }> }
+				| undefined;
+			if (liveDoc === undefined) return false;
+			const toolRunning = (liveDoc.tools ?? []).some((slot) => slot.status === "pending" || slot.status === "running");
+			const submissionUnsettled = (liveDoc.submissions ?? []).some((submission) => submission.settled === undefined);
+			return toolRunning || submissionUnsettled;
+		};
+		const probe = (): ResidencyProbe => ({ busy, nativeActive: nativeActive(), live, openedRetained: opened !== null });
 
 		const dispatch = async (call: { member?: unknown; args?: unknown }): Promise<unknown> => {
-			await gate;
-			const member = typeof call.member === "string" ? call.member : "";
-			// Adapter-state query works regardless of residency (it is not an
-			// engine call); everything else needs the engine live.
-			if (member === "residency") return { ...cached, released, resumed, live, openedRetained: opened !== null };
-			const current = opened;
-			if (!live || current === null) throw new Error(`residency: ${metadata.id} engine residency is not live`);
-			return dispatchDurableMember(current, call);
+			busy += 1;
+			try {
+				await gate;
+				const member = typeof call.member === "string" ? call.member : "";
+				// Adapter-state query works regardless of residency (it is not an
+				// engine call); everything else needs the engine live.
+				if (member === "residency") return { ...cached, released, resumed, live, openedRetained: opened !== null, busy, nativeActive: nativeActive() };
+				const current = opened;
+				if (!live || current === null) throw new Error(`residency: ${metadata.id} engine residency is not live`);
+				return dispatchDurableMember(current, call);
+			} finally {
+				busy -= 1;
+			}
 		};
 
-		const engine: InProcessSessionEngine = durableEngineShell(
+		const engine = Object.assign(durableEngineShell(
 			identity,
 			dispatch,
 			// Writer-once: the writer releases here, exactly once per engine.
@@ -129,7 +161,7 @@ export function sdkResidencyHydrate(options: ResidencyHydrateOptions): HydrateSe
 					live = false;
 				}
 			},
-		);
+		), { residencyProbe: probe }) as InProcessSessionEngine & { residencyProbe: () => ResidencyProbe };
 
 		return {
 			engine,
@@ -160,6 +192,7 @@ export function sdkResidencyHydrate(options: ResidencyHydrateOptions): HydrateSe
 						// NATIVE continuation: same cwd, same persisted store/history.
 						const reopened = await openDurable({ cwd, continueSession: true });
 						opened = reopened;
+						openedRef = new WeakRef(reopened as object);
 						cached = snapshot(reopened);
 						writeFileSync(recordPath(root, metadata.id), `${JSON.stringify(cached)}\n`);
 						live = true;
@@ -178,7 +211,7 @@ export interface SharedHostResidencyOptions {
 	readonly maxConcurrentHydrations?: number;
 }
 
-export type ParkOutcome = "parked" | "refused-not-quiescent" | "unknown-session";
+export type ParkOutcome = "parked" | "refused-not-quiescent" | "refused-active-work" | "unknown-session";
 
 export interface SharedHostResidency {
 	readonly runtime: ReturnType<typeof createInProcessRuntime>;
@@ -198,11 +231,16 @@ export async function createSharedHostResidency(options: SharedHostResidencyOpti
 	const factory: InProcessEngineFactory = withRetainedHistory(sdkResidencyHydrate(options.hydrate), {
 		maxConcurrentHydrations: options.maxConcurrentHydrations ?? 4,
 	});
-	const parks = new Map<string, () => void>();
+	const parks = new Map<string, { park: () => void; probe: () => ResidencyProbe }>();
+	let closed = false;
 	const gated: InProcessEngineFactory = {
 		async open(metadata, identity) {
 			const engine = await factory.open(metadata, identity);
-			parks.set(metadata.id, (engine as { park?: () => void }).park ?? (() => undefined));
+			const probed = engine as { park?: () => void; residencyProbe?: () => ResidencyProbe };
+			parks.set(metadata.id, {
+				park: probed.park ?? (() => undefined),
+				probe: probed.residencyProbe ?? (() => ({ busy: 0, nativeActive: false, live: false, openedRetained: false })),
+			});
 			return engine;
 		},
 	};
@@ -211,14 +249,23 @@ export async function createSharedHostResidency(options: SharedHostResidencyOpti
 		runtime: composed.runtime,
 		core: composed.core,
 		parkWhenQuiescent(sessionId: string): ParkOutcome {
-			const park = parks.get(sessionId);
-			if (park === undefined) return "unknown-session";
-			// Existing lifecycle gate: zero presentations = quiescent.
+			const entry = parks.get(sessionId);
+			if (entry === undefined) return "unknown-session";
+			// Existing lifecycle gate: zero presentations = quiescent (now proven
+			// by production attach/release binding in composeSharedHost).
 			if (!composed.core.isQuiescent(sessionId)) return "refused-not-quiescent";
-			park();
+			// ACTIVE NATIVE WORK BLOCKS PARK: in-flight dispatches or a live turn
+			// (pi.live tool slots/submissions) — read from the actual engine state.
+			const state = entry.probe();
+			if (state.busy > 0 || state.nativeActive) return "refused-active-work";
+			entry.park();
 			return "parked";
 		},
 		async close(): Promise<void> {
+			// Idempotent teardown: a second close resolves without re-entering the
+			// seam (writer-once at the engine level; no double release).
+			if (closed) return;
+			closed = true;
 			await composed.close();
 		},
 	};
