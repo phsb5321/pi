@@ -72,12 +72,20 @@ const toolTarget = join(root, "tool-target.txt");
 writeFileSync(toolTarget, "native-tool-payload-42\n");
 
 function report(): never {
-	check("acceptance completeness: every required assertion executed", executed === REQUIRED_CASES);
+	// The completeness assertion counts ITSELF first, then compares: the
+	// previous version compared at the call site before this check ran.
+	executed += 1;
+	if (executed === REQUIRED_CASES) {
+		process.stdout.write(`PASS acceptance completeness: every required assertion executed (${executed}/${REQUIRED_CASES})\n`);
+	} else {
+		failures += 1;
+		process.stderr.write(`FAIL acceptance completeness: ${executed}/${REQUIRED_CASES} executed\n`);
+	}
 	if (failures > 0) {
 		process.stderr.write(`HISTORY-RECLAIM OVERLAY: ${failures} FAILURE(S) - required acceptance NOT met\n`);
 		process.exit(3);
 	}
-	process.stdout.write("HISTORY-RECLAIM OVERLAY: ALL PASS (run result - see the case labels; deterministic local faux provider through the Harness/Models pattern; no paid or external calls)\n`);
+	process.stdout.write("HISTORY-RECLAIM OVERLAY: ALL PASS (run result - see the case labels; deterministic local faux provider through the Harness/Models pattern; no paid or external calls)\n");
 	process.exit(0);
 }
 
@@ -89,7 +97,11 @@ function report(): never {
 	const setup = chatSetup({ tokensPerSecond: 400, tokenSize: { min: 1, max: 1 } });
 	// The registered tool the canned tool-call targets; its arguments are
 	// exactly {path} (matching THIS registration, per the packet).
+	// The barrier is armed ONLY for the cancellable turn (the earlier version
+	// deadlocked the first tool case on an unresolved gate).
 	const gate = deferred<void>();
+	const gateReached = deferred<void>();
+	let gateArmed = false;
 	addTool(
 		setup.registry,
 		defineTool({
@@ -100,7 +112,10 @@ function report(): never {
 				const { readFileSync } = await import("node:fs");
 				const text = readFileSync(String((args as { path: string }).path), "utf8");
 				api.output(text);
-				await gate.promise; // the awaited ACTIVE barrier (the turn is mid-tool)
+				if (gateArmed) {
+					gateReached.resolve(); // turn-local evidence: THIS turn reached the barrier
+					await gate.promise;
+				}
 				return {};
 			},
 		}),
@@ -145,16 +160,10 @@ function report(): never {
 	]);
 	const controller = new AbortController();
 	const turnContext = { ...context, abortSignal: controller.signal } as typeof context;
+	gateArmed = true; // arm the barrier for THIS cancellable turn only
 	const turn = chat.submit({ type: "input", content: "turn to cancel" }, turnContext);
-	await eventually(() => gate !== undefined); // the tool gate is reached when the tool started
-	// The tool-start evidence: the turn is observably ACTIVE (mid-tool, the
-	// gate is awaited inside execute) before the abort.
-	let activeObserved = false;
-	for (const batch of batches) {
-		for (const event of batch) {
-			if (event.type === "message_update" || event.type === "tool_start") activeObserved = true;
-		}
-	}
+	await gateReached.promise; // turn-local evidence: the barrier was reached (the turn is mid-tool)
+	const activeObserved = true;
 	controller.abort();
 	const outcome = await Promise.race([
 		turn.then(() => "completed").catch((error: unknown) => `error:${String(error)}`),
