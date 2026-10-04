@@ -30,6 +30,7 @@ import {
 	type InProcessSessionEngine,
 	type InProcessSessionIdentity,
 } from "@earendil-works/pi-server";
+import { createThinClient } from "@earendil-works/pi-client";
 
 // ── the thin-client interface (pD implements the real leg against this) ─────
 export interface ThinClient {
@@ -41,8 +42,8 @@ export interface ThinClient {
 
 type Invoke = (call: { member: string; args?: unknown[] }) => Promise<unknown>;
 
-/** Synthetic thin client: the canary's provider stand-in on the ThinClient interface. */
-function syntheticThinClient(sessionId: string, invoke: Invoke): ThinClient {
+/** Synthetic thin client: the canary's labeled provider stand-in (fallback reference) on the ThinClient interface. */
+export function syntheticThinClient(sessionId: string, invoke: Invoke): ThinClient {
 	return {
 		sessionId,
 		async submit(text: string): Promise<void> {
@@ -145,7 +146,9 @@ async function run(): Promise<number> {
 		core.attach(id);
 		const invoke: Invoke = (call) =>
 			attachment.invokeService(call as never, () => undefined, {} as never) as Promise<unknown>;
-		clients.push(syntheticThinClient(id, invoke));
+		// Real thin-client leg (pD, @earendil-works/pi-client); syntheticThinClient
+		// stays exported as the labeled provider stand-in on the same seam.
+		clients.push(createThinClient(id, invoke));
 	}
 	const [c1a, c1b, c2, c3] = [clients[0]!, clients[0]!, clients[1]!, clients[2]!];
 	assert.ok(clients.length >= 3, "thin clients attached across sessions");
