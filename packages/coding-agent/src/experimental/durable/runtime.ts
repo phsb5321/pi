@@ -81,6 +81,11 @@ export interface DurableController {
 export interface OpenDurableOptions {
 	readonly cwd?: string;
 	readonly continueSession?: boolean;
+	/**
+	 * Application-owned models, reused across native sessions and continuation.
+	 * Defaults to ModelRuntime.create().
+	 */
+	readonly modelRuntime?: ModelRuntime;
 }
 
 export interface OpenDurableResult {
@@ -126,7 +131,7 @@ export async function openDurable(options: OpenDurableOptions = {}): Promise<Ope
 	const envs = new ExecutionEnvs(location.cwd);
 	let harness: Harness | undefined;
 	try {
-		const modelRuntime = await ModelRuntime.create();
+		const modelRuntime = options.modelRuntime ?? (await ModelRuntime.create());
 		const settingsManager = SettingsManager.create(location.cwd);
 		configureHarnessHttp(settingsManager);
 		const settings = createHarnessSettings(settingsManager);

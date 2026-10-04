@@ -1,7 +1,7 @@
 import type { JsonValue, RemoteServiceTransport, ServiceCall } from "@earendil-works/chord";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import type { Client } from "./client.ts";
-import { attachSession, type AttachedSession } from "./client-attach.ts";
+import { type AttachedSession, attachSession } from "./client-attach.ts";
 
 /**
  * Real thin-client leg (pD) for the shared-host canary seam

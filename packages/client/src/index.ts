@@ -1,5 +1,9 @@
 export { Client, createClientServiceTransport } from "./client.ts";
+export type { AttachedSession, AttachSessionsOptions } from "./client-attach.ts";
+export { attachSession, attachSessions, requireSessionTarget, SESSION_MANAGEMENT_SERVICE } from "./client-attach.ts";
 export { ClientDisposedError, DisconnectedError, ServerError } from "./errors.ts";
+export type { Invoke, LazyThinClientOptions, ThinClient } from "./thin-client.ts";
+export { createLazyThinClient, createSessionInvoke, createThinClient } from "./thin-client.ts";
 export type { ByteTransport, ByteTransportFactory, ByteTransportHandlers } from "./transport.ts";
 export type {
 	AttachmentChangeListener,
@@ -10,7 +14,3 @@ export type {
 	ServiceSubscription,
 	Unsubscribe,
 } from "./types.ts";
-export { attachSession, attachSessions, requireSessionTarget, SESSION_MANAGEMENT_SERVICE } from "./client-attach.ts";
-export type { AttachedSession, AttachSessionsOptions } from "./client-attach.ts";
-export { createLazyThinClient, createSessionInvoke, createThinClient } from "./thin-client.ts";
-export type { Invoke, LazyThinClientOptions, ThinClient } from "./thin-client.ts";

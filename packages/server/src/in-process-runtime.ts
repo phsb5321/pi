@@ -1,10 +1,5 @@
 import type { Context } from "@earendil-works/chord";
-import {
-	createSharedProcessHost,
-	type SharedProcessCapacityError,
-	type SharedProcessPolicy,
-	type WorkerIdentity,
-} from "./shared-process.ts";
+import { createSharedProcessHost, type SharedProcessPolicy, type WorkerIdentity } from "./shared-process.ts";
 import type {
 	MaybePromise,
 	RoutedSessionAttachment,
@@ -246,5 +241,5 @@ export function createInProcessRuntime(
 	return { host: trackedHost, control };
 }
 
-export { SharedProcessCapacityError } from "./shared-process.ts";
 export type { SharedProcessPolicy, WorkerIdentity } from "./shared-process.ts";
+export { SharedProcessCapacityError } from "./shared-process.ts";

@@ -33,6 +33,7 @@ import {
 } from "@earendil-works/pi-ai";
 import {
 	type AgentEvent,
+	LiveDoc,
 	MemoryStorage,
 	defineTool,
 	watchEvents,
@@ -40,12 +41,13 @@ import {
 import { chatSetup, openChat, allEntries, waitFor } from "../packages/durable/test/chat-support.ts";
 import { addTool } from "../packages/durable/test/harness-support.ts";
 import { context } from "../packages/durable/test/session-support.ts";
+import { withRetainedHistory } from "../packages/server/src/retained-history.ts";
 import { aborted, deferred } from "../packages/durable/test/task-support.ts";
 
-// 11 case checks (5 streaming/tool/cancel + 2 restart + 3 park/resume/
-// reclaim + the strict tool-result lineage) plus the completeness check
-// itself = 12 executed assertions.
-const REQUIRED_CASES = 12;
+// 12 case checks (5 streaming/tool/cancel + 2 restart + 3 park/resume/
+// reclaim + the strict tool-result lineage + the terminal-aborted task)
+// plus the completeness check itself = 13 executed assertions.
+const REQUIRED_CASES = 13;
 let executed = 0;
 let failures = 0;
 function check(label: string, condition: boolean): void {
@@ -109,7 +111,7 @@ writeFileSync(toolTarget, "native-tool-payload-42\n");
 // three cases share a live turn lifecycle and never close mid-assert).
 // ==========================================================================
 {
-	const setup = chatSetup({ tokensPerSecond: 400, tokenSize: { min: 1, max: 1 } });
+	const setup = chatSetup({ tokensPerSecond: 100, tokenSize: { min: 1, max: 1 } });
 	// The barrier is armed ONLY for the cancellable turn.
 	const gate = deferred<void>();
 	const gateReached = deferred<void>();
@@ -177,19 +179,31 @@ writeFileSync(toolTarget, "native-tool-payload-42\n");
 		});
 		const toolText = JSON.stringify(await allEntries(chat));
 		check("real-tool: the registered tool-call executed with matching arguments", toolText.includes("read-fixture"));
-		// Strict tool-result lineage (not a marker string in any entry): the
-		// tool_execution_end event for callId c1 carries the pi.tool-result
-		// entry, and its terminal status is completed.
-		const toolEnd = batches
-			.flat()
-			.find((event) => (event as unknown as { type?: string; toolCallId?: string }).type === "tool_execution_end" && (event as unknown as { toolCallId?: string }).toolCallId === "c1") as
-			| { type: string; toolCallId: string; entry?: { kind?: string; status?: string }; status?: string }
-			| undefined;
+		// Strict tool-result lineage through the REAL records (no default
+		// success, missing records FAIL): the tool_execution_end event for
+		// callId c1 carries the pi.tool-result entry; the entry's byTaskId
+		// resolves to a terminal completed task in storage; the entry's
+		// ToolResultMessage has isError false and the payload content.
+		const toolEnd = batches.flat().find(
+			(event): event is Extract<AgentEvent, { type: "tool_execution_end" }> =>
+				event.type === "tool_execution_end" && event.toolCallId === "c1",
+		);
+		const resultEntry = toolEnd?.entry;
+		const resultMessage = resultEntry?.model?.[0];
+		const toolTask = resultEntry?.byTaskId === undefined ? undefined : await storage.task(resultEntry.byTaskId, context);
+		const input = toolTask?.input;
+		const outcome = toolTask?.state.outcome;
 		const lineageOk =
-			toolEnd !== undefined &&
-			toolEnd.entry?.kind === "pi.tool-result" &&
-			(toolEnd.entry?.status ?? toolEnd.status ?? "completed") === "completed";
-		check("real-tool: strict tool-result lineage (tool_execution_end c1 -> pi.tool-result, terminal completed)", lineageOk);
+			resultEntry?.kind === "pi.tool-result" &&
+			resultMessage?.role === "toolResult" && resultMessage.toolCallId === "c1" &&
+			resultMessage.isError === false && JSON.stringify(resultMessage.content).includes("native-tool-payload-42") &&
+			toolTask?.kind === "pi.tool" && toolTask.conversationId === chat.id &&
+			input !== null && typeof input === "object" && !Array.isArray(input) && input.callId === "c1" &&
+			toolTask.state.status === "terminal" && outcome?.status === "completed" &&
+			outcome.result !== null && typeof outcome.result === "object" && !Array.isArray(outcome.result) &&
+			outcome.result.entryId === resultEntry.id;
+		check("real-tool: event/result/task lineage is terminal completed with the actual result entry", lineageOk);
+
 		check("real-tool: the tool result content is in the native entries", toolText.includes("native-tool-payload-42") && toolText.includes("tool-saw-native-tool-payload-42"));
 
 		// --- REAL CANCEL-OF-ACTIVE-TURN: the barrier holds the turn mid-tool;
@@ -204,16 +218,29 @@ writeFileSync(toolTarget, "native-tool-payload-42\n");
 		const cancellable = await chat.submit({ type: "input", content: "turn to cancel" }, turnContext);
 		await gateReached.promise; // turn-local evidence: the barrier was reached (mid-tool)
 		const activeObserved = true;
+		// The active task id captured WHILE the turn is live (the canonical
+		// harness-events pattern uses snapshot(LiveDoc).run.taskId).
+		const live = await harness.snapshot(LiveDoc, chat.id, context);
+		const cancelledTaskId = live?.run?.taskId;
 		// The NATIVE abort (Conversation.abort -> scheduler.abortConversation,
-		// harness/harness.ts): not a synthetic test-signal race.
-		await chat.root.abort(context);
+		// harness/harness.ts:144): not a synthetic test-signal race.
+		await chat.abort(context);
 		const settled = await cancellable.wait(context); // SettledSubmissionRecord
 		const settledDespiteAbort = JSON.stringify(await allEntries(chat)).includes("must-not-settle");
+		// The terminal proof is the REAL storage task record (signal
+		// observation alone is not terminal evidence).
+		const cancelledTask = cancelledTaskId === undefined ? undefined : await storage.task(cancelledTaskId, context);
+		const taskTerminalAborted =
+			cancelledTask !== undefined &&
+			cancelledTask.state.status === "terminal" &&
+			cancelledTask.abortRequested === true &&
+			cancelledTask.state.outcome.status === "aborted";
 		check("cancel-of-active-turn: the turn was ACTIVE (mid-tool at the barrier) at abort time", activeObserved);
 		check(
 			"cancel-of-active-turn: the native Conversation.abort settled the turn (submission unanswered, tool abortSignal observed, no settle)",
 			settled.status === "unanswered" && toolSawAbort === true && !settledDespiteAbort,
 		);
+		check("cancel-of-active-turn: the captured task is terminal-aborted in real storage (not signal-only)", taskTerminalAborted);
 		gate.resolve();
 	} finally {
 		// Native cleanup on every path (success or failure).
@@ -273,7 +300,6 @@ writeFileSync(toolTarget, "native-tool-payload-42\n");
 		await first.harness.close(context);
 
 		// The wrapper's HydrateSession mapped to the real SDK close/re-open.
-		const { withRetainedHistory } = await import("../packages/server/src/retained-history.ts");
 		let live: Awaited<ReturnType<typeof openChat>> | undefined;
 		let realReleases = 0;
 		let realResumes = 0;

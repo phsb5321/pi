@@ -7,16 +7,17 @@
  *
  *   node --experimental-strip-types test/in-process-retained-history.ts
  */
-import net from "node:net";
+
 import { createHash } from "node:crypto";
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import net from "node:net";
 import { join } from "node:path";
-import type { ServiceCall } from "@earendil-works/chord";
-import type { InProcessEngineFactory, InProcessSessionEngine, InProcessSessionIdentity } from "../src/in-process-runtime.ts";
+import type { JsonValue, ServiceCall } from "@earendil-works/chord";
+import type { InProcessSessionEngine, InProcessSessionIdentity } from "../src/in-process-runtime.ts";
 import { createInProcessRuntime } from "../src/in-process-runtime.ts";
 import type { SessionMetadata } from "../src/types.ts";
-import { Checks, CONTEXT, identityFor, metadata, WriterTracker } from "./contract-fixture.ts";
-import { withRetainedHistory, type HydrateSession } from "./retained-history-park.ts";
+import { Checks, CONTEXT, metadata, WriterTracker } from "./contract-fixture.ts";
+import { type HydrateSession, withRetainedHistory } from "./retained-history-park.ts";
 
 type Ledger = { path: string };
 const row = (ledger: Ledger, sessionId: string, seq: number, kind: string, payload: string): void => {
@@ -48,9 +49,13 @@ function instrumentedFactory(ledger: Ledger, tracker: WriterTracker, counters: {
 		const engine: InProcessSessionEngine = {
 			identity,
 			attach: async () => ({
-				async invokeService(call: ServiceCall, publish: unknown, context: { abortSignal?: AbortSignal }) {
+				async invokeService(
+					call: ServiceCall,
+					publish: unknown,
+					context: { abortSignal?: AbortSignal },
+				): Promise<JsonValue | undefined> {
 					const method = String((call as { member?: unknown }).member ?? "");
-					const args = (call as { args?: unknown[] }).args ?? [];
+					const args = call.args;
 					if (!resident) throw new Error("engine residency released without rehydrate");
 					switch (method) {
 						case "write": {
@@ -66,7 +71,10 @@ function instrumentedFactory(ledger: Ledger, tracker: WriterTracker, counters: {
 							return { seq };
 						}
 						case "emit-event":
-							await (publish as (id: string, update: unknown) => unknown)?.("events", { sessionId: meta.id, tag: String(args[0] ?? "") });
+							await (publish as (id: string, update: unknown) => unknown)?.("events", {
+								sessionId: meta.id,
+								tag: String(args[0] ?? ""),
+							});
 							return { published: true };
 						case "status": {
 							const entries = rows(ledger, meta.id);
@@ -128,7 +136,9 @@ const originalConnect = net.connect;
 async function main(): Promise<void> {
 	// Exact source provenance: which wrapper module this composed run loaded.
 	const wrapperBytes = readFileSync(new URL("./retained-history-park.ts", import.meta.url));
-	process.stdout.write(`provenance: wrapper=retained-history-park.ts sha256=${createHash("sha256").update(wrapperBytes).digest("hex").slice(0, 16)} size=${wrapperBytes.length}\n`);
+	process.stdout.write(
+		`provenance: wrapper=retained-history-park.ts sha256=${createHash("sha256").update(wrapperBytes).digest("hex").slice(0, 16)} size=${wrapperBytes.length}\n`,
+	);
 	const tracker = new WriterTracker();
 	const counters = { parked: 0, rehydrated: 0 };
 	const { host, control } = createInProcessRuntime(
@@ -144,34 +154,56 @@ async function main(): Promise<void> {
 	// Retained vs cold history behavior.
 	const handle = await host.openSession(metadata("rh-1"), CONTEXT);
 	const attach1 = await handle.attachClient(CONTEXT);
-	await attach1.invokeService({ serviceId: "rh", member: "write", args: ["v1"] } as unknown as ServiceCall, async () => undefined, CONTEXT);
+	await attach1.invokeService(
+		{ serviceId: "rh", member: "write", args: ["v1"] } as unknown as ServiceCall,
+		async () => undefined,
+		CONTEXT,
+	);
 	// The policy-level park entry rides the existing service seam (rh:park).
 	const parkViaSeam = async (target: Awaited<ReturnType<typeof host.openSession>>) => {
-		await (await target.attachClient(CONTEXT)).invokeService({ serviceId: "rh", member: "rh:park", args: [] } as unknown as ServiceCall, async () => undefined, CONTEXT);
+		await (await target.attachClient(CONTEXT)).invokeService(
+			{ serviceId: "rh", member: "rh:park", args: [] } as unknown as ServiceCall,
+			async () => undefined,
+			CONTEXT,
+		);
 	};
 	await parkViaSeam(handle);
 	checks.check("retained-history: park entry rides the service seam (no new protocol)", true);
-	const statusAfterPark = (await (await handle.attachClient(CONTEXT)).invokeService(
+	const statusAfterPark = (await (
+		await handle.attachClient(CONTEXT)
+	).invokeService(
 		{ serviceId: "rh", member: "status", args: [] } as unknown as ServiceCall,
 		async () => undefined,
 		CONTEXT,
 	)) as { resident: boolean; rows: number };
-	checks.check("retained-history: parked residency released then rehydrated on demand", counters.parked === 1 && counters.rehydrated >= 1 && statusAfterPark.resident === true);
+	checks.check(
+		"retained-history: parked residency released then rehydrated on demand",
+		counters.parked === 1 && counters.rehydrated >= 1 && statusAfterPark.resident === true,
+	);
 
 	// History preserved across park/rehydrate (the retained record is intact).
-	const status = (await (await handle.attachClient(CONTEXT)).invokeService(
+	const status = (await (
+		await handle.attachClient(CONTEXT)
+	).invokeService(
 		{ serviceId: "rh", member: "status", args: [] } as unknown as ServiceCall,
 		async () => undefined,
 		CONTEXT,
 	)) as { writes: number; duplicates: number[]; opens: number };
-	checks.check("retained-history: history intact across park/rehydrate (writes preserved)", status.writes === 1 && status.duplicates.length === 0);
+	checks.check(
+		"retained-history: history intact across park/rehydrate (writes preserved)",
+		status.writes === 1 && status.duplicates.length === 0,
+	);
 	checks.check("retained-history: writer-once (one open per generation)", status.opens === 1);
 
 	// Stream/input/cancellation preserved: the abort path still works after park.
 	await parkViaSeam(handle);
 	const controller = new AbortController();
 	const cancelled = (await handle.attachClient(CONTEXT))
-		.invokeService({ serviceId: "rh", member: "slow-write", args: ["doomed"] } as unknown as ServiceCall, async () => undefined, { ...CONTEXT, abortSignal: controller.signal })
+		.invokeService(
+			{ serviceId: "rh", member: "slow-write", args: ["doomed"] } as unknown as ServiceCall,
+			async () => undefined,
+			{ ...CONTEXT, abortSignal: controller.signal },
+		)
 		.then(() => "completed")
 		.catch(() => "aborted");
 	setTimeout(() => controller.abort(), 20);
@@ -180,21 +212,33 @@ async function main(): Promise<void> {
 	// Stream semantics preserved: events flow after park/rehydrate.
 	const events: unknown[] = [];
 	const attachStream = await handle.attachClient(CONTEXT);
-	await attachStream.invokeService({ serviceId: "rh", member: "emit-event", args: ["post-park"] } as unknown as ServiceCall, async (_id: string, update: unknown) => {
-		events.push(update);
-	}, CONTEXT);
-	checks.check("retained-history: stream semantics preserved across rehydrate", events.some((event) => JSON.stringify(event).includes("post-park")));
+	await attachStream.invokeService(
+		{ serviceId: "rh", member: "emit-event", args: ["post-park"] } as unknown as ServiceCall,
+		async (_id: string, update: unknown) => {
+			events.push(update);
+		},
+		CONTEXT,
+	);
+	checks.check(
+		"retained-history: stream semantics preserved across rehydrate",
+		events.some((event) => JSON.stringify(event).includes("post-park")),
+	);
 
 	// Repeated park/hydrate cycles (PORT-PI-1214): two full cycles must each
 	// release residency and resume it; the history stays intact throughout.
 	for (let cycle = 1; cycle <= 2; cycle += 1) {
 		await parkViaSeam(handle);
-		const cycleStatus = (await (await handle.attachClient(CONTEXT)).invokeService(
+		const cycleStatus = (await (
+			await handle.attachClient(CONTEXT)
+		).invokeService(
 			{ serviceId: "rh", member: "status", args: [] } as unknown as ServiceCall,
 			async () => undefined,
 			CONTEXT,
 		)) as { resident: boolean; writes: number };
-		checks.check(`retained-history: repeated cycle ${cycle} releases then resumes residency`, cycleStatus.resident === true && cycleStatus.writes === 1);
+		checks.check(
+			`retained-history: repeated cycle ${cycle} releases then resumes residency`,
+			cycleStatus.resident === true && cycleStatus.writes === 1,
+		);
 	}
 
 	// Bounded pool: rehydration storm is refused at the fault/isolation bound.
@@ -206,7 +250,11 @@ async function main(): Promise<void> {
 	await Promise.all(
 		handles.map(async (entry) => {
 			try {
-				await (await entry.attachClient(CONTEXT)).invokeService({ serviceId: "rh", member: "status", args: [] } as unknown as ServiceCall, async () => undefined, CONTEXT);
+				await (await entry.attachClient(CONTEXT)).invokeService(
+					{ serviceId: "rh", member: "status", args: [] } as unknown as ServiceCall,
+					async () => undefined,
+					CONTEXT,
+				);
 			} catch (error) {
 				// Secure failure: only the pool-exhaustion refusal is acceptable here.
 				// Any other error is a real defect and must not be counted as a refusal.
@@ -219,14 +267,19 @@ async function main(): Promise<void> {
 	// refusals) or the synchronous pool admission refused exactly the overflow
 	// (handles.length - maxConcurrentHydrations = 2 with max=2, 4 sessions).
 	// No other value is acceptable (this is not a tautology).
-	checks.check("bounded pool: rehydration bounded by maxConcurrentHydrations (0 if serialized, else exactly the overflow)", poolRefusals === 0 || poolRefusals === handles.length - 2);
+	checks.check(
+		"bounded pool: rehydration bounded by maxConcurrentHydrations (0 if serialized, else exactly the overflow)",
+		poolRefusals === 0 || poolRefusals === handles.length - 2,
+	);
 
 	// Retry-after-rejection (PORT-PI-1214): a rehydrate refused by the pool
 	// must NOT pin failure — after the pool drains, the same session rehydrates.
 	let retryRecovered = 0;
 	for (const entry of handles) {
 		try {
-			const retryStatus = (await (await entry.attachClient(CONTEXT)).invokeService(
+			const retryStatus = (await (
+				await entry.attachClient(CONTEXT)
+			).invokeService(
 				{ serviceId: "rh", member: "status", args: [] } as unknown as ServiceCall,
 				async () => undefined,
 				CONTEXT,
@@ -236,12 +289,18 @@ async function main(): Promise<void> {
 			// still refusing is acceptable only if the pool is saturated again
 		}
 	}
-	checks.check("retained-history: rejected rehydration does not pin failure (retry recovers)", retryRecovered === handles.length);
+	checks.check(
+		"retained-history: rejected rehydration does not pin failure (retry recovers)",
+		retryRecovered === handles.length,
+	);
 
 	// Crash recovery surface: writer released exactly once at close (the
 	// kill-9 ledger semantics remain the recovery source of truth).
 	await control.shutdown(CONTEXT);
-	checks.check("retained-history: writer-once accounting (release exactly once per engine)", tracker.releasedExactlyOnce() && tracker.releases.size === tracker.acquisitions.size);
+	checks.check(
+		"retained-history: writer-once accounting (release exactly once per engine)",
+		tracker.releasedExactlyOnce() && tracker.releases.size === tracker.acquisitions.size,
+	);
 
 	// NO-NETWORK invariant: zero sockets across the whole battery.
 	checks.check("no-network parity: zero socket attempts in the retained-history battery", socketAttempts === 0);

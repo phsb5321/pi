@@ -13,19 +13,23 @@
  * #3). The thin-client/presentation leg is pD's; this entry only hosts
  * engines and books presentation demand via the core.
  */
-import {
+import type {
+	InProcessEngineFactory,
+	InProcessRuntime,
+	InProcessSessionEngine,
+	InProcessSessionIdentity,
+	SessionMetadata,
 	SharedHostCore,
-	createInProcessRuntime,
-	type InProcessEngineFactory,
-	type InProcessRuntime,
-	type InProcessSessionEngine,
-	type InProcessSessionIdentity,
-	type SessionMetadata,
-	type SharedHostHooks,
-	type SharedHostPolicy,
+	SharedHostHooks,
+	SharedHostPolicy,
 } from "@earendil-works/pi-server";
 import { type OpenDurableOptions, type OpenDurableResult, openDurable } from "./runtime.ts";
 import { composeSharedHost, dispatchDurableMember, durableEngineShell } from "./shared-host-dispatch.ts";
+
+export type DurableOptionsResolver = (
+	metadata: SessionMetadata,
+	identity: InProcessSessionIdentity,
+) => OpenDurableOptions | Promise<OpenDurableOptions>;
 
 export interface SharedHostMainOptions {
 	/** Cap policy for the shared host (refuse, never queue). */
@@ -52,7 +56,9 @@ function wrapDurable(identity: InProcessSessionIdentity, opened: OpenDurableResu
 	);
 }
 
-export function durableEngineFactory(options: OpenDurableOptions | DurableOptionsResolver = {}): InProcessEngineFactory {
+export function durableEngineFactory(
+	options: OpenDurableOptions | DurableOptionsResolver = {},
+): InProcessEngineFactory {
 	return {
 		async open(metadata, identity): Promise<InProcessSessionEngine> {
 			// Application-owned per-session context: the resolver carries each

@@ -129,6 +129,7 @@ export function withRetainedHistory(
 			};
 
 			return {
+				...engine,
 				identity: engine.identity,
 				terminated: engine.terminated,
 				attach,

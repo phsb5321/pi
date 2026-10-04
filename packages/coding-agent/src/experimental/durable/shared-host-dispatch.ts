@@ -5,7 +5,10 @@
  * forced — `submit`/`setModel` reach the live controller and are only used
  * when an application explicitly drives them.
  */
+import type { JsonValue } from "@earendil-works/chord";
+import type { ConversationId } from "@earendil-works/pi-durable";
 import {
+	createInProcessRuntime,
 	type InProcessEngineFactory,
 	type InProcessRuntime,
 	type InProcessSessionEngine,
@@ -13,14 +16,24 @@ import {
 	SharedHostCore,
 	type SharedHostHooks,
 	type SharedHostPolicy,
-	createInProcessRuntime,
 } from "@earendil-works/pi-server";
 import type { OpenDurableResult } from "./runtime.ts";
 
 /** Opaque service member map for one durable session engine. */
-export const DURABLE_MEMBERS = new Set(["submit", "compact", "abort", "cycleThinking", "setModel", "switchConversation", "view"]);
+export const DURABLE_MEMBERS = new Set([
+	"submit",
+	"compact",
+	"abort",
+	"cycleThinking",
+	"setModel",
+	"switchConversation",
+	"view",
+]);
 
-export async function dispatchDurableMember(opened: OpenDurableResult, call: { member?: unknown; args?: unknown }): Promise<unknown> {
+export async function dispatchDurableMember(
+	opened: OpenDurableResult,
+	call: { member?: unknown; args?: unknown },
+): Promise<JsonValue | undefined> {
 	const member = typeof call.member === "string" ? call.member : "";
 	const args = Array.isArray(call.args) ? call.args : [];
 	const controller = opened.controller;
@@ -43,9 +56,13 @@ export async function dispatchDurableMember(opened: OpenDurableResult, call: { m
 		case "setModel":
 			await controller.setModel(args[0] as never);
 			return { ok: true };
-		case "switchConversation":
-			await controller.switchConversation(String(args[0] ?? ""));
+		case "switchConversation": {
+			const id = args[0];
+			if (typeof id !== "number" || !Number.isSafeInteger(id) || id < 1)
+				throw new TypeError("Expected a native conversation id");
+			await controller.switchConversation(id as ConversationId);
 			return { ok: true };
+		}
 		case "view": {
 			const view = opened.view.current();
 			return {
@@ -56,14 +73,16 @@ export async function dispatchDurableMember(opened: OpenDurableResult, call: { m
 			};
 		}
 		default:
-			throw new Error(`Unknown shared-host member: ${member || "<empty>"} (allowed: ${[...DURABLE_MEMBERS].join(", ")})`);
+			throw new Error(
+				`Unknown shared-host member: ${member || "<empty>"} (allowed: ${[...DURABLE_MEMBERS].join(", ")})`,
+			);
 	}
 }
 
 /** One copy of the durable engine shell shape (identity/attach/close). */
 export function durableEngineShell(
 	identity: InProcessSessionIdentity,
-	invokeService: (call: { member?: unknown; args?: unknown }) => Promise<unknown>,
+	invokeService: (call: { member?: unknown; args?: unknown }) => Promise<JsonValue | undefined>,
 	close: () => Promise<void>,
 ): InProcessSessionEngine {
 	return {
@@ -87,7 +106,38 @@ export function composeSharedHost(
 	hooks: SharedHostHooks | undefined,
 ): { runtime: InProcessRuntime; core: SharedHostCore; close(): Promise<void> } {
 	const core = new SharedHostCore({ maxSessions: policy.maxSessions }, hooks);
-	const runtime = createInProcessRuntime(factory, {
+	// Presentation glue (1504 fix): the runtime's attach/release IS the
+	// production presentation lifecycle — binding it to core.attach/detach
+	// makes core.isQuiescent prove PRODUCTION quiescence instead of manual
+	// bookkeeping.
+	const glued: InProcessEngineFactory = {
+		async open(metadata, identity, context) {
+			const engine = await factory.open(metadata, identity, context);
+			return {
+				...engine,
+				async attach(attachContext) {
+					core.attach(metadata.id);
+					try {
+						const attachment = await engine.attach(attachContext);
+						return {
+							...attachment,
+							async release(releaseContext) {
+								try {
+									return await attachment.release(releaseContext);
+								} finally {
+									core.detach(metadata.id);
+								}
+							},
+						};
+					} catch (error) {
+						core.detach(metadata.id);
+						throw error;
+					}
+				},
+			};
+		},
+	};
+	const runtime = createInProcessRuntime(glued, {
 		maxSessions: policy.maxSessions,
 		// Retirement stays OFF at the entry (host policy decides later);
 		// the seam enforces writer ownership and the cap regardless.
