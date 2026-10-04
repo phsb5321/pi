@@ -1,0 +1,1 @@
+{"instrument":"mem-probe-bounded","seed":"42","cohort":5,"pids":5,"timeout_s":25,"condition":"advisory","wall_s":3.699,"exit":3,"out_bytes":5068,"stamp":"2026-10-03T02:34:51Z"}
