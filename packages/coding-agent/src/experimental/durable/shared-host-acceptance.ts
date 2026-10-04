@@ -32,16 +32,10 @@ import { join } from "node:path";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import type { SessionMetadata } from "@earendil-works/pi-server";
 import { createSharedHostMain } from "./shared-host-main.ts";
+import { makeChecks, openAttachedSessions } from "./shared-host-acceptance-kit.ts";
 
-let failures = 0;
-function check(label: string, condition: boolean): void {
-	if (condition) {
-		console.log(`PASS ${label}`);
-		return;
-	}
-	failures += 1;
-	console.error(`FAIL ${label}`);
-}
+const harness = makeChecks();
+const check = harness.check;
 
 const root = mkdtempSync(join(tmpdir(), "shared-host-acceptance-"));
 const ids = ["sdk-s1", "sdk-s2", "sdk-s3"];
@@ -59,23 +53,16 @@ const host = await createSharedHostMain({
 	durable: { cwd: root, continueSession: false },
 });
 
+const invoke = await openAttachedSessions(host.runtime as never, ids);
 const views: Array<{ id: string; session: { id: string; directory: string; cwd: string } }> = [];
-const handles = new Map<string, { attachClient: (ctx: never) => Promise<{ invokeService: (call: unknown, publish: unknown, ctx: unknown) => Promise<unknown> }> }>();
 for (const id of ids) {
-	const handle = await (host.runtime as never as { host: { openSession: (m: SessionMetadata, c: unknown) => Promise<unknown> } }).host.openSession({ id }, BACKGROUND_CONTEXT);
-	handles.set(id, handle as never);
-}
-for (const id of ids) {
-	const attachment = await handles.get(id)!.attachClient(BACKGROUND_CONTEXT as never);
-	const invoke = (member: string, args: unknown[] = []) =>
-		attachment.invokeService({ member, args }, async () => undefined, BACKGROUND_CONTEXT);
 	// Item 2: app-owned service dispatch carries the view per session.
-	const view = (await invoke("view")) as { session: { id: string; directory: string; cwd: string } };
+	const view = (await invoke(id, "view")) as { session: { id: string; directory: string; cwd: string } };
 	views.push({ id, session: view.session });
 	// Item 1 (cancel flow, real controller): abort resolves; session stays live.
-	const abortResult = (await invoke("abort")) as { ok: boolean };
+	const abortResult = (await invoke(id, "abort")) as { ok: boolean };
 	check(`cancel: ${id} abort() clean through the real controller`, abortResult.ok === true);
-	const after = (await invoke("view")) as { session: { id: string } };
+	const after = (await invoke(id, "view")) as { session: { id: string } };
 	check(`cancel: ${id} responsive after abort (view still its own)`, after.session.id === view.session.id);
 }
 
@@ -125,8 +112,8 @@ await host.close();
 const remaining = (host.runtime as never as { control: { identities: () => unknown[] } }).control.identities();
 check("shutdown: all engines closed, identities empty", remaining.length === 0);
 
-if (failures > 0) {
-	console.error(`SHARED-HOST REAL-SDK ACCEPTANCE: ${failures} FAILURE(S)`);
+if (harness.failures > 0) {
+	console.error(`SHARED-HOST REAL-SDK ACCEPTANCE: ${harness.failures} FAILURE(S)`);
 	process.exit(3);
 }
 console.log("SHARED-HOST REAL-SDK ACCEPTANCE: ALL PASS (candidate base 59e7842de; no model turns; provider-free)");
