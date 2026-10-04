@@ -20,6 +20,7 @@ import {
 	type InProcessRuntime,
 	type InProcessSessionEngine,
 	type InProcessSessionIdentity,
+	type SessionMetadata,
 	type SharedHostHooks,
 	type SharedHostPolicy,
 } from "@earendil-works/pi-server";
@@ -29,8 +30,8 @@ export interface SharedHostMainOptions {
 	/** Cap policy for the shared host (refuse, never queue). */
 	readonly policy: SharedHostPolicy;
 	readonly hooks?: SharedHostHooks;
-	/** Forwarded to openDurable for each session engine. */
-	readonly durable?: OpenDurableOptions;
+	/** Forwarded to openDurable for each session engine (fixed or per-session). */
+	readonly durable?: OpenDurableOptions | DurableOptionsResolver;
 }
 
 export interface SharedHostMain {
@@ -101,10 +102,19 @@ function wrapDurable(identity: InProcessSessionIdentity, opened: OpenDurableResu
 	};
 }
 
-export function durableEngineFactory(options: OpenDurableOptions = {}): InProcessEngineFactory {
+/** Per-session open options: fixed, or resolved per session by the application. */
+export type DurableOptionsResolver = (
+	metadata: SessionMetadata,
+	identity: InProcessSessionIdentity,
+) => OpenDurableOptions | Promise<OpenDurableOptions>;
+
+export function durableEngineFactory(options: OpenDurableOptions | DurableOptionsResolver = {}): InProcessEngineFactory {
 	return {
-		async open(_metadata, identity): Promise<InProcessSessionEngine> {
-			const opened = await openDurable(options);
+		async open(metadata, identity): Promise<InProcessSessionEngine> {
+			// Application-owned per-session context: the resolver carries each
+			// session's own open options (cwd, continuation) without sharing.
+			const resolved = typeof options === "function" ? await options(metadata, identity) : options;
+			const opened = await openDurable(resolved);
 			return wrapDurable(identity, opened);
 		},
 	};
