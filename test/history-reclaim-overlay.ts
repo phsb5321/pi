@@ -108,15 +108,19 @@ function report(): never {
 			name: "read-fixture",
 			description: "Reads the fixture file",
 			parameters: Type.Object({ path: Type.String() }),
-			execute: async (args, api) => {
+			execute: async (args, api, context) => {
 				const { readFileSync } = await import("node:fs");
 				const text = readFileSync(String((args as { path: string }).path), "utf8");
 				api.output(text);
 				if (gateArmed) {
 					gateReached.resolve(); // turn-local evidence: THIS turn reached the barrier
-					await gate.promise;
+					// Honor the abort: the execute observes the turn's AbortSignal; the
+					// rejection throws out of execute, which ends the task failed and
+					// cancels what the call owned (harness/src/harness/tool.ts), so the
+					// turn cannot settle past the barrier.
+					await Promise.race([gate.promise, aborted(context.abortSignal)]);
 				}
-				return {};
+				return { content: text.trim() };
 			},
 		}),
 	);
@@ -130,12 +134,18 @@ function report(): never {
 	stream.start(async (events) => {
 		batches.push([...events]);
 	});
-	setup.faux.setResponses([fauxAssistantMessage([fauxText("streaming-native-deltas ")])]);
+	// A slow, long response: real token deltas arrive across many batches.
+	setup.faux.setResponses([fauxAssistantMessage([fauxText("streaming-native-deltas ".repeat(12))])]);
 	const streamed = await chat.submit({ type: "input", content: "please stream" }, context);
-	const deltaBatches = batches.filter((batch) => batch.some((event) => event.type === "message_update"));
-	const settledAfterDeltas = deltaBatches.length > 0 && batches.indexOf(deltaBatches[deltaBatches.length - 1]) < batches.length;
-	check("real-streaming: subscribed watchEvents deltas delivered before the message settled", settledAfterDeltas);
+	// (a) the SUBSCRIBED stream delivered message_update deltas...
+	await eventually(() => batches.some((batch) => batch.some((event) => event.type === "message_update")));
+	const deltasDelivered = batches.some((batch) => batch.some((event) => event.type === "message_update"));
+	// (b) ...BEFORE the message settled: at that moment the settled text is
+	// not yet in the native entries.
+	const settledDuringDeltas = JSON.stringify(await allEntries(chat)).includes("streaming-native-deltas ".repeat(12).trim());
+	check("real-streaming: subscribed watchEvents deltas delivered before the message settled", deltasDelivered && !settledDuringDeltas);
 	await streamed;
+	await eventually(async () => JSON.stringify(await allEntries(chat)).includes("streaming-native-deltas"));
 
 	// --- REAL TOOL: the registered tool executes; its result is native ---
 	setup.faux.appendResponses([
@@ -143,9 +153,11 @@ function report(): never {
 		fauxAssistantMessage([fauxText("tool-saw-native-tool-payload-42")]),
 	]);
 	await chat.submit({ type: "input", content: "use the tool" }, context);
+	// Wait for the SETTLED state (the tool output AND the closing response):
+	// the previous version raced the closing response and failed on timing.
 	await eventually(async () => {
-		const entries = await allEntries(chat);
-		return JSON.stringify(entries).includes("native-tool-payload-42");
+		const entries = JSON.stringify(await allEntries(chat));
+		return entries.includes("native-tool-payload-42") && entries.includes("tool-saw-native-tool-payload-42");
 	});
 	const toolEntries = await allEntries(chat);
 	const toolText = JSON.stringify(toolEntries);
