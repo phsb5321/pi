@@ -41,8 +41,8 @@ export type HydrateSession = (
 	identity: InProcessSessionIdentity,
 ) => Promise<{
 	engine: InProcessSessionEngine;
-	releaseResidency: () => void;
-	resumeResidency: () => void;
+	releaseResidency: () => void | Promise<void>;
+	resumeResidency: () => void | Promise<void>;
 }>;
 
 /**
@@ -50,7 +50,7 @@ export type HydrateSession = (
  * the engine once per generation; `releaseResidency` drops the reclaimable
  * engine/context residency at park; the first call after park rehydrates.
  */
-export type ParkableEngine = InProcessSessionEngine & { park(): void };
+export type ParkableEngine = InProcessSessionEngine & { park(): Promise<void> };
 
 export function withRetainedHistory(
 	hydrate: HydrateSession,
@@ -76,7 +76,7 @@ export function withRetainedHistory(
 					}
 					inFlightHydrations += 1;
 					try {
-						resumeResidency();
+						await resumeResidency();
 						policy.onHydrate?.(metadata.id);
 						parked = false;
 					} finally {
@@ -97,10 +97,12 @@ export function withRetainedHistory(
 			};
 
 			/** Park the session: release reclaimable engine/context residency. */
-			const park = (): void => {
+			const park = async (): Promise<void> => {
 				if (parked) return;
 				parked = true;
-				releaseResidency();
+				// Wrapper-wide await (PORT-PI-1241): async reclaim proof requires the
+				// release/resume callbacks to be awaited, not fired and forgotten.
+				await releaseResidency();
 				policy.onPark?.(metadata.id);
 			};
 
@@ -112,7 +114,7 @@ export function withRetainedHistory(
 						// Reserved member: the policy-level park entry rides the existing
 						// service seam (no new protocol surface).
 						if (String((call as { member?: unknown }).member ?? "") === "rh:park") {
-							park();
+							await park();
 							return { parked: true };
 						}
 						await ensureHydrated();

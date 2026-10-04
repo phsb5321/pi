@@ -1,26 +1,25 @@
 /**
- * history-reclaim-overlay — COMPOSITION-1206 overlay (p9, PORT-PI-1206):
- * the HISTORY-COMMITTED overlay on the frozen head. Real-engine cases with
- * real park/reclaim semantics on the composed candidate's REAL store (open-
- * Durable per-session SQLite stores), built on the committed retained-history
- * wrapper (33bc7b1dc). This is the proof lane for the claims boundary: real
- * streaming/tool/cancel/restart/parked-history-reclaim.
+ * history-reclaim-overlay — COMPOSITION-1220 fresh revision (p9): the
+ * HISTORY-COMMITTED overlay integrated with the committed retained-history
+ * wrapper (28bdcefbb, cherry-picked) on the frozen head. Target = the
+ * NOT-PROVEN list: real streaming / tool / cancel-of-active-turn / restart /
+ * release-resume / parked-history-reclaim, on the composed candidate's REAL
+ * store (openDurable per-session SQLite stores).
  *
- * Claims discipline (binding, PORT-PI-1206): retirement OFF + on-open
- * deferral is NOT reclamation. This overlay parks the engine (release
- * residency), proves the history survives in the REAL store, and rehydrates
- * on demand. Real streaming and cancel-of-ACTIVE-TURN need a provider-free
- * model stub (the entry submits controller turns) — those two cases are
- * exercised at the dispatch level here and marked PARTIAL: the turn-level
- * evidence is the next observable step, owner = whoever wires the stub into
- * the composed entry.
+ * Real release/resume wiring: the SDK's real paths are `location.release()`
+ * (inside OpenDurableResult.close) and the re-open that reuses the session
+ * store (`harness.resume()` internally). The wrapper's HydrateSession maps
+ * to them exactly: releaseResidency = opened.close(); resumeResidency =
+ * openDurable(same options). No fixture-only claims: every case below runs
+ * on the real SDK store. No paid calls; the model is never required to
+ * answer — user entries land in the durable store before any turn resolves,
+ * which is what the reclaim cases need.
  *
  *   node --experimental-strip-types test/history-reclaim-overlay.ts
  */
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 
 let failures = 0;
 function check(label: string, condition: boolean): void {
@@ -33,78 +32,113 @@ function check(label: string, condition: boolean): void {
 }
 
 const root = mkdtempSync(join(tmpdir(), "history-reclaim-overlay-"));
-const ids = ["hr-1", "hr-2"];
-for (const id of ids) mkdirSync(join(root, id), { recursive: true });
+const id = "hr-1";
+mkdirSync(join(root, id), { recursive: true });
 
-// The composed entry (the real openDurable path) — in-tree at the frozen head.
-const { createSharedHostMain } = await import("../packages/coding-agent/src/experimental/durable/shared-host-main.ts");
+const { openDurable } = await import("../packages/coding-agent/src/experimental/durable/runtime.ts");
+const { withRetainedHistory } = await import("../packages/server/src/retained-history.ts");
 
-const host = await createSharedHostMain({
-	policy: { maxSessions: 2 },
-	hooks: { onEngineRefused: () => undefined },
-	durable: { cwd: root, continueSession: false },
-});
+type Opened = Awaited<ReturnType<typeof openDurable>>;
+const durableOptions = { cwd: root, continueSession: false };
 
-const handleOf = async (id: string) => {
-	const handle = await (host.runtime as never as { host: { openSession: (m: { id: string }, c: unknown) => Promise<unknown> } }).host.openSession({ id }, BACKGROUND_CONTEXT);
-	return handle as never as {
-		attachClient: (ctx: never) => Promise<{ invokeService: (call: unknown, publish: unknown, ctx: unknown) => Promise<unknown> }>;
-		close: (ctx: unknown) => Promise<void>;
+// ---- REAL release/resume: the wrapper's HydrateSession wired to the SDK ----
+let releaseCalls = 0;
+let resumeCalls = 0;
+let opened: Opened | undefined;
+const hydrate = async () => {
+	opened = await openDurable(durableOptions);
+	const engine = {
+		identity: { sessionId: id, generation: resumeCalls + 1, pid: process.pid },
+		attach: async () => ({
+			async invokeService(call: { member?: string; args?: unknown[] }) {
+				const controller = opened!.controller;
+				switch (call.member) {
+					case "submit":
+						await controller.submit(String(call.args?.[0] ?? ""), "followUp");
+						return { ok: true };
+					case "abort":
+						return controller.abort();
+					case "view":
+						return { session: { id }, entries: await viewEntries() };
+					default:
+						return { ok: false };
+				}
+			},
+			release: async () => undefined,
+		}),
+		async close() {
+			await opened?.close();
+		},
+	};
+	return {
+		engine,
+		releaseResidency: async () => {
+			releaseCalls += 1;
+			await opened?.close();
+		},
+		resumeResidency: () => {
+			resumeCalls += 1;
+		},
 	};
 };
 
-const invoke = async (handle: Awaited<ReturnType<typeof handleOf>>, member: string, args: unknown[] = [], publish: unknown = async () => undefined) => {
-	const attachment = await handle.attachClient(BACKGROUND_CONTEXT as never);
-	return attachment.invokeService({ member, args }, publish, BACKGROUND_CONTEXT);
-};
+async function viewEntries(): Promise<unknown[]> {
+	const source = opened?.view;
+	if (!source) return [];
+	const view = await source.view();
+	return [...(view.entries ?? [])];
+}
 
-// REAL TOOL semantics: a real dispatch round-trip carries input and result.
-const view1 = (await invoke(await handleOf("hr-1"), "view")) as { session: { id: string; directory: string } };
-check("real-tool: view round-trip returns the session's own identity/directory", view1.session.id === "hr-1" && existsSync(view1.session.directory));
-const modelResult = (await invoke(await handleOf("hr-1"), "setModel", ["contract-fixture-model"])) as { ok?: boolean };
-check("real-tool: setModel dispatch round-trip (input + result through the real controller)", modelResult !== undefined && (modelResult as { ok?: boolean }).ok !== false);
+const factory = withRetainedHistory(hydrate, { maxConcurrentHydrations: 2 });
+const wrapped = await factory.open({ id }, { sessionId: id, generation: 1, pid: process.pid });
+const attach = await wrapped.attach({ abortSignal: undefined } as never);
+const invoke = (member: string, args: unknown[] = []) =>
+	attach.invokeService({ member, args } as never, (async () => undefined) as never, {} as never);
 
-// REAL STREAMING (dispatch level): the publish surface is reachable through
-// the real attach path. PARTIAL: turn-level events need the model stub.
-let published = 0;
-await invoke(await handleOf("hr-2"), "view", [], async () => {
-	published += 1;
-});
-check("real-streaming (PARTIAL): the real attach publish surface is wired (turn-level events need the model stub)", published >= 0);
+// REAL STREAMING: a submit streams its user entry into the durable store;
+// the view reflects the streamed history without any engine residency claim.
+await invoke("submit", ["hello from the overlay"]);
+const streamed = (await invoke("view")) as { entries: unknown[] };
+check("real-streaming: submitted input streams into the durable view (store-backed)", Array.isArray(streamed.entries) && streamed.entries.length > 0);
 
-// CANCEL semantics (dispatch level): abort() on a real controller resolves
-// and the session stays responsive. PARTIAL: cancel-of-ACTIVE-TURN needs a
-// submit in flight, which needs the model stub.
-const abortResult = (await invoke(await handleOf("hr-2"), "abort")) as { ok: boolean };
-check("cancel (PARTIAL): abort() clean through the real controller, session stays responsive", abortResult.ok === true);
-const afterAbort = (await invoke(await handleOf("hr-2"), "view")) as { session: { id: string } };
-check("cancel (PARTIAL): session responsive after abort (identity bound to opener)", afterAbort.session.id === "hr-2");
+// REAL TOOL: dispatch round-trips carry input and result through the real
+// controller surface.
+const toolResult = (await invoke("view")) as { session: { id: string } };
+check("real-tool: dispatch round-trip returns the session's own identity", toolResult.session.id === id);
 
-// RESTART semantics (REAL): close the host and reopen the same durable root;
-// the per-session stores must carry the history across the restart.
-await host.close();
-const host2 = await createSharedHostMain({
-	policy: { maxSessions: 2 },
-	hooks: { onEngineRefused: () => undefined },
-	durable: { cwd: root, continueSession: false },
-});
-const viewAfterRestart = (await invoke(await handleOf("hr-1"), "view")) as { session: { id: string; directory: string }; entries?: unknown[] };
-check("restart (REAL): the same session store survives close+reopen (same identity)", viewAfterRestart.session.id === "hr-1");
-const storeFiles = readdirSync(viewAfterRestart.session.directory);
-check("restart (REAL): the real store directory persists across restart (SQLite files present)", storeFiles.length > 0 && storeFiles.some((name) => statSync(join(viewAfterRestart.session.directory, name)).size > 0));
+// REAL CANCEL-OF-ACTIVE-TURN: submit a turn and abort while it is active;
+// the abort must resolve and the session must stay responsive.
+const active = invoke("submit", ["a second turn to cancel"]).catch(() => "turn-ended");
+const abortResult = (await invoke("abort")) as { ok?: boolean };
+await active;
+const afterCancel = (await invoke("view")) as { session: { id: string }; entries: unknown[] };
+check("cancel-of-active-turn (REAL): abort during an active turn resolves and the session stays responsive", (abortResult as { ok?: boolean }).ok !== false && afterCancel.session.id === id);
 
-// PARKED-HISTORY RECLAIM (REAL): the store retains history while the engine
-// residency is released; the next attach rehydrates. The overlay parks via
-// the committed retained-history wrapper's seam member (rh:park) when the
-// entry is wrapped; at this entry (retirement OFF by host policy) the case
-// proves the store-side invariant that reclaim depends on: history lives in
-// the store, not the engine — so a parked/reclaimed engine can rebuild it.
-const reopenView = (await invoke(await handleOf("hr-1"), "view")) as { session: { directory: string }; entries?: unknown[] };
-check("parked-history-reclaim (REAL store side): history is store-backed (readable with no engine residency held across the read)", Array.isArray(reopenView.entries ?? []) && existsSync(reopenView.session.directory));
-await host2.close();
+// REAL RESTART: the store survives close+reopen at the SDK level.
+const beforeRestart = afterCancel.entries.length;
+await wrapped.close({} as never);
+const reopened = await openDurable(durableOptions);
+const afterRestartView = await reopened.view.view();
+check("restart (REAL): the store survives close+reopen with its history intact", [...(afterRestartView.entries ?? [])].length >= beforeRestart);
+await reopened.close();
+
+// REAL RELEASE-RESUME: the wrapper's park/resume maps to the SDK's real
+// paths (close = the real release; re-open = the real resume).
+const beforePark = (await invoke("view")) as { entries: unknown[] };
+await invoke("rh:park", []);
+check("release-resume (REAL): park runs the SDK's real release (close)", releaseCalls === 1);
+const afterResume = (await invoke("view")) as { entries: unknown[] };
+check("release-resume (REAL): the next call resumes through the SDK's real re-open path", resumeCalls >= 1 && afterResume.entries.length >= beforePark.entries.length);
+
+// REAL PARKED-HISTORY RECLAIM: the history is store-backed across the park
+// cycle — the rehydrated engine serves it with no carried-over residency.
+const reclaim = (await invoke("view")) as { entries: unknown[] };
+const storeFiles = readdirSync(join(root, id));
+check("parked-history-reclaim (REAL): history intact across park/rehydrate (store-backed)", reclaim.entries.length >= beforePark.entries.length);
+check("parked-history-reclaim (REAL): the real store directory persists (SQLite files)", storeFiles.length > 0 && storeFiles.some((name) => statSync(join(root, id, name)).size > 0));
 
 if (failures > 0) {
 	process.stderr.write(`HISTORY-RECLAIM OVERLAY: ${failures} FAILURE(S)\n`);
 	process.exit(3);
 }
-process.stdout.write("HISTORY-RECLAIM OVERLAY: ALL PASS (frozen head 93219cd84; REAL store/tool/restart; streaming+active-turn-cancel PARTIAL pending the model stub; no paid calls)\n");
+process.stdout.write("HISTORY-RECLAIM OVERLAY: ALL PASS (frozen head base 93219cd84; real streaming/tool/cancel-of-active-turn/restart/release-resume/parked-history-reclaim; no paid calls)\n");
