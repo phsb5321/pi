@@ -59,6 +59,8 @@ export interface ResidencyState {
 	readonly released: number;
 	readonly resumed: number;
 	readonly live: boolean;
+	/** False after a park: the engine/context reference was dropped (GC-able). */
+	readonly openedRetained: boolean;
 }
 
 export interface ResidencyHydrateOptions {
@@ -84,27 +86,34 @@ export function sdkResidencyHydrate(options: ResidencyHydrateOptions): HydrateSe
 		mkdirSync(cwd, { recursive: true });
 		// Restart continuity: a persisted resident record means continue the
 		// native session (same store/history); otherwise create one.
-		let opened: OpenDurableResult = await openDurable({ cwd, continueSession: existsSync(recordPath(root, metadata.id)) });
+		let opened: OpenDurableResult | null = await openDurable({
+			cwd,
+			continueSession: existsSync(recordPath(root, metadata.id)),
+		});
 		let live = true;
 		let released = 0;
 		let resumed = 0;
 		// Serialized async release/resume: one promise chain the calls await.
 		let gate: Promise<void> = Promise.resolve();
-		const record = (): ResidentRecord => {
-			const session = opened.view.current().session;
+		// The small durable identity is cached so a parked engine's object graph
+		// (Harness/store/closures) can be dropped without losing the binding.
+		const snapshot = (current: OpenDurableResult): ResidentRecord => {
+			const session = current.view.current().session;
 			return { sessionId: metadata.id, cwd, nativeSessionId: session.id, directory: session.directory };
 		};
-		writeFileSync(recordPath(root, metadata.id), `${JSON.stringify(record())}\n`);
-		const emit = (): void => options.onState?.(metadata.id, { released, resumed, live });
+		let cached: ResidentRecord = snapshot(opened);
+		writeFileSync(recordPath(root, metadata.id), `${JSON.stringify(cached)}\n`);
+		const emit = (): void => options.onState?.(metadata.id, { released, resumed, live, openedRetained: opened !== null });
 
 		const dispatch = async (call: { member?: unknown; args?: unknown }): Promise<unknown> => {
 			await gate;
 			const member = typeof call.member === "string" ? call.member : "";
 			// Adapter-state query works regardless of residency (it is not an
 			// engine call); everything else needs the engine live.
-			if (member === "residency") return { ...record(), released, resumed, live };
-			if (!live) throw new Error(`residency: ${metadata.id} engine residency is not live`);
-			return dispatchDurableMember(opened, call);
+			if (member === "residency") return { ...cached, released, resumed, live, openedRetained: opened !== null };
+			const current = opened;
+			if (!live || current === null) throw new Error(`residency: ${metadata.id} engine residency is not live`);
+			return dispatchDurableMember(current, call);
 		};
 
 		const engine: InProcessSessionEngine = durableEngineShell(
@@ -113,8 +122,10 @@ export function sdkResidencyHydrate(options: ResidencyHydrateOptions): HydrateSe
 			// Writer-once: the writer releases here, exactly once per engine.
 			async () => {
 				await gate;
-				if (live) {
-					await opened.close();
+				const current = opened;
+				if (current !== null) {
+					await current.close();
+					opened = null;
 					live = false;
 				}
 			},
@@ -127,8 +138,14 @@ export function sdkResidencyHydrate(options: ResidencyHydrateOptions): HydrateSe
 				const prior = gate;
 				gate = (async () => {
 					await prior;
-					if (live) {
-						await opened.close();
+					const current = opened;
+					if (current !== null) {
+						await current.close();
+						// PRIMARY RAM fix (1504): drop the engine/context reference so
+						// the closed object graph is actually reclaimable — only the
+						// cached durable identity survives the park. No per-parked-seat
+						// process/isolate; the wrapper's bounded hydration pool unchanged.
+						opened = null;
 						live = false;
 					}
 					emit();
@@ -139,11 +156,13 @@ export function sdkResidencyHydrate(options: ResidencyHydrateOptions): HydrateSe
 				const prior = gate;
 				gate = (async () => {
 					await prior;
-					if (!live) {
+					if (opened === null) {
 						// NATIVE continuation: same cwd, same persisted store/history.
-						opened = await openDurable({ cwd, continueSession: true });
+						const reopened = await openDurable({ cwd, continueSession: true });
+						opened = reopened;
+						cached = snapshot(reopened);
+						writeFileSync(recordPath(root, metadata.id), `${JSON.stringify(cached)}\n`);
 						live = true;
-						writeFileSync(recordPath(root, metadata.id), `${JSON.stringify(record())}\n`);
 					}
 					emit();
 				})();
