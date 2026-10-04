@@ -42,9 +42,10 @@ import { addTool } from "../packages/durable/test/harness-support.ts";
 import { context } from "../packages/durable/test/session-support.ts";
 import { aborted, deferred } from "../packages/durable/test/task-support.ts";
 
-// 10 case checks (5 streaming/tool/cancel + 2 restart + 3 park/resume/
-// reclaim) plus the completeness check itself = 11 executed assertions.
-const REQUIRED_CASES = 11;
+// 11 case checks (5 streaming/tool/cancel + 2 restart + 3 park/resume/
+// reclaim + the strict tool-result lineage) plus the completeness check
+// itself = 12 executed assertions.
+const REQUIRED_CASES = 12;
 let executed = 0;
 let failures = 0;
 function check(label: string, condition: boolean): void {
@@ -124,10 +125,13 @@ writeFileSync(toolTarget, "native-tool-payload-42\n");
 				api.output(text);
 				if (gateArmed) {
 					gateReached.resolve(); // turn-local evidence: THIS turn reached the barrier
-					// Honor the abort: the rejection throws out of execute, which ends
-					// the task failed and cancels what the call owned (harness/src/
-					// harness/tool.ts), so the turn cannot settle past the barrier.
-					await Promise.race([gate.promise, aborted(toolContext.abortSignal)]);
+					try {
+						await Promise.race([gate.promise, aborted(toolContext.abortSignal)]);
+					} catch (error) {
+						// The tool's ACTUAL abortSignal observed (captured as evidence).
+						toolSawAbort = true;
+						throw error;
+					}
 				}
 				return { content: text.trim() };
 			},
@@ -141,9 +145,11 @@ writeFileSync(toolTarget, "native-tool-payload-42\n");
 	stream.start(async (events) => {
 		batches.push([...events]);
 	});
+	let toolSawAbort = false;
 	diagnostics = () => ({
 		batches: batches.length,
 		lastEvents: batches.slice(-3),
+		toolSawAbort,
 	});
 	try {
 		// --- REAL STREAMING: subscribed deltas before the message settles ---
@@ -171,6 +177,19 @@ writeFileSync(toolTarget, "native-tool-payload-42\n");
 		});
 		const toolText = JSON.stringify(await allEntries(chat));
 		check("real-tool: the registered tool-call executed with matching arguments", toolText.includes("read-fixture"));
+		// Strict tool-result lineage (not a marker string in any entry): the
+		// tool_execution_end event for callId c1 carries the pi.tool-result
+		// entry, and its terminal status is completed.
+		const toolEnd = batches
+			.flat()
+			.find((event) => (event as unknown as { type?: string; toolCallId?: string }).type === "tool_execution_end" && (event as unknown as { toolCallId?: string }).toolCallId === "c1") as
+			| { type: string; toolCallId: string; entry?: { kind?: string; status?: string }; status?: string }
+			| undefined;
+		const lineageOk =
+			toolEnd !== undefined &&
+			toolEnd.entry?.kind === "pi.tool-result" &&
+			(toolEnd.entry?.status ?? toolEnd.status ?? "completed") === "completed";
+		check("real-tool: strict tool-result lineage (tool_execution_end c1 -> pi.tool-result, terminal completed)", lineageOk);
 		check("real-tool: the tool result content is in the native entries", toolText.includes("native-tool-payload-42") && toolText.includes("tool-saw-native-tool-payload-42"));
 
 		// --- REAL CANCEL-OF-ACTIVE-TURN: the barrier holds the turn mid-tool;
@@ -185,14 +204,16 @@ writeFileSync(toolTarget, "native-tool-payload-42\n");
 		const cancellable = await chat.submit({ type: "input", content: "turn to cancel" }, turnContext);
 		await gateReached.promise; // turn-local evidence: the barrier was reached (mid-tool)
 		const activeObserved = true;
-		controller.abort();
-		const outcome = await Promise.race([
-			cancellable.wait(context).then(() => "completed").catch((error: unknown) => `error:${String(error)}`),
-			aborted(controller.signal).then(() => "aborted-impossible").catch((error: unknown) => `aborted:${String(error)}`),
-		]);
+		// The NATIVE abort (Conversation.abort -> scheduler.abortConversation,
+		// harness/harness.ts): not a synthetic test-signal race.
+		await chat.root.abort(context);
+		const settled = await cancellable.wait(context); // SettledSubmissionRecord
 		const settledDespiteAbort = JSON.stringify(await allEntries(chat)).includes("must-not-settle");
 		check("cancel-of-active-turn: the turn was ACTIVE (mid-tool at the barrier) at abort time", activeObserved);
-		check("cancel-of-active-turn: the actual abort signal/outcome canceled the turn (no settle)", `${outcome}`.toLowerCase().includes("abort") && !settledDespiteAbort);
+		check(
+			"cancel-of-active-turn: the native Conversation.abort settled the turn (submission unanswered, tool abortSignal observed, no settle)",
+			settled.status === "unanswered" && toolSawAbort === true && !settledDespiteAbort,
+		);
 		gate.resolve();
 	} finally {
 		// Native cleanup on every path (success or failure).
