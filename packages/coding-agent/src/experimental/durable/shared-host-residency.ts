@@ -15,10 +15,15 @@
  *   void` and does not await them (domain note filed), so this adapter
  *   serializes them on an internal gate that every engine call awaits —
  *   async release/resume is awaited end-to-end without touching p9's file;
- * - input/stream/publish/cancel pass through unchanged (the dispatch rides
- *   the same member seam), writer-once holds (writer release happens at
- *   engine close exactly once, independent of park/resume cycles), and the
- *   persisted record survives restart.
+ * - the member surface (input/abort/view/switch) passes through the same
+ *   dispatch across park/resume; stream-DELTA and tool-call semantics are
+ *   NOT claimed here (they belong to p9's parity suite), writer-once holds
+ *   (writer release happens at engine close exactly once, independent of
+ *   park/resume cycles), and the persisted record survives restart;
+ * - park is QUIESCENCE-GATED at the host entry: a session parks only when
+ *   the existing SharedHostCore presentation count is zero
+ *   (`core.isQuiescent`) — the wrapper's raw `rh:park` seam member remains
+ *   p9's bypass and is out of this gate's scope.
  *
  * DEFAULT OFF: nothing runs unless the application calls
  * `createSharedHostResidency`. Synthetic/provider-free; no model turns.
@@ -154,9 +159,13 @@ export interface SharedHostResidencyOptions {
 	readonly maxConcurrentHydrations?: number;
 }
 
+export type ParkOutcome = "parked" | "refused-not-quiescent" | "unknown-session";
+
 export interface SharedHostResidency {
 	readonly runtime: ReturnType<typeof createInProcessRuntime>;
 	readonly core: SharedHostCore;
+	/** Quiescence-gated park: refuses while the session has presentations. */
+	parkWhenQuiescent(sessionId: string): ParkOutcome;
 	close(): Promise<void>;
 }
 
@@ -170,5 +179,28 @@ export async function createSharedHostResidency(options: SharedHostResidencyOpti
 	const factory: InProcessEngineFactory = withRetainedHistory(sdkResidencyHydrate(options.hydrate), {
 		maxConcurrentHydrations: options.maxConcurrentHydrations ?? 4,
 	});
-	return composeSharedHost(factory, options.policy, options.hooks);
+	const parks = new Map<string, () => void>();
+	const gated: InProcessEngineFactory = {
+		async open(metadata, identity) {
+			const engine = await factory.open(metadata, identity);
+			parks.set(metadata.id, (engine as { park?: () => void }).park ?? (() => undefined));
+			return engine;
+		},
+	};
+	const composed = composeSharedHost(gated, options.policy, options.hooks);
+	return {
+		runtime: composed.runtime,
+		core: composed.core,
+		parkWhenQuiescent(sessionId: string): ParkOutcome {
+			const park = parks.get(sessionId);
+			if (park === undefined) return "unknown-session";
+			// Existing lifecycle gate: zero presentations = quiescent.
+			if (!composed.core.isQuiescent(sessionId)) return "refused-not-quiescent";
+			park();
+			return "parked";
+		},
+		async close(): Promise<void> {
+			await composed.close();
+		},
+	};
 }

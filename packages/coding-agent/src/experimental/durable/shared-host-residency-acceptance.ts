@@ -38,14 +38,18 @@ const CYCLES = 3;
 
 const events: Array<{ id: string; state: ResidencyState }> = [];
 
-async function runHost(label: string): Promise<{ close: () => Promise<void>; invoke: (id: string, member: string, args?: unknown[]) => Promise<unknown> }> {
+async function runHost(label: string): Promise<{
+	close: () => Promise<void>;
+	invoke: (id: string, member: string, args?: unknown[]) => Promise<unknown>;
+	host: Awaited<ReturnType<typeof createSharedHostResidency>>;
+}> {
 	const host = await createSharedHostResidency({
 		policy: { maxSessions: ids.length },
 		hydrate: { root, onState: (id, state) => events.push({ id, state }) },
 	});
 	const invoke = await openAttachedSessions(host.runtime as never, ids);
 	check(`${label}: sessions opened and attached`, ids.length > 0);
-	return { close: () => host.close(), invoke };
+	return { close: () => host.close(), invoke, host };
 }
 
 const first = await runHost("pass1");
@@ -89,6 +93,34 @@ for (const id of ids) {
 	check(`restart: ${id} continues its persisted native session`, view.session.id === persisted.nativeSessionId && view.session.directory === persisted.directory);
 }
 await second.close();
+
+// Presentation acceptance (bounded native close/reopen/residency +
+// presentation): park is QUIESCENCE-GATED on the existing presentation
+// lifecycle — two presentations per session; park refused while any remain;
+// parks only at zero; the next call reopens natively (identity continues).
+const third = await runHost("pass3");
+for (const id of ids) {
+	third.host.core.attach(id);
+	third.host.core.attach(id);
+}
+for (const id of ids) {
+	check(`presentations: ${id} park refused with 2 presentations up`, third.host.parkWhenQuiescent(id) === "refused-not-quiescent");
+}
+for (const id of ids) third.host.core.detach(id);
+for (const id of ids) {
+	check(`presentations: ${id} park still refused with 1 presentation up`, third.host.parkWhenQuiescent(id) === "refused-not-quiescent");
+}
+for (const id of ids) third.host.core.detach(id);
+for (const id of ids) {
+	check(`presentations: ${id} parks at quiescence (zero presentations)`, third.host.parkWhenQuiescent(id) === "parked");
+}
+for (const id of ids) {
+	const view = (await third.invoke(id, "view")) as { session: { id: string; directory: string } };
+	const base = baseline.get(id)!;
+	check(`presentations: ${id} native reopen continues identity+store`, view.session.id === base.nativeSessionId && view.session.directory === base.directory);
+}
+check("presentations: unknown session refused by the park gate", third.host.parkWhenQuiescent("no-such") === "unknown-session");
+await third.close();
 
 if (harness.failures > 0) {
 	console.error(`SHARED-HOST RESIDENCY ACCEPTANCE: ${harness.failures} FAILURE(S)`);
