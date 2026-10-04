@@ -25,6 +25,7 @@ import {
 	type SharedHostPolicy,
 } from "@earendil-works/pi-server";
 import { type OpenDurableOptions, type OpenDurableResult, openDurable } from "./runtime.ts";
+import { composeSharedHost, dispatchDurableMember, durableEngineShell } from "./shared-host-dispatch.ts";
 
 export interface SharedHostMainOptions {
 	/** Cap policy for the shared host (refuse, never queue). */
@@ -40,73 +41,16 @@ export interface SharedHostMain {
 	close(): Promise<void>;
 }
 
-/** Opaque service member map for one durable session engine. */
-const DURABLE_MEMBERS = new Set(["submit", "compact", "abort", "cycleThinking", "setModel", "switchConversation", "view"]);
-
 function wrapDurable(identity: InProcessSessionIdentity, opened: OpenDurableResult): InProcessSessionEngine {
-	return {
+	return durableEngineShell(
 		identity,
-		async attach() {
-			return {
-				async invokeService(call: { member?: unknown; args?: unknown }) {
-					const member = typeof call.member === "string" ? call.member : "";
-					const args = Array.isArray(call.args) ? call.args : [];
-					const controller = opened.controller;
-					switch (member) {
-						case "submit": {
-							const text = String(args[0] ?? "");
-							const whenBusy = args[1] === "steer" ? "steer" : "followUp";
-							await controller.submit(text, whenBusy);
-							return { ok: true };
-						}
-						case "compact":
-							await controller.compact(args[0] === undefined ? undefined : String(args[0]));
-							return { ok: true };
-						case "abort":
-							await controller.abort();
-							return { ok: true };
-						case "cycleThinking":
-							await controller.cycleThinking();
-							return { ok: true };
-						case "setModel":
-							await controller.setModel(args[0] as never);
-							return { ok: true };
-						case "switchConversation":
-							await controller.switchConversation(String(args[0] ?? ""));
-							return { ok: true };
-						case "view": {
-							const view = opened.view.current();
-							return {
-								session: view.session,
-								conversations: view.conversations.length,
-								models: view.models.length,
-								notices: view.notices.length,
-							};
-						}
-						default:
-							throw new Error(
-								`Unknown shared-host member: ${member || "<empty>"} (allowed: ${[...DURABLE_MEMBERS].join(", ")})`,
-							);
-					}
-				},
-				async release(): Promise<void> {
-					// Presentation drop: per-presentation state lives in the view; the
-					// engine-level release happens at handle.close.
-				},
-			};
-		},
-		async close(): Promise<void> {
-			// Releases this session's exclusive durable writer ownership.
+		(call) => dispatchDurableMember(opened, call),
+		// Releases this session's exclusive durable writer ownership.
+		async () => {
 			await opened.close();
 		},
-	};
+	);
 }
-
-/** Per-session open options: fixed, or resolved per session by the application. */
-export type DurableOptionsResolver = (
-	metadata: SessionMetadata,
-	identity: InProcessSessionIdentity,
-) => OpenDurableOptions | Promise<OpenDurableOptions>;
 
 export function durableEngineFactory(options: OpenDurableOptions | DurableOptionsResolver = {}): InProcessEngineFactory {
 	return {
@@ -121,20 +65,7 @@ export function durableEngineFactory(options: OpenDurableOptions | DurableOption
 }
 
 export async function createSharedHostMain(options: SharedHostMainOptions): Promise<SharedHostMain> {
-	const core = new SharedHostCore({ maxSessions: options.policy.maxSessions }, options.hooks);
-	const runtime = createInProcessRuntime(durableEngineFactory(options.durable), {
-		maxSessions: options.policy.maxSessions,
-		// Retirement stays OFF at the entry (host policy decides later);
-		// the seam enforces writer ownership and the cap regardless.
-		onEngineRefused: (refused) => core.noteRefused(refused.sessionId),
-	});
-	return {
-		runtime,
-		core,
-		async close(): Promise<void> {
-			await runtime.control.shutdown({} as never);
-		},
-	};
+	return composeSharedHost(durableEngineFactory(options.durable), options.policy, options.hooks);
 }
 
 /** The real entry: a shared host with durable engines. DEFAULT OFF. */

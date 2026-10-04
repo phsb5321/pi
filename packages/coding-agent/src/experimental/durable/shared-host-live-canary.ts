@@ -26,6 +26,7 @@ import { join } from "node:path";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import type { SessionMetadata } from "@earendil-works/pi-server";
 import { createSharedHostMain } from "./shared-host-main.ts";
+import { openAttachedSessions } from "./shared-host-acceptance-kit.ts";
 
 const LIVE = process.env.PI_SHARED_LIVE_CANARY === "1";
 const LIVE_MODEL = process.env.PI_SHARED_LIVE_MODEL;
@@ -43,15 +44,7 @@ async function runLive(): Promise<number> {
 		// Per-session open options through the application-owned resolver.
 		durable: (metadata: SessionMetadata) => ({ cwd: join(root, metadata.id), continueSession: false }),
 	});
-	type Attachment = { invokeService: (call: unknown, publish: unknown, ctx: unknown) => Promise<unknown> };
-	const attachments = new Map<string, Attachment>();
-	for (const id of ids) {
-		const handle = await (host.runtime as never as { host: { openSession: (m: SessionMetadata, c: unknown) => Promise<{ attachClient: (c: unknown) => Promise<Attachment> }> } }).host.openSession({ id }, BACKGROUND_CONTEXT);
-		attachments.set(id, await handle.attachClient(BACKGROUND_CONTEXT));
-	}
-	const invoke = (id: string, member: string, args: unknown[] = []) =>
-		attachments.get(id)!.invokeService({ member, args }, async () => undefined, BACKGROUND_CONTEXT);
-
+	const invoke = await openAttachedSessions(host.runtime as never, ids);
 	const sessions = new Map<string, string>();
 	for (const id of ids) {
 		const view = (await invoke(id, "view")) as { session: { id: string; cwd: string } };
