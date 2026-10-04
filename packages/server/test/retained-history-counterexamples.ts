@@ -12,15 +12,15 @@
  *   CE-3  a resume counter is NOT reopen proof — the seam's `resumeResidency:
  *         () => void` accepts a counter-only bump; the wrapper reports
  *         rehydrated without any engine reopen.
- *   CE-4  the wrapper accepts attachment dispatch AFTER wrapped.close —
- *         no use-after-close guard at the wrapper level (the real-SDK
- *         adapter guards this on its side; wrapper-level = p9's fix).
+ *   CE-4  regression: wrapper close now rejects dispatch, new attachment
+ *         and park, without reopening or closing the engine twice.
  *
  * Drives p9's `withRetainedHistory` seam directly with a fixture engine.
  * Exit 0 = every counterexample demonstrated as described.
  *
  *   node --experimental-strip-types packages/server/test/retained-history-counterexamples.ts
  */
+import assert from "node:assert/strict";
 import type { JsonValue, ServiceCall } from "@earendil-works/chord";
 import { type HydrateSession, type ParkableEngine, withRetainedHistory } from "../src/retained-history.ts";
 import type { SessionMetadata } from "../src/types.ts";
@@ -119,12 +119,15 @@ checks.check(
 	state.resumeBumps >= 1 && state.reopened === false && hydrated >= 1,
 );
 
-// CE-4: dispatch AFTER wrapped.close is accepted by the wrapper (no guard).
+// CE-4: every wrapper entry refuses use after close, with idempotent teardown.
 await engine.close(CONTEXT);
-const afterClose = await call("view");
+await assert.rejects(call("view"), /engine is closed/);
+await assert.rejects(async () => engine.attach(CONTEXT), /engine is closed/);
+await assert.rejects(engine.park(), /engine is closed/);
+await engine.close(CONTEXT);
 checks.check(
-	"CE-4: attachment dispatch after wrapped.close is accepted (wrapper-level use-after-close, unguarded)",
-	afterClose !== undefined && state.closedDispatches >= 1,
+	"CE-4: closed wrapper rejects dispatch/attach/park and closes exactly once",
+	state.closedDispatches === 0 && state.closeCount === 1,
 );
 
 checks.finish("RETAINED-HISTORY COUNTEREXAMPLES");

@@ -1,6 +1,6 @@
 /**
- * history-reclaim-overlay — NATIVE-822 correction (p9). SOURCE-ONLY until
- * the sole p4 immutable re-execution runs it; NOT parity, NOT green.
+ * history-reclaim-overlay — native streaming/tool/cancellation and durable
+ * close/reopen acceptance. Record exact source and executable exits separately.
  *
  * Canonical patterns reused verbatim from the existing runnable native
  * harness tests (per the SOURCE-PUBLISH/NATIVE-822 packets):
@@ -39,6 +39,7 @@ import {
 	watchEvents,
 } from "@earendil-works/pi-durable";
 import { chatSetup, openChat, allEntries, waitFor } from "../packages/durable/test/chat-support.ts";
+import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
 import { addTool } from "../packages/durable/test/harness-support.ts";
 import { context } from "../packages/durable/test/session-support.ts";
 import { withRetainedHistory } from "../packages/server/src/retained-history.ts";
@@ -135,7 +136,7 @@ writeFileSync(toolTarget, "native-tool-payload-42\n");
 						throw error;
 					}
 				}
-				return { content: text.trim() };
+				return { content: [{ type: "text", text: text.trim() }] };
 			},
 		}),
 	);
@@ -250,12 +251,13 @@ writeFileSync(toolTarget, "native-tool-payload-42\n");
 }
 
 // ==========================================================================
-// FIXTURE 2 — close/restart: same NATIVE HISTORY through the same storage
+// FIXTURE 2 — close/restart: same NATIVE HISTORY through reopened SQLite
 // (separate fixture; nothing is invoked through the closed harness).
 // ==========================================================================
 {
 	const setup = chatSetup();
-	const storage = new MemoryStorage();
+	const path = join(root, "restart.sqlite");
+	const storage = await openNodeSqliteStorage(path);
 	const { harness, root: chat } = await openChat(storage, setup);
 	diagnostics = () => ({ fixture: "restart" });
 	try {
@@ -270,7 +272,7 @@ writeFileSync(toolTarget, "native-tool-payload-42\n");
 		const before = JSON.stringify(await allEntries(chat));
 		await harness.close(context);
 
-		const reopened = await openChat(storage, setup);
+		const reopened = await openChat(await openNodeSqliteStorage(path), setup);
 		try {
 			const after = JSON.stringify(await allEntries(reopened.root));
 			check("restart: exact native history equality through close+reopen (same storage)", before === after);
@@ -289,7 +291,8 @@ writeFileSync(toolTarget, "native-tool-payload-42\n");
 // ==========================================================================
 {
 	const setup = chatSetup();
-	const storage = new MemoryStorage();
+	const path = join(root, "park-resume.sqlite");
+	const storage = await openNodeSqliteStorage(path);
 	const first = await openChat(storage, setup);
 	diagnostics = () => ({ fixture: "park-resume" });
 	try {
@@ -305,7 +308,7 @@ writeFileSync(toolTarget, "native-tool-payload-42\n");
 		let realResumes = 0;
 		const factory = withRetainedHistory(
 			async () => {
-				live = await openChat(storage, setup);
+				live = await openChat(await openNodeSqliteStorage(path), setup);
 				return {
 					engine: {
 						identity: { sessionId: "hr-1", generation: realResumes + 1, pid: process.pid },
@@ -328,14 +331,14 @@ writeFileSync(toolTarget, "native-tool-payload-42\n");
 						realReleases += 1;
 					},
 					resumeResidency: async () => {
-						live = await openChat(storage, setup);
+						live = await openChat(await openNodeSqliteStorage(path), setup);
 						realResumes += 1;
 					},
 				};
 			},
 			{ maxConcurrentHydrations: 2 },
 		);
-		const wrapped = await factory.open({ id: "hr-1" }, { sessionId: "hr-1", generation: 1, pid: process.pid });
+		const wrapped = await factory.open({ id: "hr-1" }, { sessionId: "hr-1", generation: 1, pid: process.pid }, context);
 		const invoke = async (member: string) => {
 			const attach = await wrapped.attach({ abortSignal: undefined } as never);
 			return attach.invokeService({ member, args: [] } as never, (async () => undefined) as never, {} as never);

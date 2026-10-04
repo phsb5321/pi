@@ -63,9 +63,15 @@ export function withRetainedHistory(
 		async open(metadata: SessionMetadata, identity: InProcessSessionIdentity) {
 			const { engine, releaseResidency, resumeResidency } = await hydrate(metadata, identity);
 			let parked = false;
+			let closed = false;
+			let closing: Promise<void> | undefined;
+			const assertOpen = (): void => {
+				if (closed) throw new Error("retained-history: engine is closed");
+			};
 			let rehydrating: Promise<void> | undefined;
 
 			const ensureHydrated = async (): Promise<void> => {
+				assertOpen();
 				if (!parked) return;
 				if (rehydrating) return rehydrating;
 				const attempt = (async () => {
@@ -98,6 +104,7 @@ export function withRetainedHistory(
 
 			/** Park the session: release reclaimable engine/context residency. */
 			const park = async (): Promise<void> => {
+				assertOpen();
 				if (parked) return;
 				parked = true;
 				// Wrapper-wide await (PORT-PI-1241): async reclaim proof requires the
@@ -108,6 +115,7 @@ export function withRetainedHistory(
 
 			const attach: Attach = async (context) => {
 				await ensureHydrated();
+				assertOpen();
 				const attachment = await engine.attach(context);
 				return {
 					async invokeService(call, publish, callContext) {
@@ -118,6 +126,7 @@ export function withRetainedHistory(
 							return { parked: true };
 						}
 						await ensureHydrated();
+						assertOpen();
 						// Stream/publish, input (args), and cancellation (abortSignal) pass
 						// through unchanged across park/rehydrate.
 						return attachment.invokeService(call, publish, callContext);
@@ -136,7 +145,16 @@ export function withRetainedHistory(
 				async close(context) {
 					// Writer-once: close releases the writer exactly once regardless of
 					// park state (crash recovery semantics unchanged).
-					await engine.close(context);
+					if (closing !== undefined) return closing;
+					closed = true;
+					closing = (async () => {
+						try {
+							await rehydrating;
+						} finally {
+							await engine.close(context);
+						}
+					})();
+					return closing;
 				},
 				// The park entry point for policy-level retire hooks; the service-level
 				// `rh:park` member is the seam-compatible reach for it.

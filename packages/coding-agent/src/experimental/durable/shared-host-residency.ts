@@ -200,6 +200,7 @@ export function sdkResidencyHydrate(options: ResidencyHydrateOptions): HydrateSe
 					}
 					emit();
 				})();
+				return gate;
 			},
 			resumeResidency: () => {
 				resumed += 1;
@@ -221,6 +222,7 @@ export function sdkResidencyHydrate(options: ResidencyHydrateOptions): HydrateSe
 					}
 					emit();
 				})();
+				return gate;
 			},
 		};
 	};
