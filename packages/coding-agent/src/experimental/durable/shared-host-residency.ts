@@ -79,7 +79,7 @@ export interface ResidencyHydrateOptions {
 	/** Root directory: one per-session cwd + resident record under it. */
 	readonly root: string;
 	/** Application-owned models, retained across park/reopen. */
-	readonly modelRuntime?: ModelRuntime;
+	readonly modelRuntime?: ModelRuntime | ((metadata: SessionMetadata) => ModelRuntime);
 	/** Observed state transitions (acceptance/instrumentation; optional). */
 	readonly onState?: (sessionId: string, state: ResidencyState) => void;
 }
@@ -96,6 +96,9 @@ export function sdkResidencyHydrate(options: ResidencyHydrateOptions): HydrateSe
 	const root = options.root;
 	mkdirSync(root, { recursive: true });
 	return async (metadata: SessionMetadata, identity: InProcessSessionIdentity) => {
+		// Resolve once per engine identity: reopen must retain the original account context.
+		const modelRuntime =
+			typeof options.modelRuntime === "function" ? options.modelRuntime(metadata) : options.modelRuntime;
 		const cwd = join(root, metadata.id);
 		mkdirSync(cwd, { recursive: true });
 		// Restart continuity: a persisted resident record means continue the
@@ -103,7 +106,7 @@ export function sdkResidencyHydrate(options: ResidencyHydrateOptions): HydrateSe
 		let opened: OpenDurableResult | null = await openDurable({
 			cwd,
 			continueSession: existsSync(recordPath(root, metadata.id)),
-			modelRuntime: options.modelRuntime,
+			modelRuntime,
 		});
 		let live = true;
 		let released = 0;
@@ -176,6 +179,10 @@ export function sdkResidencyHydrate(options: ResidencyHydrateOptions): HydrateSe
 						live = false;
 					}
 				},
+				() => {
+					if (!opened) throw new Error("Durable engine is parked");
+					return opened;
+				},
 			),
 			{ residencyProbe: probe },
 		) as InProcessSessionEngine & { residencyProbe: () => ResidencyProbe };
@@ -212,7 +219,7 @@ export function sdkResidencyHydrate(options: ResidencyHydrateOptions): HydrateSe
 						const reopened = await openDurable({
 							cwd,
 							continueSession: true,
-							modelRuntime: options.modelRuntime,
+							modelRuntime,
 						});
 						opened = reopened;
 						openedRef = new WeakRef(reopened as object);

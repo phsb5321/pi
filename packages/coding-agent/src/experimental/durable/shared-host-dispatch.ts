@@ -5,7 +5,7 @@
  * forced — `submit`/`setModel` reach the live controller and are only used
  * when an application explicitly drives them.
  */
-import type { JsonValue } from "@earendil-works/chord";
+import { decodeServiceControlCall, type JsonValue } from "@earendil-works/chord";
 import type { ConversationId } from "@earendil-works/pi-durable";
 import {
 	createInProcessRuntime,
@@ -17,6 +17,7 @@ import {
 	type SharedHostHooks,
 	type SharedHostPolicy,
 } from "@earendil-works/pi-server";
+import { attachDurablePresentation, DurablePresentation } from "./presentation-service.ts";
 import type { OpenDurableResult } from "./runtime.ts";
 
 /** Opaque service member map for one durable session engine. */
@@ -27,6 +28,7 @@ export const DURABLE_MEMBERS = new Set([
 	"cycleThinking",
 	"setModel",
 	"switchConversation",
+	"toggleTasks",
 	"view",
 ]);
 
@@ -52,6 +54,9 @@ export async function dispatchDurableMember(
 			return { ok: true };
 		case "cycleThinking":
 			await controller.cycleThinking();
+			return { ok: true };
+		case "toggleTasks":
+			await controller.toggleTasks();
 			return { ok: true };
 		case "setModel":
 			await controller.setModel(args[0] as never);
@@ -84,13 +89,26 @@ export function durableEngineShell(
 	identity: InProcessSessionIdentity,
 	invokeService: (call: { member?: unknown; args?: unknown }) => Promise<JsonValue | undefined>,
 	close: () => Promise<void>,
+	getOpened?: () => OpenDurableResult,
 ): InProcessSessionEngine {
 	return {
 		identity,
 		async attach() {
+			const presentation = getOpened ? attachDurablePresentation(getOpened().view, invokeService) : undefined;
+			let released = false;
 			return {
-				invokeService: async (call: { member?: unknown; args?: unknown }) => invokeService(call),
-				release: async () => undefined,
+				async invokeService(call, publish, context) {
+					if (released) throw new Error("Durable attachment is released");
+					if (presentation && (call.serviceId === DurablePresentation.id || decodeServiceControlCall(call))) {
+						return presentation.invokeService(call, publish, context);
+					}
+					return invokeService(call);
+				},
+				async release(context) {
+					if (released) return;
+					released = true;
+					await presentation?.release(context);
+				},
 			};
 		},
 		async close() {
