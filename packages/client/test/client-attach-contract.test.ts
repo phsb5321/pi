@@ -2,6 +2,7 @@ import type { JsonValue } from "@earendil-works/chord";
 import type { RequestEnvelope, ServerId } from "@earendil-works/pi-protocol";
 import { describe, expect, test } from "vitest";
 import { attachSession, attachSessions, requireSessionTarget } from "../src/client-attach.ts";
+import { createLazyThinClient } from "../src/thin-client.ts";
 import { Client, DisconnectedError, type SessionTarget } from "../src/index.ts";
 import { MemoryByteServer } from "./support.ts";
 
@@ -25,6 +26,7 @@ interface ServiceShape {
 class ContractHost {
 	readonly attachmentPublishes: Array<{ sessionId: string; attachmentId: string } | null> = [];
 	readonly echoCounts = new Map<string, number>();
+	readonly transcripts = new Map<string, string[]>();
 	private attachmentSequence = 0;
 	private readonly routes = new Map<MemoryByteServer, SessionTarget | undefined>();
 
@@ -71,7 +73,11 @@ class ContractHost {
 		}
 		const route = this.routes.get(server);
 		const requested = request.target as SessionTarget;
-		if (route === undefined || route.sessionId !== requested.sessionId || route.attachmentId !== requested.attachmentId) {
+		if (
+			route === undefined ||
+			route.sessionId !== requested.sessionId ||
+			route.attachmentId !== requested.attachmentId
+		) {
 			fail("session-not-attached");
 			return;
 		}
@@ -82,6 +88,18 @@ class ContractHost {
 		}
 		if (service.member === "state") {
 			ok({ state: this.echoCounts.get(route.sessionId) ?? 0 });
+			return;
+		}
+		if (service.member === "submit") {
+			// ThinClient seam members (canary engine shape): transcript append.
+			const lines = this.transcripts.get(route.sessionId) ?? [];
+			lines.push(String(service.args[0] ?? ""));
+			this.transcripts.set(route.sessionId, lines);
+			ok({ ok: true });
+			return;
+		}
+		if (service.member === "observe") {
+			ok([...(this.transcripts.get(route.sessionId) ?? [])] as unknown as JsonValue);
 			return;
 		}
 		fail("unsupported");
@@ -106,6 +124,24 @@ async function openConnection(host: ContractHost): Promise<Connection> {
 	};
 	void pump();
 	return { server, client };
+}
+
+/** Lazy presentation on a synthetic connection (shared setup for the lazy cases). */
+function lazyOn(
+	host: ContractHost,
+	sessionId = "session-a",
+): { lazy: ReturnType<typeof createLazyThinClient>; connects: () => number; connection: () => Client | undefined } {
+	let connects = 0;
+	let connection: Client | undefined;
+	const lazy = createLazyThinClient({
+		sessionId,
+		connect: async () => {
+			connects += 1;
+			connection = (await openConnection(host)).client;
+			return connection;
+		},
+	});
+	return { lazy, connects: () => connects, connection: () => connection };
 }
 
 describe("client-attach contract (headless, synthetic host)", () => {
@@ -188,5 +224,46 @@ describe("client-attach contract (headless, synthetic host)", () => {
 		const sessionB = await attachSession(client, "session-b");
 		expect(sessionB.target?.attachmentId).not.toBe(attachmentIdA);
 		expect(host.attachmentPublishes.filter(Boolean)).toHaveLength(2);
+	});
+
+	test("lazy presentation holds no state until first use", async () => {
+		const host = new ContractHost();
+		const { lazy, connects } = lazyOn(host);
+		expect(connects()).toBe(0); // no connection, no attach, no presentation state
+		await lazy.submit("first");
+		expect(connects()).toBe(1);
+		expect(await lazy.observe()).toEqual(["first"]);
+		expect(connects()).toBe(1);
+		expect(host.attachmentPublishes).toHaveLength(1);
+	});
+
+	test("lazy first-use races attach exactly once (idempotent)", async () => {
+		const host = new ContractHost();
+		const { lazy, connects } = lazyOn(host);
+		await Promise.all([lazy.submit("a"), lazy.observe(), lazy.submit("b")]);
+		expect(connects()).toBe(1);
+		expect(host.attachmentPublishes).toHaveLength(1);
+		expect(await lazy.observe()).toEqual(["a", "b"]);
+	});
+
+	test("lazy close before first use is a zero-cost no-op", async () => {
+		const host = new ContractHost();
+		const { lazy, connects } = lazyOn(host);
+		await lazy.close();
+		expect(connects()).toBe(0);
+		expect(host.attachmentPublishes).toHaveLength(0);
+		await expect(lazy.submit("late")).rejects.toThrow(/closed/);
+		await expect(lazy.observe()).rejects.toThrow(/closed/);
+	});
+
+	test("lazy close after use detaches and disconnects exactly once", async () => {
+		const host = new ContractHost();
+		const { lazy, connection } = lazyOn(host);
+		await lazy.submit("kept");
+		await lazy.close();
+		await lazy.close(); // idempotent
+		expect(host.attachmentPublishes.at(-1)).toBeNull();
+		expect(connection()?.connected).toBe(false);
+		await expect(lazy.observe()).rejects.toThrow(/closed/);
 	});
 });
