@@ -10,3 +10,7 @@ export type {
 	ServiceSubscription,
 	Unsubscribe,
 } from "./types.ts";
+export { attachSession, attachSessions, requireSessionTarget, SESSION_MANAGEMENT_SERVICE } from "./client-attach.ts";
+export type { AttachedSession, AttachSessionsOptions } from "./client-attach.ts";
+export { createLazyThinClient, createSessionInvoke, createThinClient } from "./thin-client.ts";
+export type { Invoke, LazyThinClientOptions, ThinClient } from "./thin-client.ts";
