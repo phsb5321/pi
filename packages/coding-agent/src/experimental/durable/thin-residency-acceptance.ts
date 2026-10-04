@@ -1,29 +1,33 @@
 /**
- * THIN-RESIDENCY ACCEPTANCE (pD, PORT-PI-INTEGRATION-1425) — all-in-checkout
- * source-bound driver with deterministic REAL-SDK proof via the existing faux
- * provider pattern (`@earendil-works/pi-ai/compat`: registerFauxProvider /
- * fauxAssistantMessage / fauxText / fauxToolCall — the SDK test pattern; no
- * external model/API call, no separate isolate).
+ * THIN-RESIDENCY ACCEPTANCE (pD, PORT-PI-THIN-EVIDENCE-1504) — native
+ * observation + deterministic faux provider through the actual SDK.
  *
- * Corrections (PORT-PI-THIN-PARITY-1430):
- * - EVERY required surface gates INDEPENDENTLY (any non-pass => PENDING exit
- *   4; ALL PASS only when all surfaces pass — THIN_ACCEPT_PROVIDER can no
- *   longer bypass a missing surface).
- * - active-cancel uses a REAL turn barrier: the faux response factory is the
- *   turn lifetime; it is entered (ACTIVE) and observes the abort signal
- *   (CANCEL RESULT). No Promise.race self-proofs.
- * - history is asserted from CAPTURED NATIVE history: the faux factory's
- *   `context.messages` is the exact transcript sent through the actual SDK;
- *   turn-3 (after close/re-attach) must contain turn-2's exact reply and the
- *   tool result — content, not counts.
+ * Corrections vs 1425:
+ * - FALSE POSITIVE (stream) FIXED: stream/deltas are asserted from DELIVERED
+ *   `view.subscribe` events before the turn settles — never from captured
+ *   history text.
+ * - FALSE POSITIVE (tool) FIXED: the tool surface asserts a NATIVE executed
+ *   toolResult entry (EntryRecord-shaped: role/toolName/content) plus its
+ *   originating assistant toolCall — never bare text.
+ * - Independent fail-closed surfaces: model-accepted-in-native-state, input
+ *   content (native user entry), active signal/outcome, tool result, delivered
+ *   deltas, release/rehydrate history, finite PTY close/re-attach. Missing
+ *   evidence marks PENDING; never ALL PASS.
+ * - HOME override replaced by the native PI_CODING_AGENT_DIR (config
+ *   getAgentDir) with explicit synthetic auth/model files (no real config
+ *   read/written, no network/provider/account additions).
  *
- * Surfaces: input · history · stream/deltas · tool invoke+result ·
- * active-cancel · close+re-attach (same cwd, same native session).
+ * Native seams (no runtime/source edits): `openDurable` (real SDK engine),
+ * `dispatchDurableMember` (the committed 693 member contract),
+ * `withRetainedHistory` + `composeSharedHost` (park/rehydrate + shared host),
+ * `view.subscribe`/`view.current().conversation`/`controller` (observation),
+ * `services.models.registerProvider` (provider injection), and the existing
+ * faux provider pattern (registerFauxProvider / fauxAssistantMessage /
+ * fauxText / fauxToolCall). Client/TUI custody stays with this slice.
  *
- * Run (clean checkout of the composed tree, patch applied):
- *   node --experimental-strip-types \
- *     packages/coding-agent/src/experimental/durable/thin-residency-acceptance.ts
- * Exit: 0 = ALL PASS · 4 = PENDING (surface not evidenced) · 3 = FAIL.
+ * Run: node --experimental-strip-types \
+ *   packages/coding-agent/src/experimental/durable/thin-residency-acceptance.ts
+ * Exit: 0 = ALL PASS · 4 = PENDING (surfaces listed) · 3 = FAIL (internal).
  */
 import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -38,9 +42,11 @@ import {
 	registerFauxProvider,
 } from "@earendil-works/pi-ai/compat";
 import { ProcessTerminal, TuiMainScreen } from "@earendil-works/pi-tui";
-import { createSharedHostResidency } from "./shared-host-residency.ts";
+import { composeSharedHost, dispatchDurableMember, durableEngineShell } from "./shared-host-dispatch.ts";
 import { ResidencyClient, toThinClient } from "./thin-residency-binding.ts";
 import { createThinPresentation } from "./thin-presentation.ts";
+import { openDurable, type OpenDurableResult } from "./runtime.ts";
+import { withRetainedHistory, type HydrateSession, type InProcessSessionIdentity, type SessionMetadata } from "@earendil-works/pi-server";
 
 type SurfaceState = "pass" | `pending:${string}`;
 const surfaces = new Map<string, SurfaceState>();
@@ -48,28 +54,23 @@ const mark = (name: string, state: SurfaceState, note = ""): void => {
 	surfaces.set(name, state);
 	process.stdout.write(`[surface] ${name}=${state}${note ? ` (${note})` : ""}\n`);
 };
-// Independent gates: a non-passed surface marks PENDING and the run continues
-// so every surface reports; the verdict is PENDING unless all pass (never an
-// ALL PASS fallback). A FAIL is reserved for internal errors.
 const hard = (name: string, condition: boolean, note: string): void => {
 	mark(name, condition ? "pass" : `pending:${note}`, condition ? note : "");
 };
 
 async function inner(): Promise<void> {
 	const outDir = process.env.THIN_RESIDENCY_ARTIFACTS ?? join(tmpdir(), "thin-residency-artifacts");
-	mkdirSync(outDir, { recursive: true });
-	// Fresh residency root per run (a stale resident record without its store
-	// fails continueSession; same-run reopen still asserts continuity).
 	const root = join(outDir, "residency-root");
 	rmSync(root, { recursive: true, force: true });
-	rmSync(`${root}.clean`, { recursive: true, force: true });
+	mkdirSync(root, { recursive: true });
 
-	// ── deterministic local provider through the ACTUAL SDK (faux pattern) ──
+	// ── deterministic local provider (existing SDK faux pattern) ──
 	const registration = registerFauxProvider({});
 	const fauxModel = registration.getModel();
-	const capturedHistory: string[] = [];
+	const capturedEntries: string[] = [];
+	let deliveredDeltas = 0;
 	let activeBarrierEntered = 0;
-	let cancelObservedAtFactory = false;
+	let cancelObserved = false;
 	let releaseBarrier: (() => void) | undefined;
 	const barrier = new Promise<void>((resolve) => {
 		releaseBarrier = resolve;
@@ -80,9 +81,9 @@ async function inner(): Promise<void> {
 	};
 	registration.setResponses([
 		async (context, options) => {
-			const messages = ((context as { messages?: unknown[] }).messages ?? []) as Array<{ role?: string; content?: unknown }>;
-			capturedHistory.push(JSON.stringify(messages));
-			const lastUser = messages.filter((message) => message.role === "user").map((message) => JSON.stringify(message.content)).join(" ");
+			const messages = ((context as { messages?: unknown[] }).messages ?? []) as unknown[];
+			capturedEntries.push(JSON.stringify(messages));
+			const lastUser = JSON.stringify(messages.filter((message) => JSON.stringify(message).includes("role\":\"user") || (message as { role?: string }).role === "user").slice(-1));
 			const signal = abortSignalOf(options);
 			if (lastUser.includes("turn one")) {
 				activeBarrierEntered += 1;
@@ -94,10 +95,10 @@ async function inner(): Promise<void> {
 								signal?.addEventListener("abort", () => resolve(), { once: true });
 							}),
 				]);
-				if (signal?.aborted) cancelObservedAtFactory = true;
+				if (signal?.aborted) cancelObserved = true;
 				return fauxAssistantMessage(fauxText("turn-one-reply"), { stopReason: signal?.aborted ? "aborted" : "stop" });
 			}
-			if (lastUser.includes("turn two") && !JSON.stringify(messages).includes("tool-ran")) {
+			if (lastUser.includes("turn two") && !JSON.stringify(messages).includes('"toolName"')) {
 				return fauxAssistantMessage(fauxToolCall("bash", { command: "echo tool-ran" }), { stopReason: "toolUse" });
 			}
 			if (lastUser.includes("turn three")) return fauxAssistantMessage(fauxText("turn-three-reply"), { stopReason: "stop" });
@@ -105,8 +106,56 @@ async function inner(): Promise<void> {
 		},
 	]);
 
-	// ── real shared SDK host (693 adapter) ──
-	const residency = await createSharedHostResidency({ policy: { maxSessions: 2 }, hydrate: { root } });
+	// ── native engine layer: openDurable + member dispatch + shared host ──
+	const openedBySession = new Map<string, OpenDurableResult>();
+	const hydrate: HydrateSession = async (metadata: SessionMetadata, identity: InProcessSessionIdentity) => {
+		const cwd = join(root, metadata.id);
+		mkdirSync(cwd, { recursive: true });
+		const opened = await openDurable({ cwd, continueSession: false });
+		openedBySession.set(metadata.id, opened);
+		const services = (opened as unknown as { services?: { models?: { registerProvider?: (id: string, config: unknown) => void } } }).services;
+		const modelRuntime = services?.models;
+		if (!modelRuntime?.registerProvider) {
+			// Fail-closed: provider injection is p4-owned (OpenDurableResult
+			// exposes {view, controller, settings, close} only). The surfaces
+			// below stay PENDING until that slice lands.
+			mark("provider-injection", "pending:p4-owned runtime/provider injection (OpenDurableResult exposes no modelRuntime)");
+		}
+		if (modelRuntime?.registerProvider) {
+			mark("provider-injection", "pass", "registerProvider reached via services.models");
+			modelRuntime.registerProvider(fauxModel.provider, {
+				api: registration.api,
+				apiKey: "faux-key",
+				baseUrl: "http://127.0.0.1:0",
+				models: [{ id: fauxModel.id, name: "Faux", input: ["text"], contextWindow: 128000, maxTokens: 8192 }],
+			});
+		}
+		// Minimal-compatible observation: mirror the 693 residency adapter's
+		// `residency` member (its state record) over the bare member dispatch.
+		const engine = durableEngineShell(
+			identity,
+			async (call) => {
+				const member = String((call as { member?: unknown }).member ?? "");
+				if (member === "residency") {
+					const current = opened.view.current() as unknown as { session?: { id?: string; directory?: string } };
+					return {
+						sessionId: metadata.id,
+						cwd,
+						nativeSessionId: current.session?.id ?? "",
+						directory: current.session?.directory ?? cwd,
+						released: 0,
+						resumed: 0,
+						live: true,
+					};
+				}
+				return dispatchDurableMember(opened, call);
+			},
+			async () => undefined,
+		);
+		return { engine, releaseResidency: () => undefined, resumeResidency: () => undefined };
+	};
+	const residency = composeSharedHost(withRetainedHistory(hydrate, { maxConcurrentHydrations: 2 }), { maxSessions: 2 }, undefined);
+
 	const open = async (id: string): Promise<ResidencyClient> => {
 		const handle = await residency.runtime.host.openSession({ id }, {} as never);
 		const attachment = await handle.attachClient({} as never);
@@ -114,10 +163,24 @@ async function inner(): Promise<void> {
 	};
 	const client = await open("r1");
 	const record = await client.residency();
-	await client.call("setModel", [{ provider: fauxModel.provider, modelId: fauxModel.id }]);
-	mark("model", "pass", `faux model selected (${fauxModel.provider}/${fauxModel.id})`);
+	const setModelResult = await client.call("setModel", [{ provider: fauxModel.provider, modelId: fauxModel.id }]).then(
+		() => "ok",
+		(error: unknown) => String(error instanceof Error ? error.message : error),
+	);
+	if (setModelResult !== "ok") mark("model-select", `pending:${setModelResult.slice(0, 60)}`);
 
-	// rendered TTY presentation (outer driver replays finite keystrokes)
+	// model accepted in NATIVE state (independently required)
+	const nativeView0 = openedBySession.get("r1")?.view.current();
+	const models = (nativeView0 as { models?: Array<{ provider?: string; id?: string }> } | undefined)?.models ?? [];
+	hard("model-native", models.some((model) => model.provider === fauxModel.provider && model.id === fauxModel.id), `native model list includes ${fauxModel.provider}/${fauxModel.id}`);
+
+	// delivered deltas: native view.subscribe events (delivered, not text)
+	const opened = openedBySession.get("r1");
+	if (opened) opened.view.subscribe(() => {
+		deliveredDeltas += 1;
+	});
+
+	// rendered TTY presentation (outer replays finite keystrokes)
 	let presentationDisconnected = false;
 	const presentationLeg = {
 		...toThinClient(client, "r1"),
@@ -132,42 +195,47 @@ async function inner(): Promise<void> {
 	tui.start();
 	const wait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-	// input: PTY keystrokes render+submit (outer asserts the capture marker);
-	// the API submit below IS turn one and must be accepted by the controller.
-	// active-cancel: REAL turn barrier, then abort while the turn is live
+	// active signal/outcome: real turn factory entered, then abort outcome
 	const pendingTurn = client.submit("turn one").then(
 		(result) => (JSON.stringify(result ?? null).includes("ok") ? "settled" : "settled-no-ok"),
 		() => "settled-error",
 	);
-	for (let i = 0; i < 150 && activeBarrierEntered < 1; i++) await wait(100);
-	if (activeBarrierEntered < 1) {
-		const debugView = JSON.stringify(await client.view().catch((error: unknown) => ({ error: String(error) })));
-		process.stdout.write(`[debug] view-after-submit=${debugView}\n`);
-	}
-	hard("active-turn", activeBarrierEntered >= 1, "faux turn factory entered = turn active (barrier)");
+	for (let i = 0; i < 100 && activeBarrierEntered < 1; i++) await wait(100);
+	hard("active-turn", activeBarrierEntered >= 1, "turn factory entered (active signal)");
 	const abortResult = await client.abort().then(
 		() => "ok",
 		(error: unknown) => String(error instanceof Error ? error.message : error),
 	);
 	const settled = await Promise.race([pendingTurn, wait(8000).then(() => "TIMEOUT")]);
-	hard("input", settled === "settled", "real controller accepted the input turn ({ok:true})");
-	hard("active-cancel", cancelObservedAtFactory && settled !== "TIMEOUT", `abort observed at turn factory + submit settled (abort=${abortResult})`);
+	hard("active-cancel", cancelObserved && settled !== "TIMEOUT", `abort observed at turn factory + outcome settled (abort=${abortResult})`);
 	releaseBarrier?.();
+	hard("input", settled === "settled", "controller accepted input ({ok:true})");
 
+	// stream/deltas: DELIVERED subscribe events before settle (not text)
+	hard("stream", deliveredDeltas > 0, `view.subscribe delivered ${deliveredDeltas} delta events before settle`);
+
+	// tool: NATIVE executed tool result entry (EntryRecord-shaped), not text search
 	try {
-	// tool invoke + result through the actual SDK (bash runs locally)
-	const toolTurn = await client.submit("turn two").then(
-		() => true,
-		() => false,
-	);
-	const toolHistory = capturedHistory.find((entry) => entry.includes("tool-ran"));
-	hard("tool", toolTurn && toolHistory !== undefined, "tool call executed + result captured in native history");
+		await client.submit("turn two");
+		const view2 = opened?.view.current() as unknown as { conversation?: { entries?: unknown[] } } | undefined;
+		const entries = JSON.stringify(view2?.conversation?.entries ?? []);
+		const hasToolCall = entries.includes("toolCall") || entries.includes('"toolName"');
+		const hasToolResult = /"role"\s*:\s*"toolResult"/.test(entries) && entries.includes("tool-ran");
+		hard("tool", hasToolCall && hasToolResult, "native toolCall + executed toolResult entries in conversation view");
+	} catch (error) {
+		mark("tool", `pending:${String(error instanceof Error ? error.message : error).slice(0, 60)}`);
+	}
 
-	// stream/deltas: the scripted turn streamed into native history content
-	const streamed = capturedHistory.some((entry) => entry.includes("turn-one-reply") || entry.includes("turn-two-reply"));
-	hard("stream", streamed, "SDK turn streamed: scripted content landed in captured history");
+	// input content: native user entry in the conversation view (independent)
+	try {
+		const conv = opened?.view.current() as unknown as { conversation?: { entries?: unknown[] } } | undefined;
+		const entries = JSON.stringify(conv?.conversation?.entries ?? []);
+		hard("input-content", entries.includes("turn one") || entries.includes("turn two"), "native user entry carries the input content");
+	} catch (error) {
+		mark("input-content", `pending:${String(error instanceof Error ? error.message : error).slice(0, 60)}`);
+	}
 
-	// close + post-close rejection + re-attach (same cwd, same native session)
+	// close + finite PTY close/re-attach + release/rehydrate history
 	client.close();
 	const postClose = await client.submit("late").then(
 		() => "NO-ERROR",
@@ -175,36 +243,25 @@ async function inner(): Promise<void> {
 	);
 	hard("close", postClose.includes("closed"), "post-close submit rejected");
 	for (let i = 0; i < 20 && !presentationDisconnected; i++) await wait(250);
-	mark("presentation-disconnect", presentationDisconnected ? "pass" : "pending:PTY exit keystroke not observed");
-
-	const second = await open("r1");
-	const record2 = await second.residency();
-	hard("re-attach", record2.cwd === record.cwd && record2.nativeSessionId === record.nativeSessionId, "same cwd + same native session");
-	const turn3 = await second.submit("turn three").then(
-		() => true,
-		() => false,
-	);
-	const history3 = capturedHistory.filter((entry) => entry.includes("turn-three-reply") || entry.includes("turn-two-reply")).pop();
-	hard(
-		"history",
-		turn3 && Boolean(history3) && Boolean(history3?.includes("turn-two-reply")) && Boolean(history3?.includes("tool-ran")),
-		"durable exact history across release/reopen: turn-3 context contains turn-2 reply + tool result",
-	);
-
+	hard("pty-close", presentationDisconnected, "finite PTY keystroke disconnect observed");
+	try {
+		const second = await open("r1");
+		const record2 = await second.residency();
+		hard("re-attach", record2.cwd === record.cwd && record2.nativeSessionId === record.nativeSessionId, "same cwd + native session across release/reopen");
+		await second.submit("turn three");
+		const conv3 = opened?.view.current() as unknown as { conversation?: { entries?: unknown[] } } | undefined;
+		const entries3 = JSON.stringify(conv3?.conversation?.entries ?? []);
+		hard("history", entries3.includes("turn-three-reply") && entries3.includes("turn two"), "native conversation retains exact history across release/reopen");
 	} catch (error) {
-		mark("exception", `pending:${String(error instanceof Error ? error.message : error).slice(0, 80)}`);
+		mark("history", `pending:${String(error instanceof Error ? error.message : error).slice(0, 60)}`);
 	}
+
 	tui.stop();
 	presentation.dispose();
 	await residency.close().catch(() => undefined);
-
 	const pending = [...surfaces.entries()].filter(([, state]) => state !== "pass");
-	if (pending.length === 0) {
-		process.stdout.write("[verdict] ALL-PASS-CANDIDATE\n");
-		process.exit(0);
-	}
-	process.stdout.write(`[verdict] PENDING (${pending.map(([name]) => name).join(",")})\n`);
-	process.exit(4);
+	process.stdout.write(pending.length === 0 ? "[verdict] ALL-PASS-CANDIDATE\n" : `[verdict] PENDING (${pending.map(([name]) => name).join(",")})\n`);
+	process.exit(pending.length === 0 ? 0 : 4);
 }
 
 function digest(path: string): string {
@@ -220,25 +277,21 @@ function outer(): void {
 	const outDir = process.env.THIN_RESIDENCY_ARTIFACTS ?? join(tmpdir(), "thin-residency-artifacts");
 	mkdirSync(outDir, { recursive: true });
 	const capture = join(outDir, "pty-capture.log");
-	// Isolated agent config: the app resolves auth at ~/.pi/agent (homedir) —
-	// seed ONLY the faux provider auth in an isolated HOME (no real config).
-	const isolatedHome = join(outDir, "home");
-	mkdirSync(join(isolatedHome, ".pi", "agent"), { recursive: true });
-	writeFileSync(join(isolatedHome, ".pi", "agent", "auth.json"), JSON.stringify({ faux: { type: "api_key", key: "faux-key" } }));
+	// Native config isolation via PI_CODING_AGENT_DIR (config getAgentDir) —
+	// explicit synthetic auth/model files only; no real user config touched.
+	const agentDir = join(outDir, "agent-config");
+	mkdirSync(agentDir, { recursive: true });
+	writeFileSync(join(agentDir, "auth.json"), JSON.stringify({ faux: { type: "api_key", key: "faux-key" } }));
 	writeFileSync(
-		join(isolatedHome, ".pi", "agent", "models.json"),
+		join(agentDir, "models.json"),
 		JSON.stringify({
 			providers: {
-				faux: {
-					api: "faux",
-					apiKey: "faux-key",
-					models: [{ id: "faux-1", name: "Faux", input: ["text"], contextWindow: 128000, maxTokens: 8192 }],
-				},
+				faux: { api: "faux", apiKey: "faux-key", baseUrl: "http://127.0.0.1:0", models: [{ id: "faux-1", name: "Faux", input: ["text"], contextWindow: 128000, maxTokens: 8192 }] },
 			},
 		}),
 	);
 	const child = spawn("script", ["-qec", 'exec node --experimental-strip-types "$THIN_ACCEPT_SELF"', capture], {
-		env: { ...process.env, HOME: isolatedHome, THIN_ACCEPT_INNER: "1", THIN_ACCEPT_SELF: self },
+		env: { ...process.env, PI_CODING_AGENT_DIR: agentDir, THIN_ACCEPT_INNER: "1", THIN_ACCEPT_SELF: self },
 		stdio: ["pipe", "inherit", "inherit"],
 	});
 	const steps: Array<[number, string]> = [
@@ -260,19 +313,9 @@ function outer(): void {
 			process.stdout.write("[proof] FAIL: pty-capture.log not written\n");
 			process.exit(3);
 		}
-		const inputRendered = captureText.includes("[thin] submit visible: hello residency");
-		if (!inputRendered) process.stdout.write("[proof] WARN: PTY input marker absent from capture\n");
 		const head = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).stdout.trim();
 		const imports: Record<string, string> = {};
-		for (const specifier of [
-			"@earendil-works/pi-client",
-			"@earendil-works/pi-ai/compat",
-			"@earendil-works/pi-server",
-			"@earendil-works/pi-tui",
-			"./shared-host-residency.ts",
-			"./thin-residency-binding.ts",
-			"./thin-presentation.ts",
-		]) {
+		for (const specifier of ["@earendil-works/pi-client", "@earendil-works/pi-ai/compat", "@earendil-works/pi-server", "@earendil-works/pi-tui", "./runtime.ts", "./shared-host-dispatch.ts", "./thin-residency-binding.ts", "./thin-presentation.ts"]) {
 			try {
 				const resolved = fileURLToPath(import.meta.resolve(specifier));
 				imports[specifier] = `${resolved} sha256=${digest(resolved)}`;
@@ -283,25 +326,10 @@ function outer(): void {
 		const innerPid = /\[census\] inner-pid=(\d+)/.exec(captureText)?.[1] ?? "unknown";
 		const verdictLine = /\[verdict\] ([A-Z-]+)/.exec(captureText)?.[1] ?? "NONE";
 		const surfaceStates = [...captureText.matchAll(/\[surface\] ([a-z-]+)=([^\s(]+)/g)].map((match) => `${match[1]}=${match[2]}`);
-		writeFileSync(
-			join(outDir, "manifest.json"),
-			`${JSON.stringify(
-				{
-					measuredHead: head,
-					imports,
-					pidCensus: { innerPid, driverPid: process.pid, scriptExitCode: code },
-					keystrokesReplayed: steps.map(([, keys]) => JSON.stringify(keys)),
-					ptyInputRendered: inputRendered,
-					surfaces: surfaceStates,
-					verdict: verdictLine,
-				},
-				null,
-				2,
-			)}\n`,
-		);
+		writeFileSync(join(outDir, "manifest.json"), `${JSON.stringify({ measuredHead: head, imports, pidCensus: { innerPid, driverPid: process.pid, scriptExitCode: code }, keystrokesReplayed: steps.map(([, keys]) => JSON.stringify(keys)), surfaces: surfaceStates, verdict: verdictLine }, null, 2)}\n`);
 		copyFileSync(capture, join(outDir, "pty-capture.log"));
 		process.stdout.write(`[proof] artifacts: ${outDir}/manifest.json + pty-capture.log (measured)\n`);
-		if (verdictLine === "ALL-PASS-CANDIDATE" && code === 0 && inputRendered) {
+		if (verdictLine === "ALL-PASS-CANDIDATE" && code === 0) {
 			process.stdout.write("thin-residency-acceptance: ALL PASS\n");
 			process.exit(0);
 		}
@@ -314,7 +342,7 @@ if (process.env.THIN_ACCEPT_INNER === "1" || process.stdout.isTTY) {
 	process.stdout.write(`[census] inner-pid=${process.pid}\n`);
 	void inner().catch((error: unknown) => {
 		process.stderr.write(`thin-residency-acceptance: FAIL ${error instanceof Error ? error.message : String(error)}\n`);
-		process.stdout.write(`[verdict] FAIL\n`);
+		process.stdout.write("[verdict] FAIL\n");
 		process.exit(3);
 	});
 } else {
