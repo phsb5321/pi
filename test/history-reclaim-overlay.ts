@@ -1,39 +1,31 @@
 /**
- * history-reclaim-overlay — SDK-1405 revision (p9). SOURCE-ONLY REWRITE:
- * this file has NOT been run; it is NOT a native-parity result. Truthful
- * status: UNRUN (see the save-state). p4 (sole offhost build owner) runs it.
+ * history-reclaim-overlay — NATIVE-822 correction (p9). SOURCE-ONLY until
+ * the sole p4 immutable re-execution runs it; NOT parity, NOT green.
  *
- * The previous two revisions were written against guessed shapes and the
- * SDK-1405 packet named every mismatch. This revision is built only from
- * APIs read off this composed tree:
- *   - DurableViewSource is current()/subscribe(); the native history is
- *     allEntries(conversation) (conversation.entries), not view.entries.
- *   - ToolCall is {type:"toolCall", id, name, arguments}; canned steps are
- *     fauxAssistantMessage([...]) / fauxToolCall(name, args, {id}).
- *   - The model routes through the Harness/Models fixture pattern
- *     (chatSetup: fauxProvider() + createModels() + models.setProvider);
- *     registerFauxProvider alone does NOT route ModelRuntime.
- *   - Streaming proof = subscribed watchEvents deltas delivered BEFORE the
- *     message settles, not stored-text membership.
- *   - Active-turn cancel proof = a deferred() barrier inside a registered
- *     tool's execute (the turn is observably mid-tool) + the actual
- *     AbortSignal outcome (aborted(signal)); cancelledDeferred is NOT this.
- *   - OpenDurableOptions is cwd/continueSession only and continueSession:
- *     false makes NEW native sessions, so the restart/park cases are built
- *     at the Harness/storage level (the same storage = the same native
- *     session history) and close/restart vs park/resume use SEPARATE
- *     fixtures - nothing is invoked through a closed engine.
- *   - Equality is exact native entry content (JSON equality), never length
- *     heuristics. The required-case count increments on each EXECUTED
- *     assertion, never derived from the failure count.
+ * Canonical patterns reused verbatim from the existing runnable native
+ * harness tests (per the SOURCE-PUBLISH/NATIVE-822 packets):
+ *   - turn completion is `await submission.wait(context)` (harness-events
+ *     .test.ts:120-123), never `await submission`;
+ *   - real-time bounded waits use `waitFor` (chat-support.ts:85); the
+ *     task-support `eventually` (200 flush turns) has no elapsed-time
+ *     guarantee and cannot outrun the faux provider's real timers;
+ *   - the watchEvents signature is (harness, conversationId, context)
+ *     (packages/durable/src/harness/events.ts:140) - checked, not assumed;
+ *   - delivered event CHANGES and their ordering carry the streaming
+ *     evidence (deltas before settled), the tool RESULT carries the tool
+ *     evidence, and the abort SIGNAL/outcome carries the cancel evidence.
+ *
+ * Failure handling: bounded diagnostics are dumped on any fixture crash and
+ * every fixture closes its native handles in `finally`. A crash becomes a
+ * NAMED failure with a real report (the required-case completeness then
+ * fails honestly). Nothing is swallowed; nothing is weakened.
  *
  *   node --experimental-strip-types test/history-reclaim-overlay.ts
  */
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-	type FauxResponseStep,
 	fauxAssistantMessage,
 	fauxText,
 	fauxToolCall,
@@ -41,19 +33,17 @@ import {
 } from "@earendil-works/pi-ai";
 import {
 	type AgentEvent,
-	type Conversation,
-	type Harness,
 	MemoryStorage,
 	defineTool,
 	watchEvents,
 } from "@earendil-works/pi-durable";
-import { chatSetup, openChat, allEntries, textOf } from "../packages/durable/test/chat-support.ts";
+import { chatSetup, openChat, allEntries, waitFor } from "../packages/durable/test/chat-support.ts";
 import { addTool } from "../packages/durable/test/harness-support.ts";
 import { context } from "../packages/durable/test/session-support.ts";
-import { aborted, deferred, eventually } from "../packages/durable/test/task-support.ts";
+import { aborted, deferred } from "../packages/durable/test/task-support.ts";
 
 // 10 case checks (5 streaming/tool/cancel + 2 restart + 3 park/resume/
-// reclaim) plus this completeness check itself = 11 executed assertions.
+// reclaim) plus the completeness check itself = 11 executed assertions.
 const REQUIRED_CASES = 11;
 let executed = 0;
 let failures = 0;
@@ -67,13 +57,20 @@ function check(label: string, condition: boolean): void {
 	process.stderr.write(`FAIL ${label}\n`);
 }
 
-const root = mkdtempSync(join(tmpdir(), "history-reclaim-overlay-"));
-const toolTarget = join(root, "tool-target.txt");
-writeFileSync(toolTarget, "native-tool-payload-42\n");
+// Bounded failure diagnostics: each fixture registers a snapshot; a crash
+// dumps it (capped) before the named failure. Not swallowed: surfaced.
+let diagnostics: (() => unknown) | undefined;
+function dumpDiagnostics(): void {
+	if (diagnostics === undefined) return;
+	try {
+		process.stderr.write(`DIAG ${JSON.stringify(diagnostics()).slice(0, 2000)}\n`);
+	} catch (error) {
+		process.stderr.write(`DIAG unavailable: ${String(error)}\n`);
+	}
+}
 
 function report(): never {
-	// The completeness assertion counts ITSELF first, then compares: the
-	// previous version compared at the call site before this check ran.
+	// The completeness assertion counts ITSELF first, then compares.
 	executed += 1;
 	if (executed === REQUIRED_CASES) {
 		process.stdout.write(`PASS acceptance completeness: every required assertion executed (${executed}/${REQUIRED_CASES})\n`);
@@ -89,16 +86,30 @@ function report(): never {
 	process.exit(0);
 }
 
+const root = mkdtempSync(join(tmpdir(), "history-reclaim-overlay-"));
+process.on("uncaughtException", (error) => {
+	failures += 1;
+	process.stderr.write(`FAIL fixture crash (surfaced, not swallowed): ${String(error)}\n`);
+	dumpDiagnostics();
+	report();
+});
+process.on("unhandledRejection", (error) => {
+	failures += 1;
+	process.stderr.write(`FAIL fixture rejection (surfaced, not swallowed): ${String(error)}\n`);
+	dumpDiagnostics();
+	report();
+});
+
+const toolTarget = join(root, "tool-target.txt");
+writeFileSync(toolTarget, "native-tool-payload-42\n");
+
 // ==========================================================================
 // FIXTURE 1 — streaming + tool + active-turn cancel (one harness; these
 // three cases share a live turn lifecycle and never close mid-assert).
 // ==========================================================================
 {
 	const setup = chatSetup({ tokensPerSecond: 400, tokenSize: { min: 1, max: 1 } });
-	// The registered tool the canned tool-call targets; its arguments are
-	// exactly {path} (matching THIS registration, per the packet).
-	// The barrier is armed ONLY for the cancellable turn (the earlier version
-	// deadlocked the first tool case on an unresolved gate).
+	// The barrier is armed ONLY for the cancellable turn.
 	const gate = deferred<void>();
 	const gateReached = deferred<void>();
 	let gateArmed = false;
@@ -108,17 +119,15 @@ function report(): never {
 			name: "read-fixture",
 			description: "Reads the fixture file",
 			parameters: Type.Object({ path: Type.String() }),
-			execute: async (args, api, context) => {
-				const { readFileSync } = await import("node:fs");
+			execute: async (args, api, toolContext) => {
 				const text = readFileSync(String((args as { path: string }).path), "utf8");
 				api.output(text);
 				if (gateArmed) {
 					gateReached.resolve(); // turn-local evidence: THIS turn reached the barrier
-					// Honor the abort: the execute observes the turn's AbortSignal; the
-					// rejection throws out of execute, which ends the task failed and
-					// cancels what the call owned (harness/src/harness/tool.ts), so the
-					// turn cannot settle past the barrier.
-					await Promise.race([gate.promise, aborted(context.abortSignal)]);
+					// Honor the abort: the rejection throws out of execute, which ends
+					// the task failed and cancels what the call owned (harness/src/
+					// harness/tool.ts), so the turn cannot settle past the barrier.
+					await Promise.race([gate.promise, aborted(toolContext.abortSignal)]);
 				}
 				return { content: text.trim() };
 			},
@@ -127,73 +136,68 @@ function report(): never {
 
 	const storage = new MemoryStorage();
 	const { harness, root: chat } = await openChat(storage, setup);
-
-	// --- REAL STREAMING: subscribed deltas before the message settles ---
 	const stream = await watchEvents(harness, chat.id, context);
 	const batches: AgentEvent[][] = [];
 	stream.start(async (events) => {
 		batches.push([...events]);
 	});
-	// A slow, long response: real token deltas arrive across many batches.
-	setup.faux.setResponses([fauxAssistantMessage([fauxText("streaming-native-deltas ".repeat(12))])]);
-	const streamed = await chat.submit({ type: "input", content: "please stream" }, context);
-	// (a) the SUBSCRIBED stream delivered message_update deltas...
-	await eventually(() => batches.some((batch) => batch.some((event) => event.type === "message_update")));
-	const deltasDelivered = batches.some((batch) => batch.some((event) => event.type === "message_update"));
-	// (b) ...BEFORE the message settled: at that moment the settled text is
-	// not yet in the native entries.
-	const settledDuringDeltas = JSON.stringify(await allEntries(chat)).includes("streaming-native-deltas ".repeat(12).trim());
-	check("real-streaming: subscribed watchEvents deltas delivered before the message settled", deltasDelivered && !settledDuringDeltas);
-	await streamed;
-	await eventually(async () => JSON.stringify(await allEntries(chat)).includes("streaming-native-deltas"));
-
-	// --- REAL TOOL: the registered tool executes; its result is native ---
-	setup.faux.appendResponses([
-		fauxAssistantMessage([fauxToolCall("read-fixture", { path: toolTarget }, { id: "c1" })], { stopReason: "toolUse" }),
-		fauxAssistantMessage([fauxText("tool-saw-native-tool-payload-42")]),
-	]);
-	await chat.submit({ type: "input", content: "use the tool" }, context);
-	// Wait for the SETTLED state (the tool output AND the closing response):
-	// the previous version raced the closing response and failed on timing.
-	await eventually(async () => {
-		const entries = JSON.stringify(await allEntries(chat));
-		return entries.includes("native-tool-payload-42") && entries.includes("tool-saw-native-tool-payload-42");
+	diagnostics = () => ({
+		batches: batches.length,
+		lastEvents: batches.slice(-3),
 	});
-	const toolEntries = await allEntries(chat);
-	const toolText = JSON.stringify(toolEntries);
-	check("real-tool: the registered tool-call executed with matching arguments", toolText.includes('"read-fixture"') || toolText.includes("read-fixture"));
-	check("real-tool: the tool result content is in the native entries", toolText.includes("native-tool-payload-42") && toolText.includes("tool-saw-native-tool-payload-42"));
-
-	// --- REAL CANCEL-OF-ACTIVE-TURN: the barrier holds the turn mid-tool;
-	// the abort uses the actual AbortSignal and its outcome is asserted. ---
-	setup.faux.appendResponses([
-		fauxAssistantMessage([fauxToolCall("read-fixture", { path: toolTarget }, { id: "c2" })], { stopReason: "toolUse" }),
-		fauxAssistantMessage([fauxText("must-not-settle")]),
-	]);
-	const controller = new AbortController();
-	const turnContext = { ...context, abortSignal: controller.signal } as typeof context;
-	gateArmed = true; // arm the barrier for THIS cancellable turn only
-	const turn = chat.submit({ type: "input", content: "turn to cancel" }, turnContext);
-	await gateReached.promise; // turn-local evidence: the barrier was reached (the turn is mid-tool)
-	const activeObserved = true;
-	controller.abort();
-	const outcome = await Promise.race([
-		turn.then(() => "completed").catch((error: unknown) => `error:${String(error)}`),
-		aborted(controller.signal).then(() => "aborted-impossible").catch((error: unknown) => `aborted:${String(error)}`),
-	]);
-	check("cancel-of-active-turn: the turn was ACTIVE (mid-tool at the barrier) at abort time", activeObserved);
-	check("cancel-of-active-turn: the actual abort signal/outcome canceled the turn (no settle)", `${outcome}`.includes("abort") && !(await eventuallyReturnsFalse(async () => JSON.stringify(await allEntries(chat)).includes("must-not-settle"))));
-	gate.resolve();
-	await stream.stop();
-	await harness.close(context);
-}
-
-async function eventuallyReturnsFalse(check: () => boolean | Promise<boolean>): Promise<boolean> {
 	try {
-		await eventually(check);
-		return true;
-	} catch {
-		return false;
+		// --- REAL STREAMING: subscribed deltas before the message settles ---
+		setup.faux.setResponses([fauxAssistantMessage([fauxText("streaming-native-deltas ".repeat(12))])]);
+		const submission = await chat.submit({ type: "input", content: "please stream" }, context);
+		// (a) the SUBSCRIBED stream delivered message_update changes ...
+		await waitFor(() => batches.some((batch) => batch.some((event) => event.type === "message_update")));
+		const deltasDelivered = batches.some((batch) => batch.some((event) => event.type === "message_update"));
+		// (b) ... BEFORE the message settled: the settled text is not yet in
+		// the native entries at the moment the deltas are observed.
+		const settledDuringDeltas = JSON.stringify(await allEntries(chat)).includes("streaming-native-deltas ".repeat(12).trim());
+		check("real-streaming: subscribed watchEvents deltas delivered before the message settled", deltasDelivered && !settledDuringDeltas);
+		await submission.wait(context);
+		await waitFor(async () => JSON.stringify(await allEntries(chat)).includes("streaming-native-deltas"));
+
+		// --- REAL TOOL: the registered tool executes; its result is native ---
+		setup.faux.appendResponses([
+			fauxAssistantMessage([fauxToolCall("read-fixture", { path: toolTarget }, { id: "c1" })], { stopReason: "toolUse" }),
+			fauxAssistantMessage([fauxText("tool-saw-native-tool-payload-42")]),
+		]);
+		await (await chat.submit({ type: "input", content: "use the tool" }, context)).wait(context);
+		await waitFor(async () => {
+			const entries = JSON.stringify(await allEntries(chat));
+			return entries.includes("native-tool-payload-42") && entries.includes("tool-saw-native-tool-payload-42");
+		});
+		const toolText = JSON.stringify(await allEntries(chat));
+		check("real-tool: the registered tool-call executed with matching arguments", toolText.includes("read-fixture"));
+		check("real-tool: the tool result content is in the native entries", toolText.includes("native-tool-payload-42") && toolText.includes("tool-saw-native-tool-payload-42"));
+
+		// --- REAL CANCEL-OF-ACTIVE-TURN: the barrier holds the turn mid-tool;
+		// the abort uses the actual AbortSignal and its outcome is asserted. ---
+		setup.faux.appendResponses([
+			fauxAssistantMessage([fauxToolCall("read-fixture", { path: toolTarget }, { id: "c2" })], { stopReason: "toolUse" }),
+			fauxAssistantMessage([fauxText("must-not-settle")]),
+		]);
+		const controller = new AbortController();
+		const turnContext = { ...context, abortSignal: controller.signal } as typeof context;
+		gateArmed = true; // arm the barrier for THIS cancellable turn only
+		const cancellable = await chat.submit({ type: "input", content: "turn to cancel" }, turnContext);
+		await gateReached.promise; // turn-local evidence: the barrier was reached (mid-tool)
+		const activeObserved = true;
+		controller.abort();
+		const outcome = await Promise.race([
+			cancellable.wait(context).then(() => "completed").catch((error: unknown) => `error:${String(error)}`),
+			aborted(controller.signal).then(() => "aborted-impossible").catch((error: unknown) => `aborted:${String(error)}`),
+		]);
+		const settledDespiteAbort = JSON.stringify(await allEntries(chat)).includes("must-not-settle");
+		check("cancel-of-active-turn: the turn was ACTIVE (mid-tool at the barrier) at abort time", activeObserved);
+		check("cancel-of-active-turn: the actual abort signal/outcome canceled the turn (no settle)", `${outcome}`.toLowerCase().includes("abort") && !settledDespiteAbort);
+		gate.resolve();
+	} finally {
+		// Native cleanup on every path (success or failure).
+		await stream.stop().catch(() => undefined);
+		await harness.close(context).catch(() => undefined);
 	}
 }
 
@@ -205,22 +209,30 @@ async function eventuallyReturnsFalse(check: () => boolean | Promise<boolean>): 
 	const setup = chatSetup();
 	const storage = new MemoryStorage();
 	const { harness, root: chat } = await openChat(storage, setup);
-	setup.faux.setResponses([
-		fauxAssistantMessage([fauxText("restart-marker-alpha")]),
-		fauxAssistantMessage([fauxText("restart-marker-beta")]),
-	]);
-	await chat.submit({ type: "input", content: "first" }, context);
-	await eventually(async () => JSON.stringify(await allEntries(chat)).includes("restart-marker-alpha"));
-	await chat.submit({ type: "input", content: "second" }, context);
-	await eventually(async () => JSON.stringify(await allEntries(chat)).includes("restart-marker-beta"));
-	const before = JSON.stringify(await allEntries(chat));
-	await harness.close(context);
+	diagnostics = () => ({ fixture: "restart" });
+	try {
+		setup.faux.setResponses([
+			fauxAssistantMessage([fauxText("restart-marker-alpha")]),
+			fauxAssistantMessage([fauxText("restart-marker-beta")]),
+		]);
+		await (await chat.submit({ type: "input", content: "first" }, context)).wait(context);
+		await waitFor(async () => JSON.stringify(await allEntries(chat)).includes("restart-marker-alpha"));
+		await (await chat.submit({ type: "input", content: "second" }, context)).wait(context);
+		await waitFor(async () => JSON.stringify(await allEntries(chat)).includes("restart-marker-beta"));
+		const before = JSON.stringify(await allEntries(chat));
+		await harness.close(context);
 
-	const reopened = await openChat(storage, setup);
-	const after = JSON.stringify(await allEntries(reopened.root));
-	check("restart: exact native history equality through close+reopen (same storage)", before === after);
-	check("restart: the reopened native history contains the streamed content", after.includes("restart-marker-alpha") && after.includes("restart-marker-beta"));
-	await reopened.harness.close(context);
+		const reopened = await openChat(storage, setup);
+		try {
+			const after = JSON.stringify(await allEntries(reopened.root));
+			check("restart: exact native history equality through close+reopen (same storage)", before === after);
+			check("restart: the reopened native history contains the streamed content", after.includes("restart-marker-alpha") && after.includes("restart-marker-beta"));
+		} finally {
+			await reopened.harness.close(context).catch(() => undefined);
+		}
+	} finally {
+		await harness.close(context).catch(() => undefined);
+	}
 }
 
 // ==========================================================================
@@ -231,64 +243,66 @@ async function eventuallyReturnsFalse(check: () => boolean | Promise<boolean>): 
 	const setup = chatSetup();
 	const storage = new MemoryStorage();
 	const first = await openChat(storage, setup);
-	setup.faux.setResponses([fauxAssistantMessage([fauxText("reclaim-marker")])]);
-	await first.root.submit({ type: "input", content: "persist me" }, context);
-	await eventually(async () => JSON.stringify(await allEntries(first.root)).includes("reclaim-marker"));
-	const beforePark = JSON.stringify(await allEntries(first.root));
-	await first.harness.close(context);
+	diagnostics = () => ({ fixture: "park-resume" });
+	try {
+		setup.faux.setResponses([fauxAssistantMessage([fauxText("reclaim-marker")])]);
+		await (await first.root.submit({ type: "input", content: "persist me" }, context)).wait(context);
+		await waitFor(async () => JSON.stringify(await allEntries(first.root)).includes("reclaim-marker"));
+		const beforePark = JSON.stringify(await allEntries(first.root));
+		await first.harness.close(context);
 
-	// The wrapper's HydrateSession mapped to the real SDK close/re-open: the
-	// resume really opens a new Harness over the same storage (no counters).
-	const { withRetainedHistory } = await import("../packages/server/src/retained-history.ts");
-	let live: Awaited<ReturnType<typeof openChat>> | undefined;
-	let realReleases = 0;
-	let realResumes = 0;
-	const factory = withRetainedHistory(
-		async () => {
-			live = await openChat(storage, setup);
-			return {
-				engine: {
-					identity: { sessionId: "hr-1", generation: realResumes + 1, pid: process.pid },
-					attach: async () => ({
-						async invokeService(call: { member?: string; args?: unknown[] }) {
-							if (live === undefined) throw new Error("invoke through a released engine");
-							if (call.member === "entries") return { entries: await allEntries(live.root) };
-							if (call.member === "rh:park") return { parked: true };
-							throw new Error(`unknown member ${String(call.member)}`);
+		// The wrapper's HydrateSession mapped to the real SDK close/re-open.
+		const { withRetainedHistory } = await import("../packages/server/src/retained-history.ts");
+		let live: Awaited<ReturnType<typeof openChat>> | undefined;
+		let realReleases = 0;
+		let realResumes = 0;
+		const factory = withRetainedHistory(
+			async () => {
+				live = await openChat(storage, setup);
+				return {
+					engine: {
+						identity: { sessionId: "hr-1", generation: realResumes + 1, pid: process.pid },
+						attach: async () => ({
+							async invokeService(call: { member?: string; args?: unknown[] }) {
+								if (live === undefined) throw new Error("invoke through a released engine");
+								if (call.member === "entries") return { entries: await allEntries(live.root) };
+								if (call.member === "rh:park") return { parked: true };
+								throw new Error(`unknown member ${String(call.member)}`);
+							},
+							release: async () => undefined,
+						}),
+						async close() {
+							await live?.harness.close(context);
 						},
-						release: async () => undefined,
-					}),
-					async close() {
-						await live?.harness.close(context);
 					},
-				},
-				releaseResidency: async () => {
-					await live?.harness.close(context);
-					live = undefined;
-					realReleases += 1;
-				},
-				resumeResidency: async () => {
-					live = await openChat(storage, setup);
-					realResumes += 1;
-				},
-			};
-		},
-		{ maxConcurrentHydrations: 2 },
-	);
-	const wrapped = await factory.open({ id: "hr-1" }, { sessionId: "hr-1", generation: 1, pid: process.pid });
-	const invoke = async (member: string) => {
-		const attach = await wrapped.attach({ abortSignal: undefined } as never);
-		return attach.invokeService({ member, args: [] } as never, (async () => undefined) as never, {} as never);
-	};
+					releaseResidency: async () => {
+						await live?.harness.close(context);
+						live = undefined;
+						realReleases += 1;
+					},
+					resumeResidency: async () => {
+						live = await openChat(storage, setup);
+						realResumes += 1;
+					},
+				};
+			},
+			{ maxConcurrentHydrations: 2 },
+		);
+		const wrapped = await factory.open({ id: "hr-1" }, { sessionId: "hr-1", generation: 1, pid: process.pid });
+		const invoke = async (member: string) => {
+			const attach = await wrapped.attach({ abortSignal: undefined } as never);
+			return attach.invokeService({ member, args: [] } as never, (async () => undefined) as never, {} as never);
+		};
 
-	// Park runs the real release (the SDK close); the resume performs a real
-	// re-open. The reclaim claim is exact native-history equality.
-	const parkResult = (await invoke("rh:park")) as { parked: boolean };
-	check("release-resume: park ran the SDK's real release (close)", parkResult.parked === true && realReleases === 1);
-	const afterResume = (await invoke("entries")) as { entries: unknown[] };
-	check("release-resume: the resume performed a real Harness re-open (not a counter)", realResumes === 1);
-	check("parked-history-reclaim: exact native history equality across park/resume", JSON.stringify(afterResume.entries) === beforePark);
-	await wrapped.close({} as never);
+		const parkResult = (await invoke("rh:park")) as { parked: boolean };
+		check("release-resume: park ran the SDK's real release (close)", parkResult.parked === true && realReleases === 1);
+		const afterResume = (await invoke("entries")) as { entries: unknown[] };
+		check("release-resume: the resume performed a real Harness re-open (not a counter)", realResumes === 1);
+		check("parked-history-reclaim: exact native history equality across park/resume", JSON.stringify(afterResume.entries) === beforePark);
+		await wrapped.close({} as never);
+	} finally {
+		await first.harness.close(context).catch(() => undefined);
+	}
 }
 
 report();
