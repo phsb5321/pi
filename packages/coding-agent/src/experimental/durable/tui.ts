@@ -25,6 +25,7 @@ import {
 	Spacer,
 	setCapabilityOverrides,
 	setKeybindings,
+	type Terminal,
 	Text,
 	TruncatedText,
 	TuiAltScreen,
@@ -44,7 +45,8 @@ import { ToolExecutionComponent, type ToolRenderers } from "../../modes/interact
 import { UserMessageComponent } from "../../modes/interactive/components/user-message.ts";
 import { getEditorTheme, getMarkdownTheme, initTheme, theme } from "../../modes/interactive/theme/theme.ts";
 import { InteractiveThemeController } from "../../modes/interactive/theme/theme-controller.ts";
-import { agentOf, type DurableController, type DurableView, type DurableViewSource } from "./runtime.ts";
+import type { DurableController, DurableView, DurableViewSource } from "./runtime.ts";
+import { agentOf } from "./view.ts";
 
 const SELECT_THEME: SelectListTheme = {
 	selectedPrefix: (text) => theme.fg("accent", text),
@@ -150,7 +152,7 @@ interface Handlers {
 	cycleThinking(): void;
 }
 
-class DurableTui {
+export class DurableTui {
 	static readonly #renderers: Record<string, ToolRenderers> = createAllToolRenderers();
 	readonly #ui: TuiAltScreen;
 	readonly #chat = new Container();
@@ -180,9 +182,9 @@ class DurableTui {
 	#rebuilt = false;
 	#transcript: ScrollView;
 
-	constructor(cwd: string, handlers: Handlers) {
+	constructor(cwd: string, handlers: Handlers, terminal: Terminal = new ProcessTerminal()) {
 		this.#cwd = cwd;
-		this.#ui = new TuiAltScreen(new ProcessTerminal(), false, getAgentDir());
+		this.#ui = new TuiAltScreen(terminal, false, getAgentDir());
 		const keybindings = KeybindingsManager.create();
 		setKeybindings(keybindings);
 		this.#editor = new CustomEditor(this.#ui, getEditorTheme(), keybindings, {

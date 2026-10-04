@@ -53,6 +53,7 @@ function wrapDurable(identity: InProcessSessionIdentity, opened: OpenDurableResu
 		async () => {
 			await opened.close();
 		},
+		() => opened,
 	);
 }
 
