@@ -207,12 +207,19 @@ async function main(): Promise<void> {
 		handles.map(async (entry) => {
 			try {
 				await (await entry.attachClient(CONTEXT)).invokeService({ serviceId: "rh", member: "status", args: [] } as unknown as ServiceCall, async () => undefined, CONTEXT);
-			} catch {
+			} catch (error) {
+				// Secure failure: only the pool-exhaustion refusal is acceptable here.
+				// Any other error is a real defect and must not be counted as a refusal.
+				if (!`${String(error)}`.includes("rehydration pool exhausted")) throw error;
 				poolRefusals += 1;
 			}
 		}),
 	);
-	checks.check("bounded pool: rehydration bounded by maxConcurrentHydrations (no unbounded growth)", poolRefusals === 0 || poolRefusals > 0);
+	// Deterministic bound: either the runtime serialized the rehydrations (0
+	// refusals) or the synchronous pool admission refused exactly the overflow
+	// (handles.length - maxConcurrentHydrations = 2 with max=2, 4 sessions).
+	// No other value is acceptable (this is not a tautology).
+	checks.check("bounded pool: rehydration bounded by maxConcurrentHydrations (0 if serialized, else exactly the overflow)", poolRefusals === 0 || poolRefusals === handles.length - 2);
 
 	// Retry-after-rejection (PORT-PI-1214): a rehydrate refused by the pool
 	// must NOT pin failure — after the pool drains, the same session rehydrates.
