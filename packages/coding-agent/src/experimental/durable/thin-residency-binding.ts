@@ -123,3 +123,54 @@ export function toThinClient(client: ResidencyClient, sessionId: string): ThinCl
 		},
 	};
 }
+
+/**
+ * HOST SEAM (p4, shared-host-residency.ts — accepted 05/10/2026 20:2x):
+ * the bounded observation surface my client consumes. Generation-ordered
+ * `observe(fromGeneration?)` is the resync contract (future generations
+ * refused); `detach()` frees view state and never pins history (store is the
+ * source of truth); the window is bounded (<=256 entries). Control members
+ * (`submit`/`abort`) ride the existing DURABLE dispatch (the smallest seam)
+ * — the placement point confirmed with p4 in the receipt.
+ */
+export interface VirtualPresentation {
+	readonly sessionId: string;
+	readonly window: number;
+	observe(fromGeneration?: number): Promise<{ generation: number; entries: readonly string[] }>;
+	viewState(): Promise<unknown>;
+	detach(): Promise<void>;
+}
+
+/** The control surface that rides the DURABLE dispatch alongside the seam. */
+export interface VirtualPresentationControl {
+	submit(text: string): Promise<unknown>;
+	abort(): Promise<unknown>;
+}
+
+/**
+ * Adapt the host seam to the EXISTING ThinClient API: `submit` via the
+ * control surface, `observe` via generation-ordered entries (the windowed
+ * view state), `close` via `detach()` (frees view state; history stays in
+ * the store). Generation mismatches resync with a fresh observe — the
+ * PORT-PI-1229 re-attach flow.
+ */
+export function virtualThinClient(
+	presentation: VirtualPresentation,
+	control: VirtualPresentationControl,
+): ThinClient {
+	let generation = 0;
+	return {
+		sessionId: presentation.sessionId,
+		submit: (text: string) => control.submit(text).then(() => undefined),
+		observe: async (): Promise<readonly string[]> => {
+			const state = await presentation.observe(generation);
+			if (state.generation < generation) {
+				// stale read: resync from the current generation
+				return (await presentation.observe()).entries;
+			}
+			generation = state.generation;
+			return state.entries;
+		},
+		close: () => presentation.detach(),
+	};
+}

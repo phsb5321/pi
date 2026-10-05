@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
-import { DURABLE_MEMBERS, ResidencyClient, toThinClient } from "../src/experimental/durable/thin-residency-binding.ts";
+import { DURABLE_MEMBERS, ResidencyClient, toThinClient, virtualThinClient } from "../src/experimental/durable/thin-residency-binding.ts";
 
 function recordingInvoke(): { calls: Array<{ member: string; args?: unknown[] }>; invoke: (call: { member: string; args?: unknown[] }) => Promise<unknown> } {
 	const calls: Array<{ member: string; args?: unknown[] }> = [];
@@ -50,5 +50,56 @@ describe("thin-residency binding (contract to ms/composition-1241 adapter)", () 
 		client.close();
 		await assert.rejects(client.submit("late"), /closed/);
 		assert.equal(client.closed, true);
+	});
+});
+
+describe("virtual presentation seam (p4 contract, accepted)", () => {
+	function fakeVirtual(): {
+		presentation: import("../src/experimental/durable/thin-residency-binding.ts").VirtualPresentation;
+		control: import("../src/experimental/durable/thin-residency-binding.ts").VirtualPresentationControl;
+		detached: () => boolean;
+		observeCalls: number;
+	} {
+		const state = { detached: false, observeCalls: 0 };
+		const presentation = {
+			sessionId: "s1",
+			window: 20,
+			async observe(fromGeneration?: number) {
+				state.observeCalls += 1;
+				if (fromGeneration !== undefined && fromGeneration > 1) throw new Error("future generation refused");
+				return { generation: 1, entries: ["a", "b"] };
+			},
+			async viewState() {
+				return { ok: true };
+			},
+			async detach() {
+				state.detached = true;
+			},
+		};
+		const control = {
+			async submit() {
+				return { ok: true };
+			},
+			async abort() {
+				return { ok: true };
+			},
+		};
+		return { presentation, control, detached: () => state.detached, observeCalls: state.observeCalls } as never;
+	}
+
+	it("maps observe (generation-ordered entries) and submit/abort onto ThinClient", async () => {
+		const fake = fakeVirtual();
+		const leg = virtualThinClient(fake.presentation, fake.control);
+		assert.deepEqual(await leg.observe(), ["a", "b"]);
+		await leg.submit("hi");
+		assert.equal(leg.sessionId, "s1");
+	});
+
+	it("resyncs on stale generation and detaches via close", async () => {
+		const fake = fakeVirtual();
+		const leg = virtualThinClient(fake.presentation, fake.control);
+		await leg.observe(); // generation 1
+		await leg.close();
+		assert.equal(fake.detached(), true);
 	});
 });
