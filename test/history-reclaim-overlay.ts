@@ -39,6 +39,7 @@ import {
 	watchEvents,
 } from "@earendil-works/pi-durable";
 import { chatSetup, openChat, allEntries, waitFor } from "../packages/durable/test/chat-support.ts";
+import { deltasPrecedeTerminal, sawIntermediateDeltas, sawTerminal } from "./history-reclaim-receiver.ts";
 import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
 import { addTool } from "../packages/durable/test/harness-support.ts";
 import { context } from "../packages/durable/test/session-support.ts";
@@ -158,13 +159,17 @@ writeFileSync(toolTarget, "native-tool-payload-42\n");
 		// --- REAL STREAMING: subscribed deltas before the message settles ---
 		setup.faux.setResponses([fauxAssistantMessage([fauxText("streaming-native-deltas ".repeat(12))])]);
 		const submission = await chat.submit({ type: "input", content: "please stream" }, context);
-		// (a) the SUBSCRIBED stream delivered message_update changes ...
-		await waitFor(() => batches.some((batch) => batch.some((event) => event.type === "message_update")));
-		const deltasDelivered = batches.some((batch) => batch.some((event) => event.type === "message_update"));
-		// (b) ... BEFORE the message settled: the settled text is not yet in
-		// the native entries at the moment the deltas are observed.
+		// (a) the turn settles via the TERMINAL event (the contract fires
+		// message_end even when no intermediate message_update occurs - the
+		// old message_update-only wait could never settle such a turn).
+		await waitFor(() => sawTerminal(batches.flat()));
+		// (b) the SUBSCRIBED stream delivered message_update deltas BEFORE the
+		// terminal (deltas before settled), and the settled text was not yet
+		// in the native entries at the moment the deltas were observed.
+		const deltasDelivered = sawIntermediateDeltas(batches.flat());
+		const deltasBeforeSettle = deltasPrecedeTerminal(batches.flat());
 		const settledDuringDeltas = JSON.stringify(await allEntries(chat)).includes("streaming-native-deltas ".repeat(12).trim());
-		check("real-streaming: subscribed watchEvents deltas delivered before the message settled", deltasDelivered && !settledDuringDeltas);
+		check("real-streaming: subscribed watchEvents deltas delivered before the message settled", deltasDelivered && deltasBeforeSettle && !settledDuringDeltas);
 		await submission.wait(context);
 		await waitFor(async () => JSON.stringify(await allEntries(chat)).includes("streaming-native-deltas"));
 
