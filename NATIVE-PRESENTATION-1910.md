@@ -79,3 +79,30 @@ commands: `~/.local/state/pi-programme-20261004/portfolio-pi-pilot-1910/`.
 
 Rollback: remove the opt-in presentation composition. Existing single-session
 entry points and pD's source/WIP remain intact.
+
+## Retry-leaf source follow-up — 05/10/2026
+
+`SettingsManager` now imports its existing 60,000 ms retry-delay constant from
+`pi-ai/utils/retry`; Model/Transport remain type-only root imports. The five
+AgentSession and two harness getter callsites retain the same settings contract.
+No provider, account, profile, transport or retry policy changes.
+
+The existing `node scripts/check-entry-graphs.mjs` now rejects SettingsManager
+reaching the AI barrel. It failed on the original source and passed after the
+leaf fix. The existing offline `settings-manager.test.ts` retry case also passed
+(defaults and overrides); no new framework or measurement harness.
+
+The initial full check was refused before execution (`state-invalid`, exit 75).
+After the existing custodian's accepted runtime-writer/cause-only repair and
+measured recovery, the normal heavy-admitted `npm run check` **passed** on
+05/10/2026 at 18:02 BRT, including TypeScript and browser-target bundling.
+The first admitted attempt exposed missing ignored model data and workspace-local
+dependencies in this fresh worktree. Reusing the existing data (offline validator
+passed) and locked AI OpenAI 7.19.0 installation resolved those errors without
+source, lock, SDK pin or shared dependency edits. No duplicate custodian job,
+reroute or gate bypass. Raw checks are retained under
+`evidence/2310-settings-retry-leaf/`; normal hooks/PR CI remain delivery gates.
+
+This is not RAM acceptance. Failed native N1, all retained programme goals and
+original worker/account gates remain unchanged. No paired measurement, N8,
+heavy probe, local benchmark, provider call or deployment was performed.

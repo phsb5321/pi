@@ -141,6 +141,16 @@ for (const [pkgDir, budgets] of Object.entries(BUDGETS)) {
 	}
 }
 
+// Settings are shared by native presentation and SDK callers; retry defaults need only the public leaf.
+if (
+	walk(resolve(ROOT, "packages/coding-agent/src/core/settings-manager.ts")).has(
+		resolve(ROOT, "packages/ai/src/index.ts"),
+	)
+) {
+	console.error("SettingsManager must use pi-ai/utils/retry without reaching the AI barrel.");
+	failures += 1;
+}
+
 if (failures > 0) {
 	console.error(`\n${failures} entry-point budget violation(s).`);
 	process.exit(1);
