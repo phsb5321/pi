@@ -104,3 +104,37 @@ describe("thin-presentation v2 (lazy + shared, 100x presentation tier)", () => {
 		expect(presentation.status().attached).toBe(false);
 	});
 });
+
+describe("windowed virtualized views (R-A win20 shape)", () => {
+	it("keeps only the window: oldest entries drop as new ones arrive", async () => {
+		resetPresentationStats();
+		const leg = stubLeg();
+		const presentation = createThinPresentation({ create: () => leg, pollMs: 0, window: 5 });
+		presentation.component.render(80);
+		for (let index = 0; index < 20; index++) await presentation.submit(`msg-${index}`);
+		const rendered = presentation.component.render(80).join("\n");
+		expect(rendered).toContain("msg-19");
+		expect(rendered).not.toContain("msg-0");
+		expect(rendered).not.toContain("[thin] presentation ready"); // evicted by the window
+	});
+
+	it("virtualizes: rendered output size is bounded by the window, not the log", async () => {
+		resetPresentationStats();
+		const leg = stubLeg();
+		const presentation = createThinPresentation({ create: () => leg, pollMs: 0, window: 4 });
+		presentation.component.render(80);
+		for (let index = 0; index < 40; index++) await presentation.submit(`m${index}`);
+		const rendered = presentation.component.render(80);
+		// window (4) + input line(s): far below one line per submitted message
+		expect(rendered.length).toBeLessThan(12);
+	});
+
+	it("unrendered presentation stays at construction cost (demand everything)", () => {
+		resetPresentationStats();
+		const presentation = createThinPresentation({ create: () => stubLeg(), pollMs: 0 });
+		expect(presentationStats.widgetsBuilt).toBe(0);
+		expect(presentationStats.painted).toBe(0);
+		presentation.dispose();
+		expect(presentationStats.created).toBe(1);
+	});
+});

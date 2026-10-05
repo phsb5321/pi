@@ -30,6 +30,8 @@ import type { ThinClient } from "@earendil-works/pi-client";
 export interface ThinPresentationOptions {
 	/** Creates the leg on demand at first paint (typically `createLazyThinClient`). */
 	create: () => ThinClient;
+	/** Windowed view buffer size (R-A win20 shape: 0.53–0.64 MiB measured). */
+	window?: number;
 	/** Called with each observed state snapshot (stream/state surface). */
 	onState?: (lines: readonly string[]) => void;
 	/** Poll period for streaming state; 0 disables (default 250 ms, unref'd). */
@@ -86,7 +88,14 @@ export function resetPresentationStats(): void {
 
 export function createThinPresentation(options: ThinPresentationOptions): ThinPresentation {
 	presentationStats.created += 1;
-	const log: string[] = ["[thin] presentation ready (no state until first use)"];
+	const windowSize = Math.max(1, options.window ?? 20);
+	const view: string[] = ["[thin] presentation ready (no state until first use)"];
+	const append = (line: string): void => {
+		view.push(line);
+		// Windowed view buffer (R-A verdict: unwindowed transcripts re-create
+		// the tier constraint; the 20-msg window is the measured shape).
+		if (view.length > windowSize) view.splice(0, view.length - windowSize);
+	};
 	let leg: ThinClient | undefined;
 	let opening: Promise<ThinClient> | undefined;
 	let cancelled = false;
@@ -124,7 +133,7 @@ export function createThinPresentation(options: ThinPresentationOptions): ThinPr
 			leg = created;
 			attachedGeneration += 1;
 			cancelled = false;
-			log.push(`[thin] attach demand (generation ${attachedGeneration})`);
+			append(`[thin] attach demand (generation ${attachedGeneration})`);
 			return created;
 		});
 		const current = opening;
@@ -133,28 +142,37 @@ export function createThinPresentation(options: ThinPresentationOptions): ThinPr
 			throw error;
 		});
 	};
+	let lastObserved = "";
 	const refresh = async (): Promise<void> => {
 		const current = leg;
 		if (!current) return;
 		const lines = await current.observe();
 		options.onState?.(lines);
+		// Windowed view state: the observed messages ARE the presentation
+		// content (R-A win20 shape) — appended on change only, capped at the
+		// window, oldest dropped first.
+		const joined = lines.join("\n");
+		if (joined !== lastObserved) {
+			lastObserved = joined;
+			for (const line of lines) append(line);
+		}
 	};
 	const submit = async (text: string): Promise<void> => {
 		const current = await ensure();
 		await current.submit(text);
-		log.push(`[thin] submit visible: ${text}`);
+		append(`[thin] submit visible: ${text}`);
 		await refresh();
 	};
 	const aborts = (): void => {
 		cancelled = true;
-		log.push("[thin] cancel (presentation; SDK turn-cancel = p9 overlay)");
+		append("[thin] cancel (presentation; SDK turn-cancel = p9 overlay)");
 		void refresh();
 	};
 	const exit = async (): Promise<void> => {
 		const current = leg;
 		leg = undefined;
 		opening = undefined;
-		log.push("[thin] disconnect (leg closed; next submit re-attaches on demand)");
+		append("[thin] disconnect (leg closed; next submit re-attaches on demand)");
 		if (current) await current.close();
 	};
 
@@ -164,7 +182,8 @@ export function createThinPresentation(options: ThinPresentationOptions): ThinPr
 			// Attach on first render (painted demand).
 			void ensure().catch(() => undefined);
 			const lines: string[] = [];
-			for (const entry of log) {
+			// Virtualized: render only the windowed buffer (never the full log).
+			for (const entry of view) {
 				const key = `${width}\u0000${entry}`;
 				if (sharedLineCache.has(key)) presentationStats.cacheHits += 1;
 				else presentationStats.cacheMisses += 1;

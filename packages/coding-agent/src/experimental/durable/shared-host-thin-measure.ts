@@ -97,12 +97,19 @@ async function runPresentations(): Promise<number> {
 	const n = Number(process.env.THIN_PRESENTATION_N ?? 24);
 	const baseline = measure("P0:empty");
 	process.stdout.write(`row P0 empty process: ${baseline.toFixed(1)} MiB\n`);
-	const stub = (id: string) => ({
-		sessionId: id,
-		submit: async () => undefined,
-		observe: async (): Promise<readonly string[]> => [],
-		close: async () => undefined,
-	});
+	// R-A win20 shape: deterministic worked-class messages (~1.5 KiB each),
+	// observed through the bounded client-observation contract (observe).
+	const message = (index: number) =>
+		`## Message ${index}\n\n- item one with **bold** and \`code\` spans\n- item two of the worked-class fixture\n\n\`\`\`ts\nconst value${index} = compute(${index});\n\`\`\`\n\nThe prose paragraph for message ${index} with enough text to stand in for a real worked entry.`;
+	const stub = (id: string) => {
+		const transcript = Array.from({ length: 20 }, (_unused, index) => message(index));
+		return {
+			sessionId: id,
+			submit: async () => undefined,
+			observe: async (): Promise<readonly string[]> => [...transcript],
+			close: async () => undefined,
+		};
+	};
 	const presentations = Array.from({ length: n }, (_unused, index) =>
 		createThinPresentation({ create: () => stub(`p${index}`), pollMs: 0 }),
 	);
@@ -118,12 +125,13 @@ async function runPresentations(): Promise<number> {
 	for (const presentation of presentations) await presentation.submit("cost row");
 	const attached = measure(`P3:${n}-attached`);
 	process.stdout.write(
-		`row P3 ${n} attached+submit: ${attached.toFixed(1)} MiB (marginal ${((attached - painted) / n).toFixed(2)} MiB/presentation added by attach)\n`,
+		`row P3 ${n} attached+win20 painted: ${attached.toFixed(1)} MiB (marginal ${((attached - painted) / n).toFixed(2)} MiB/presentation added by attach)\n`,
 	);
 	const perPresentation = (attached - baseline) / n;
 	const tier = perPresentation <= 2 ? "100x" : perPresentation <= 6 ? "10x" : "below-10x";
+	const settledSlope = (attached - unpainted) / n;
 	process.stdout.write(
-		`PRESENTATION-COST ROW (whole-tree census, measured only): ${perPresentation.toFixed(2)} MiB/presentation end-to-end at N=${n} → ${tier} tier (target ≤2 MiB 100x / ≤6 MiB 10x).\n`,
+		`PRESENTATION-COST ROW (whole-tree census, measured only, win20 shape): ${perPresentation.toFixed(2)} MiB/presentation end-to-end at N=${n}; settled slope ${settledSlope.toFixed(2)} MiB/presentation (R-A measured band 0.36–0.59) → ${tier} tier (target ≤2 MiB 100x / ≤6 MiB 10x).\n`,
 	);
 	for (const presentation of presentations) presentation.dispose();
 	return 0;
