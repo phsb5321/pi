@@ -26,6 +26,7 @@ import {
 	type InProcessSessionIdentity,
 } from "@earendil-works/pi-server";
 import { createLazyThinClient, createThinClient, type ThinClient } from "@earendil-works/pi-client";
+import { createThinPresentation } from "./thin-presentation.ts";
 
 function minimalEngine(identity: InProcessSessionIdentity): InProcessSessionEngine {
 	const lines: string[] = [];
@@ -84,6 +85,48 @@ function measure(label: string): number {
 	}
 	if (!Number.isFinite(total)) throw new Error(`mem-probe[${label}]: no seat row parsed`);
 	return total;
+}
+
+/**
+ * PRESENTATION-COST ROW (100x tier): the presentation layer alone (stub legs —
+ * no engine, no provider) across N presentations: constructed (unpainted),
+ * painted, attached. The tier target is <=2 MiB/presentation (100x),
+ * <=6 MiB = 10x. Measured mem-probe whole-tree only; no RAM-acceptance claim.
+ */
+async function runPresentations(): Promise<number> {
+	const n = Number(process.env.THIN_PRESENTATION_N ?? 24);
+	const baseline = measure("P0:empty");
+	process.stdout.write(`row P0 empty process: ${baseline.toFixed(1)} MiB\n`);
+	const stub = (id: string) => ({
+		sessionId: id,
+		submit: async () => undefined,
+		observe: async (): Promise<readonly string[]> => [],
+		close: async () => undefined,
+	});
+	const presentations = Array.from({ length: n }, (_unused, index) =>
+		createThinPresentation({ create: () => stub(`p${index}`), pollMs: 0 }),
+	);
+	const unpainted = measure(`P1:${n}-created-unpainted`);
+	process.stdout.write(
+		`row P1 ${n} created (unpainted): ${unpainted.toFixed(1)} MiB (marginal ${((unpainted - baseline) / n).toFixed(2)} MiB/presentation)\n`,
+	);
+	for (const presentation of presentations) presentation.component.render(120);
+	const painted = measure(`P2:${n}-painted`);
+	process.stdout.write(
+		`row P2 ${n} painted: ${painted.toFixed(1)} MiB (marginal ${((painted - unpainted) / n).toFixed(2)} MiB/presentation added by paint)\n`,
+	);
+	for (const presentation of presentations) await presentation.submit("cost row");
+	const attached = measure(`P3:${n}-attached`);
+	process.stdout.write(
+		`row P3 ${n} attached+submit: ${attached.toFixed(1)} MiB (marginal ${((attached - painted) / n).toFixed(2)} MiB/presentation added by attach)\n`,
+	);
+	const perPresentation = (attached - baseline) / n;
+	const tier = perPresentation <= 2 ? "100x" : perPresentation <= 6 ? "10x" : "below-10x";
+	process.stdout.write(
+		`PRESENTATION-COST ROW (whole-tree census, measured only): ${perPresentation.toFixed(2)} MiB/presentation end-to-end at N=${n} → ${tier} tier (target ≤2 MiB 100x / ≤6 MiB 10x).\n`,
+	);
+	for (const presentation of presentations) presentation.dispose();
+	return 0;
 }
 
 async function run(): Promise<number> {
@@ -149,7 +192,8 @@ async function run(): Promise<number> {
 	return 0;
 }
 
-run().then(
+const entry = process.env.THIN_PRESENTATION_ROW === "1" ? runPresentations() : run();
+entry.then(
 	(code) => process.exit(code),
 	(error: unknown) => {
 		process.stderr.write(

@@ -1,33 +1,34 @@
 /**
- * Thin-presentation slice (pD, PORT-PI-1229) — CLIENT presentation acceptance.
+ * Thin presentation v2 — LAZY + SHARED (100x AIM, pD).
  *
- * Connects demand attach/detach/re-attach through the EXISTING ThinClient API
- * (`submit`/`observe`/`close`, factory shape) to a REAL rendered presentation
- * built from existing pi-tui widgets (Container/Text/Input — reuse, no
- * cosmetics, no parallel protocol). Reuses the transport stack untouched.
+ * The presentation tier is the binding constraint (53 MiB/presentation →
+ * 16 GiB at 306). This slice targets ≤ 2 MiB/presentation (≤ 6 MiB = 10x):
  *
- * PUBLISHED ADAPTER TRANSITION (app-owned surfaces, not taken over here):
- * - native presenter call site: `experimental/durable/main.ts:17`
- *   `runDurableTui(durable.view, durable.controller, durable.settings)` with
- *   `Handlers {submit, followUp, abort, exit, …}` at `tui.ts:145`;
- *   owner = the durable-harness slice (p2 T1/T2) + SDK parity (p9).
- *   Transition: wire those handlers to `createThinHandlers(...)` from this
- *   module and the native DurableTui drives a shared session unchanged.
- * - engine binding: `InProcessSessionEngine.attach().invokeService` members
- *   `submit`/`observe` (as landed) and turn-cancel; **cancel-on-wire is
- *   p9's SDK cancel parity overlay** (owner p9) — `abort()` here is the
- *   presentation-level cancel (drops in-flight invoke, resyncs state) and
- *   renders the observable marker until the overlay lands.
+ * - **Attach on first render:** the leg (`ThinClient`) is created inside the
+ *   first `render()` call — not at construction, not at first input.
+ * - **No per-presentation TUI until painted:** construction holds closures +
+ *   a string log only; the widget tree (Input + focus surface) is built at
+ *   first paint and rebuilt never (invalidate() clears only the measured
+ *   cache, not the tree).
+ * - **Shared glyph/theme/width caches (S11 learnings):** one module-level
+ *   cache memoizes styled+measured line renders keyed by (width, text) across
+ *   ALL presentations; theme resolution and glyph segmentation stay on pi-tui
+ *   shared singletons. Per-presentation render state is O(1) plus the string
+ *   log; no per-line widget objects are ever allocated.
  *
- * Lifecycle: presentation state exists only after first use (demand attach
- * via the lazy factory); `exit()` closes the leg (detach+disconnect) and the
- * next `submit` re-attaches on demand (re-attach through the same factory).
+ * Marker strings are the acceptance contract (thin-residency-acceptance.ts
+ * captures them from the PTY): `[thin] presentation ready`, `[thin] attach
+ * demand (generation N)`, `[thin] submit visible: X`, `[thin] cancel …`,
+ * `[thin] disconnect …`.
+ *
+ * The architecture table is pE's research deliverable (R-A seat) — this file
+ * implements the slice and does not duplicate that table.
  */
 import { Container, type Component, Input, Text } from "@earendil-works/pi-tui";
 import type { ThinClient } from "@earendil-works/pi-client";
 
 export interface ThinPresentationOptions {
-	/** Creates the leg on demand (typically `createLazyThinClient`). */
+	/** Creates the leg on demand at first paint (typically `createLazyThinClient`). */
 	create: () => ThinClient;
 	/** Called with each observed state snapshot (stream/state surface). */
 	onState?: (lines: readonly string[]) => void;
@@ -41,21 +42,81 @@ export interface ThinPresentation {
 	abort(): void;
 	exit(): Promise<void>;
 	refresh(): Promise<void>;
-	status(): { attached: boolean; cancelled: boolean; attachedGeneration: number };
+	status(): { attached: boolean; cancelled: boolean; attachedGeneration: number; painted: boolean };
 	dispose(): void;
 }
 
+/** Shared styled+measured line cache (S11 lesson: measure work is per-line,
+ *  per-width and identical across presentations — share it). */
+const sharedLineCache = new Map<string, string[]>();
+const SHARED_CACHE_MAX = 512;
+function sharedRenderLine(line: string, width: number, style: (text: string) => string): string[] {
+	const key = `${width}\u0000${line}`;
+	const cached = sharedLineCache.get(key);
+	if (cached !== undefined) {
+		sharedLineCache.delete(key);
+		sharedLineCache.set(key, cached); // recency
+		return cached;
+	}
+	const rendered = new Text(style(line), 1, 0).render(width);
+	sharedLineCache.set(key, rendered);
+	if (sharedLineCache.size > SHARED_CACHE_MAX) {
+		const oldest = sharedLineCache.keys().next();
+		if (!oldest.done) sharedLineCache.delete(oldest.value);
+	}
+	return rendered;
+}
+
+/** Per-process presentation stats (for the measured cost row + cases). */
+export const presentationStats = {
+	created: 0,
+	painted: 0,
+	widgetsBuilt: 0,
+	cacheHits: 0,
+	cacheMisses: 0,
+};
+
+export function resetPresentationStats(): void {
+	presentationStats.created = 0;
+	presentationStats.painted = 0;
+	presentationStats.widgetsBuilt = 0;
+	presentationStats.cacheHits = 0;
+	presentationStats.cacheMisses = 0;
+}
+
 export function createThinPresentation(options: ThinPresentationOptions): ThinPresentation {
-	const log = new Container();
-	const input = new Input();
+	presentationStats.created += 1;
+	const log: string[] = ["[thin] presentation ready (no state until first use)"];
 	let leg: ThinClient | undefined;
 	let opening: Promise<ThinClient> | undefined;
 	let cancelled = false;
 	let attachedGeneration = 0;
 	let disposed = false;
-	const append = (line: string): void => {
-		log.addChild(new Text(line, 1, 0));
+	let painted = false;
+
+	// Widget tree — built at first paint only (no per-presentation TUI until
+	// painted); kept for the lifetime of the presentation.
+	let input: Input | undefined;
+	let root: Container | undefined;
+	const ensurePainted = (): void => {
+		if (root !== undefined) return;
+		presentationStats.painted += 1;
+		presentationStats.widgetsBuilt += 2; // Input + Container (log renders as lines)
+		root = new Container();
+		input = new Input();
+		root.addChild(input);
+		input.onSubmit = (value: string) => {
+			const text = value.trim();
+			if (text.length === 0) return;
+			input?.setValue("");
+			if (text === "exit" || text === "/exit") {
+				void exit();
+				return;
+			}
+			void submit(text);
+		};
 	};
+
 	const ensure = async (): Promise<ThinClient> => {
 		if (disposed) throw new Error("thin presentation disposed");
 		if (leg) return leg;
@@ -63,7 +124,7 @@ export function createThinPresentation(options: ThinPresentationOptions): ThinPr
 			leg = created;
 			attachedGeneration += 1;
 			cancelled = false;
-			append(`[thin] attach demand (generation ${attachedGeneration})`);
+			log.push(`[thin] attach demand (generation ${attachedGeneration})`);
 			return created;
 		});
 		const current = opening;
@@ -81,65 +142,66 @@ export function createThinPresentation(options: ThinPresentationOptions): ThinPr
 	const submit = async (text: string): Promise<void> => {
 		const current = await ensure();
 		await current.submit(text);
-		append(`[thin] submit visible: ${text}`);
+		log.push(`[thin] submit visible: ${text}`);
 		await refresh();
-	};
-	input.onSubmit = (value: string) => {
-		const text = value.trim();
-		if (text.length === 0) return;
-		input.setValue("");
-		if (text === "exit" || text === "/exit") {
-			void exit(); // printable disconnect; Ctrl-D/Ctrl-X also mapped
-			return;
-		}
-		void submit(text);
-	};
-	const root = new Container();
-	root.addChild(log);
-	root.addChild(input);
-	const component: Component = {
-		render: (width: number) => root.render(width),
-		invalidate: () => root.invalidate(),
-		handleInput: (data: string) => {
-			if (data === "\x03" || data === "\x1b") {
-				aborts();
-				return;
-			}
-			if (data === "\x04" || data === "\x18") {
-				// Ctrl-D, with Ctrl-X as a PTY-safe twin
-				void exit();
-				return;
-			}
-			input.handleInput(data);
-		},
 	};
 	const aborts = (): void => {
 		cancelled = true;
-		// Presentation-level cancel: drop the in-flight surface and resync.
-		// Turn-cancel on the wire = p9's SDK overlay (published transition).
-		append("[thin] cancel (presentation; SDK turn-cancel = p9 overlay)");
+		log.push("[thin] cancel (presentation; SDK turn-cancel = p9 overlay)");
 		void refresh();
 	};
 	const exit = async (): Promise<void> => {
 		const current = leg;
 		leg = undefined;
 		opening = undefined;
-		append("[thin] disconnect (leg closed; next submit re-attaches on demand)");
+		log.push("[thin] disconnect (leg closed; next submit re-attaches on demand)");
 		if (current) await current.close();
 	};
+
+	const component: Component = {
+		render: (width: number) => {
+			ensurePainted();
+			// Attach on first render (painted demand).
+			void ensure().catch(() => undefined);
+			const lines: string[] = [];
+			for (const entry of log) {
+				const key = `${width}\u0000${entry}`;
+				if (sharedLineCache.has(key)) presentationStats.cacheHits += 1;
+				else presentationStats.cacheMisses += 1;
+				lines.push(...sharedRenderLine(entry, width, (text) => text));
+			}
+			lines.push(...(root as Container).render(width));
+			return lines;
+		},
+		invalidate: () => {
+			root?.invalidate();
+		},
+		handleInput: (data: string) => {
+			ensurePainted();
+			if (data === "\x03" || data === "\x1b") {
+				aborts();
+				return;
+			}
+			if (data === "\x04" || data === "\x18") {
+				void exit();
+				return;
+			}
+			input?.handleInput(data);
+		},
+	};
+
 	const poll =
 		options.pollMs === 0
 			? undefined
 			: setInterval(() => void refresh().catch(() => undefined), options.pollMs ?? 250);
 	poll?.unref?.();
-	append("[thin] presentation ready (no state until first use)");
 	return {
 		component,
 		submit,
 		abort: aborts,
 		exit,
 		refresh,
-		status: () => ({ attached: leg !== undefined, cancelled, attachedGeneration }),
+		status: () => ({ attached: leg !== undefined, cancelled, attachedGeneration, painted }),
 		dispose(): void {
 			disposed = true;
 			if (poll) clearInterval(poll);
