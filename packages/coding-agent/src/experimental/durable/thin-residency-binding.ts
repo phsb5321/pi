@@ -147,6 +147,14 @@ export interface VirtualPresentationControl {
 	abort(): Promise<unknown>;
 }
 
+/** A7/R10: detach is ordered AFTER the residency release confirms. */
+export interface VirtualResidencyState {
+	released: number;
+	resumed: number;
+	live: boolean;
+	openedRetained?: boolean;
+}
+
 /**
  * Adapt the host seam to the EXISTING ThinClient API: `submit` via the
  * control surface, `observe` via generation-ordered entries (the windowed
@@ -157,6 +165,7 @@ export interface VirtualPresentationControl {
 export function virtualThinClient(
 	presentation: VirtualPresentation,
 	control: VirtualPresentationControl,
+	residency?: () => Promise<VirtualResidencyState>,
 ): ThinClient {
 	let generation = 0;
 	return {
@@ -165,12 +174,22 @@ export function virtualThinClient(
 		observe: async (): Promise<readonly string[]> => {
 			const state = await presentation.observe(generation);
 			if (state.generation < generation) {
-				// stale read: resync from the current generation
+				// R11: stale read — resync from the current generation
 				return (await presentation.observe()).entries;
 			}
 			generation = state.generation;
 			return state.entries;
 		},
-		close: () => presentation.detach(),
+		close: async () => {
+			// A7/R10: detach AFTER the residency release confirms; fail closed
+			// while the release is outstanding (history must not be pinned).
+			if (residency !== undefined) {
+				const state = await residency();
+				if (state.live || state.openedRetained === true) {
+					throw new Error("detach refused: residency not released (released>0 and live=false required)");
+				}
+			}
+			await presentation.detach();
+		},
 	};
 }

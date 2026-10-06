@@ -103,3 +103,51 @@ describe("virtual presentation seam (p4 contract, accepted)", () => {
 		assert.equal(fake.detached(), true);
 	});
 });
+
+describe("attach-protocol delta (pE impl-notes A1/A7/R11)", () => {
+	it("A7: detach fails closed while the residency release is outstanding", async () => {
+		let detached = 0;
+		const presentation = {
+			sessionId: "s1",
+			window: 20,
+			async observe() {
+				return { generation: 1, entries: [] };
+			},
+			async viewState() {
+				return {};
+			},
+			async detach() {
+				detached += 1;
+			},
+		};
+		const control = { submit: async () => ({}), abort: async () => ({}) };
+		const held = { released: 0, resumed: 0, live: true, openedRetained: true };
+		const leg = virtualThinClient(presentation as never, control as never, async () => held);
+		await assert.rejects(leg.close(), /residency not released/);
+		assert.equal(detached, 0);
+		const released = { released: 1, resumed: 0, live: false, openedRetained: false };
+		const leg2 = virtualThinClient(presentation as never, control as never, async () => released);
+		await leg2.close();
+		assert.equal(detached, 1);
+	});
+
+	it("R11: stale generation reads resync from the current generation", async () => {
+		let current = 2;
+		const presentation = {
+			sessionId: "s1",
+			window: 20,
+			async observe(fromGeneration?: number) {
+				if (fromGeneration !== undefined && fromGeneration > current) throw new Error("future generation refused");
+				return { generation: current, entries: [`entry-${current}`] };
+			},
+			async viewState() {
+				return {};
+			},
+			async detach() {},
+		};
+		const leg = virtualThinClient(presentation as never, { submit: async () => ({}), abort: async () => ({}) } as never);
+		assert.deepEqual(await leg.observe(), ["entry-2"]);
+		current = 3;
+		assert.deepEqual(await leg.observe(), ["entry-3"]); // stale read resyncs
+	});
+});

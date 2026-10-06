@@ -30,21 +30,46 @@ import type { ThinClient } from "@earendil-works/pi-client";
 export interface ThinPresentationOptions {
 	/** Creates the leg on demand at first paint (typically `createLazyThinClient`). */
 	create: () => ThinClient;
-	/** Windowed view buffer size (R-A win20 shape: 0.53–0.64 MiB measured). */
+	/** Windowed view buffer size (R-A win20 shape: 0.53–0.64 MiB measured).
+	 *  FOLD-IN POINT for pF's state-floor number: `window = clamp(pF per-surface
+	 *  floor / per-entry bytes, 1, 256)` — the constant stays here. */
 	window?: number;
+	/** Surface identity (A1/A9: one writer per surface; lease = surfaceId). */
+	surfaceId?: string;
 	/** Called with each observed state snapshot (stream/state surface). */
 	onState?: (lines: readonly string[]) => void;
 	/** Poll period for streaming state; 0 disables (default 250 ms, unref'd). */
 	pollMs?: number;
 }
 
+/** Presentation geometry (A3): drives the windowed rendering anchor. */
+export interface PresentationGeometry {
+	rows: number;
+	cols: number;
+	/** Window anchor: the view renders the window ENDING at the viewport top+offset. */
+	viewportTop: number;
+	mode: "main" | "alt";
+}
+
 export interface ThinPresentation {
 	readonly component: Component;
+	readonly surfaceId: string;
+	/** A1: the attach generation (host `attachGeneration` model; stale-surface
+	 *  writes are refused across re-attach). */
+	readonly attachGeneration: number;
+	setGeometry(geometry: PresentationGeometry): void;
 	submit(text: string): Promise<void>;
 	abort(): void;
 	exit(): Promise<void>;
 	refresh(): Promise<void>;
-	status(): { attached: boolean; cancelled: boolean; attachedGeneration: number; painted: boolean };
+	status(): {
+		attached: boolean;
+		cancelled: boolean;
+		attachedGeneration: number;
+		painted: boolean;
+		surfaceId: string;
+		geometry: PresentationGeometry;
+	};
 	dispose(): void;
 }
 
@@ -88,6 +113,8 @@ export function resetPresentationStats(): void {
 
 export function createThinPresentation(options: ThinPresentationOptions): ThinPresentation {
 	presentationStats.created += 1;
+	const surfaceId = options.surfaceId ?? "surface-1";
+	let geometry: PresentationGeometry = { rows: 24, cols: 80, viewportTop: 0, mode: "main" };
 	const windowSize = Math.max(1, options.window ?? 20);
 	const view: string[] = ["[thin] presentation ready (no state until first use)"];
 	const append = (line: string): void => {
@@ -176,14 +203,19 @@ export function createThinPresentation(options: ThinPresentationOptions): ThinPr
 		if (current) await current.close();
 	};
 
+	const setGeometry = (next: PresentationGeometry): void => {
+		geometry = next;
+	};
 	const component: Component = {
 		render: (width: number) => {
 			ensurePainted();
-			// Attach on first render (painted demand).
 			void ensure().catch(() => undefined);
+			// A3/R3: the window anchors to the viewport; entries above the
+			// viewport top are dropped from the render (never re-materialized).
+			const anchor = Math.max(0, view.length - geometry.viewportTop);
+			const windowed = view.slice(Math.max(0, anchor - windowSize), anchor);
 			const lines: string[] = [];
-			// Virtualized: render only the windowed buffer (never the full log).
-			for (const entry of view) {
+			for (const entry of windowed) {
 				const key = `${width}\u0000${entry}`;
 				if (sharedLineCache.has(key)) presentationStats.cacheHits += 1;
 				else presentationStats.cacheMisses += 1;
@@ -216,11 +248,16 @@ export function createThinPresentation(options: ThinPresentationOptions): ThinPr
 	poll?.unref?.();
 	return {
 		component,
+		surfaceId,
+		get attachGeneration(): number {
+			return attachedGeneration;
+		},
+		setGeometry,
 		submit,
 		abort: aborts,
 		exit,
 		refresh,
-		status: () => ({ attached: leg !== undefined, cancelled, attachedGeneration, painted }),
+		status: () => ({ attached: leg !== undefined, cancelled, attachedGeneration, painted, surfaceId, geometry }),
 		dispose(): void {
 			disposed = true;
 			if (poll) clearInterval(poll);
