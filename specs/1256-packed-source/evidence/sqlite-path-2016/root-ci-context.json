@@ -1,0 +1,21 @@
+{
+  "authority": "ROOT-PROGRESS-2016-PI explicit latest supplied actual CI readback",
+  "before_HEAD": "dd450e270015bad61ee9510bfcb992c913b3d10a",
+  "PR": 12,
+  "state": "OPEN",
+  "base": "memory-sound",
+  "merge_state_from_Root": "DIRTY",
+  "hosted_run_id": 37530022605,
+  "check_run_id": 112496714128,
+  "steps": [],
+  "gh_log_result_from_Root": "not found",
+  "exact_annotation": "The job was not started because your account is locked due to a billing issue.",
+  "classification": "Job non-start due to billing, notTypeScript/compiler/test/sourcefailure",
+  "independent_annotation_read_this_caller": "Pending targeted annotation read during normal publication metadata, no compiler/sourcehold inferred",
+  "Root_reported_Nix2679_head": "348860e7",
+  "Root_reported_Linux_CI": "SUCCESS, not installed/nativeexactqualifiedroute",
+  "original_prepared_compiler": "HELD, spentcompiler0, no secondbuild/namespacepatch/router/profile/hookshadow",
+  "coordinator_p1": "UNCUED",
+  "actions_not_authorized": "billing/protection/workflow/funding/rebase/fetch/mainforce/merge/accountauthproviderprofilecaprepair",
+  "preserved_negative_boundaries": "N1negative37.89/41.84, OSC52BEL/STnegative; all22+actualindependentYT/priorPORT23/source-vs-installed"
+}

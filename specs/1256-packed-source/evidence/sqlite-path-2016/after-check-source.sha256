@@ -1,0 +1,4 @@
+bf7050ff5dffeef2a3c87fc91aef67dbd445a7bd887b60cbce6155797d27720c  test/packed-isolation-306.ts
+87c7f0e5f2358194c69dfdf1d064920f8de59e8887f418b12dd0b65cdddf5ee4  test/packed-sqlite-path-regression-2016.ts
+e7d24d8e0b3790c88535d2dd2006e39c54567a64e4ad74473d7e058d8756f2d8  packages/coding-agent/src/experimental/durable/shared-host-acceptance-kit.ts
+185bf0e63aa18cfdd9c6dd6146557d178ce33e2773b30cdffc3b934150dbfc74  test/packed-source-regression-1256.ts

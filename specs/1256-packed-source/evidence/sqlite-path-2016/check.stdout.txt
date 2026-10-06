@@ -1,0 +1,46 @@
+{
+  "result": "PASS_SOURCE_PATH_RED3_GREEN0",
+  "acceptance": "SOURCE filesystem path plumbing, actual fixture bytes; injected SDK/adapter, NOT native SQLite or full306 acceptance",
+  "node": "v22.23.2",
+  "check_sha256": "87c7f0e5f2358194c69dfdf1d064920f8de59e8887f418b12dd0b65cdddf5ee4",
+  "before_fixture_sha256": "bd67d8b079286855edaf0bb0b6637d9efb84e38682e0931fdcd82c98fdd6a619",
+  "candidate_fixture_sha256": "bf7050ff5dffeef2a3c87fc91aef67dbd445a7bd887b60cbce6155797d27720c",
+  "actual_slice_hashes": {
+    "opener": "c57a139b27ddf158ac95445c18c1e9f5f778abdf0e110ec21c53598ff89d7226",
+    "initial": "d54d1831e84c6849304616714127d22f2ce6231c84b0dc14a298eb71b4f7dc17",
+    "close": "b0777c505a97dc7eb7cef637fd96ee1e8d038fef89c932ede7d5400f4da4dd96",
+    "park": "0e0960feaf906051689644d9ca38d7c50f79f3f0848dca9ffd139e038fa339fe",
+    "resume": "bf718e580e39f13a66a96df4f3b695a4063a6e5894c567c90410db753d578eca",
+    "consumer": "067bc7620068a8936c59a0c5f2415f670503df68d328df0e7806728cefad0109"
+  },
+  "native_immutable_object": "f6674860a3b5e812b38211161ce6965546ba2f9a",
+  "native_runtime_sha256": "bce5b7e5a68b0cfbb2e07665bfc16f161fccfa52ba8f35dcb21ffcbfe168a110",
+  "native_sessions_sha256": "ce6f1a9a4e87d97a3568b575dcdd009b2daacc66ca9f357a74c1653cd0816e1d",
+  "native_adapter_execution": "NOT_RUN: local packages/durable/src/storage/sqlite/node.ts absent ENOENT; no borrowed source/dist/hydration/dependencies",
+  "runs": [
+    {
+      "phase": "baseline",
+      "exit": 3,
+      "signal": null,
+      "program_sha256": "1df1a65a796c6ebd063a6d9b393b0bc937a09ee626e506b6d3f54f98815dd5ea",
+      "source_sha256": "bd67d8b079286855edaf0bb0b6637d9efb84e38682e0931fdcd82c98fdd6a619",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "6fde094a67876cde117a9505a0755f373caee2e4256c93755becc197a4140d09"
+    },
+    {
+      "phase": "candidate",
+      "exit": 0,
+      "signal": null,
+      "program_sha256": "e6c1a157f9bd198cfb10bd5fd895b6f736ccc19b1a694c0e0cf701bf71db2d7e",
+      "source_sha256": "bf7050ff5dffeef2a3c87fc91aef67dbd445a7bd887b60cbce6155797d27720c",
+      "stdout_sha256": "6a8c4d9c296882655b39f32de56ddb791bc1ece23dda51c18eedfcfcce12b3fa",
+      "stderr_sha256": "445f3f9d2815417d93b871fe98b0cb50bb56b49768a10358e8663b1d6d282c65"
+    }
+  ],
+  "thread_env": {
+    "UV_THREADPOOL_SIZE": "1",
+    "OMP_NUM_THREADS": "1",
+    "NODE_OPTIONS": "--v8-pool-size=1"
+  },
+  "preserved": "counter/catch/completeness13/frozen offline factory unchanged; no SDK/provider/model/compiler/network/full306/installed/RAM/N1 acceptance"
+}

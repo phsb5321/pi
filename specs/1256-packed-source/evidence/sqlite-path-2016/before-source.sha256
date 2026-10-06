@@ -1,0 +1,3 @@
+bd67d8b079286855edaf0bb0b6637d9efb84e38682e0931fdcd82c98fdd6a619  test/packed-isolation-306.ts
+e7d24d8e0b3790c88535d2dd2006e39c54567a64e4ad74473d7e058d8756f2d8  packages/coding-agent/src/experimental/durable/shared-host-acceptance-kit.ts
+185bf0e63aa18cfdd9c6dd6146557d178ce33e2773b30cdffc3b934150dbfc74  test/packed-source-regression-1256.ts

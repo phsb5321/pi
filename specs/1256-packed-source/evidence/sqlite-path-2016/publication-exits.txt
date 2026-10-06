@@ -1,0 +1,3 @@
+{"phase": "before-head", "exit": 0}
+{"phase": "before-status", "exit": 0}
+{"phase": "preexisting-staged", "exit": 0}

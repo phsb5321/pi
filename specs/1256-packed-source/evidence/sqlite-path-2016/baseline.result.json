@@ -1,0 +1,9 @@
+{
+  "phase": "baseline",
+  "exit": 3,
+  "signal": null,
+  "program_sha256": "1df1a65a796c6ebd063a6d9b393b0bc937a09ee626e506b6d3f54f98815dd5ea",
+  "source_sha256": "bd67d8b079286855edaf0bb0b6637d9efb84e38682e0931fdcd82c98fdd6a619",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "6fde094a67876cde117a9505a0755f373caee2e4256c93755becc197a4140d09"
+}

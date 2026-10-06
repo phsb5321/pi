@@ -1,0 +1,14 @@
+f6674860a3b5e812b38211161ce6965546ba2f9a:packages/coding-agent/src/experimental/durable/README.md:14:`~/.pi/agent/experimental/durable-sessions/<cwd-hash>/<session>/session.sqlite`; a lock keeps a second process out
+f6674860a3b5e812b38211161ce6965546ba2f9a:packages/coding-agent/src/experimental/durable/runtime.ts:53:	readonly session: { readonly id: string; readonly directory: string; readonly cwd: string };
+f6674860a3b5e812b38211161ce6965546ba2f9a:packages/coding-agent/src/experimental/durable/runtime.ts:182:			session: { id: location.id, directory: location.directory, cwd: location.cwd },
+f6674860a3b5e812b38211161ce6965546ba2f9a:packages/coding-agent/src/experimental/durable/sessions.ts:7:/** One session directory holding `session.sqlite`, locked by this process. */
+f6674860a3b5e812b38211161ce6965546ba2f9a:packages/coding-agent/src/experimental/durable/sessions.ts:10:	directory: string;
+f6674860a3b5e812b38211161ce6965546ba2f9a:packages/coding-agent/src/experimental/durable/sessions.ts:28:	let directory: string;
+f6674860a3b5e812b38211161ce6965546ba2f9a:packages/coding-agent/src/experimental/durable/sessions.ts:55:	return { id: basename(directory), directory, database: join(directory, "session.sqlite"), cwd, created, release };
+f6674860a3b5e812b38211161ce6965546ba2f9a:packages/coding-agent/src/experimental/durable/shared-host-acceptance-kit.ts:3: * acceptances/canaries in this directory: fail-fast checks + session
+f6674860a3b5e812b38211161ce6965546ba2f9a:packages/coding-agent/src/experimental/durable/shared-host-acceptance.ts:55:const views: Array<{ id: string; session: { id: string; directory: string; cwd: string } }> = [];
+f6674860a3b5e812b38211161ce6965546ba2f9a:packages/coding-agent/src/experimental/durable/shared-host-acceptance.ts:58:	const view = (await invoke(id, "view")) as { session: { id: string; directory: string; cwd: string } };
+f6674860a3b5e812b38211161ce6965546ba2f9a:packages/coding-agent/src/experimental/durable/shared-host-residency-reclaim-regression.ts:139:	const source = new DatabaseSync(join(record.directory, "session.sqlite"), { readOnly: true });
+f6674860a3b5e812b38211161ce6965546ba2f9a:packages/coding-agent/src/experimental/durable/shared-host-residency.ts:57:	readonly directory: string;
+f6674860a3b5e812b38211161ce6965546ba2f9a:packages/coding-agent/src/experimental/durable/shared-host-residency.ts:79:	/** Root directory: one per-session cwd + resident record under it. */
+f6674860a3b5e812b38211161ce6965546ba2f9a:packages/coding-agent/src/experimental/durable/shared-host-residency.ts:117:			return { sessionId: metadata.id, cwd, nativeSessionId: session.id, directory: session.directory };

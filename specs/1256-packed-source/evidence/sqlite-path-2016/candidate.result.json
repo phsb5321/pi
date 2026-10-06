@@ -1,0 +1,9 @@
+{
+  "phase": "candidate",
+  "exit": 0,
+  "signal": null,
+  "program_sha256": "e6c1a157f9bd198cfb10bd5fd895b6f736ccc19b1a694c0e0cf701bf71db2d7e",
+  "source_sha256": "bf7050ff5dffeef2a3c87fc91aef67dbd445a7bd887b60cbce6155797d27720c",
+  "stdout_sha256": "6a8c4d9c296882655b39f32de56ddb791bc1ece23dda51c18eedfcfcce12b3fa",
+  "stderr_sha256": "445f3f9d2815417d93b871fe98b0cb50bb56b49768a10358e8663b1d6d282c65"
+}

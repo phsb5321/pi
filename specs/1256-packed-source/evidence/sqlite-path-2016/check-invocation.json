@@ -1,0 +1,25 @@
+{
+  "started_brt": "2026-10-06T20:42:11.286719-03:00",
+  "argv": [
+    "/nix/store/2gd4h12irmnanhg33md2rpjygrsj5ypb-nodejs-slim-22.23.2/bin/node",
+    "--experimental-strip-types",
+    "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/test/packed-sqlite-path-regression-2016.ts"
+  ],
+  "thread_limits": {
+    "UV_THREADPOOL_SIZE": "1",
+    "OMP_NUM_THREADS": "1",
+    "NODE_OPTIONS": "--v8-pool-size=1"
+  },
+  "prior_NODE_OPTIONS_preserved": "",
+  "node_checks_launched": 1,
+  "watchdog_seconds": 45,
+  "scope": "Offline actual SOURCE path slices/real filesystem with injectedSDK/adapter, notSQLite/full306/compiler/model",
+  "exit_code": 0,
+  "stdout_bytes": 2605,
+  "stderr_bytes": 179,
+  "stdout_sha256": "8144b2e66c3fcb06131539ca0467baddded294218378f9fd27356b73568ca188",
+  "stderr_sha256": "58b48f972129947fff715a80102df723ff4398934ef2760944f855bf71a9fe3a",
+  "elapsed_seconds": 0.3444982820074074,
+  "finished_brt": "2026-10-06T20:42:11.631232-03:00",
+  "result": "NODE_CHECK_EXIT0"
+}

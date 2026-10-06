@@ -1,0 +1,35 @@
+ M specs/1256-packed-source/evidence/publication-1641-completion/README.md
+ M specs/1256-packed-source/evidence/publication-1641-completion/argv.txt
+ M specs/1256-packed-source/evidence/publication-1641-completion/exits.txt
+ M specs/1256-packed-source/evidence/raw-evidence-copy-map.json
+ M specs/1256-packed-source/handoff.md
+?? specs/1256-packed-source/evidence/publication-1641-completion/actual-staged-paths.txt
+?? specs/1256-packed-source/evidence/publication-1641-completion/closure.json
+?? specs/1256-packed-source/evidence/publication-1641-completion/explicit-unignored-stage-paths.txt
+?? specs/1256-packed-source/evidence/publication-1641-completion/final-head-signature.txt
+?? specs/1256-packed-source/evidence/publication-1641-completion/final-status.txt
+?? specs/1256-packed-source/evidence/publication-1641-completion/result.json
+?? specs/1256-packed-source/evidence/publication-1641-completion/stage-explicit-unignored.txt
+?? specs/1256-packed-source/evidence/publication-1641-completion/staged-diff-check.txt
+?? specs/1256-packed-source/evidence/publication-1641-git/PR-body.md
+?? specs/1256-packed-source/evidence/publication-1641-git/PR-create.txt
+?? specs/1256-packed-source/evidence/publication-1641-git/PR-readback.txt
+?? specs/1256-packed-source/evidence/publication-1641-git/README.md
+?? specs/1256-packed-source/evidence/publication-1641-git/SSH-remote-exact-head.txt
+?? specs/1256-packed-source/evidence/publication-1641-git/argv.txt
+?? specs/1256-packed-source/evidence/publication-1641-git/closure.json
+?? specs/1256-packed-source/evidence/publication-1641-git/existing-PR.txt
+?? specs/1256-packed-source/evidence/publication-1641-git/exits.txt
+?? specs/1256-packed-source/evidence/publication-1641-git/final-head-tree-parent.txt
+?? specs/1256-packed-source/evidence/publication-1641-git/final-status.txt
+?? specs/1256-packed-source/evidence/publication-1641-git/normal-first-prepush-SSH.txt
+?? specs/1256-packed-source/evidence/publication-1641-git/normal-git-commit.txt
+?? specs/1256-packed-source/evidence/publication-1641-git/push-argv.txt
+?? specs/1256-packed-source/evidence/publication-1641-git/push-continuation-result.json
+?? specs/1256-packed-source/evidence/publication-1641-git/push-exits.txt
+?? specs/1256-packed-source/evidence/publication-1641-git/push-final-status.txt
+?? specs/1256-packed-source/evidence/publication-1641-git/result.json
+?? specs/1256-packed-source/evidence/publication-1641-git/signature-verification.txt
+?? specs/1256-packed-source/evidence/sqlite-path-2016/before-packed-isolation-306.ts.txt
+?? specs/1256-packed-source/evidence/sqlite-path-2016/before-source.sha256
+?? specs/1256-packed-source/evidence/sqlite-path-2016/before-status.txt

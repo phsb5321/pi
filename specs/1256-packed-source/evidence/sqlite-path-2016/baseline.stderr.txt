@@ -1,0 +1,8 @@
+AssertionError [ERR_ASSERTION]: eviction: the packed store persists across park (awaited openNodeSqliteStorage on the session's own store files)
+
+false !== true
+
+    at runCheck (file:///home/notroot/Documents/Code/pi-upstream-1256-packed-source/[eval1]:28:47)
+    at consumeStores (file:///home/notroot/Documents/Code/pi-upstream-1256-packed-source/[eval1]:61:2)
+    at file:///home/notroot/Documents/Code/pi-upstream-1256-packed-source/[eval1]:66:14
+SOURCE BASELINE RED3: actual cwd consumer cannot find the injected native-directory files
