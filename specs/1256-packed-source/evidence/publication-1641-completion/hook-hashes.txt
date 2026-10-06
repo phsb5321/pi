@@ -1,0 +1,7 @@
+5687e1c3b76cfd61ad324b36dd162b6b687b8691007a7cd5fc49328370b0e244  /home/notroot/.config/git/hooks/pre-commit
+bdfefb52476ad4b422445b38cc592ef0f3358311012bd429f9fb1ea599fb2e1d  /home/notroot/.config/git/hooks/commit-msg
+51b6cf08bb606d54409485096f983d1cfe605facc4143c37a68864b0411f9672  /home/notroot/.config/git/hooks/prepare-commit-msg
+fcfe688983da875cd27feac8e6d02311e9ea40ff8d464ee986ee472288850a67  /home/notroot/.config/git/hooks/pre-push
+bce53490f02fa16c4b93ef2f50cc19f7a370a972cf2b3419ff5004024ffa8155  /home/notroot/.config/git/hooks/post-commit
+4c33f77f94181e2689fabcb220237801b1c80ffef973399170a2295590668d51  /etc/profiles/per-user/notroot/bin/code-slop-gate
+fd25790baef2ac62778fcf9343ef1517aef712f6787e6c55c68276077d04bbd1  /etc/profiles/per-user/notroot/bin/alignment-gate

@@ -1,0 +1,52 @@
+{
+  "purpose": "Publish existing raw proof via nonignored byte-identical .log.txt files, without changing .gitignore/source-check.json/source code or staging ignored .log paths",
+  "verification": "PASS exact cmp plus SHA256 original/copy for all6; baseline/candidate match unchanged source-check.json output hashes. Full observed ledger: raw-evidence-copy-hashes.sha256.",
+  "algorithm": "SHA256 over complete raw bytes; originals remain intact",
+  "copies": [
+    {
+      "original": "specs/1256-packed-source/evidence/baseline-red.log",
+      "text_copy": "specs/1256-packed-source/evidence/baseline-red.log.txt",
+      "expected_sha256": "af9e6a9720289de86486a54db3efed9cdcfd884ef5f0f24f26682adf5d01c6f2",
+      "expected_from": "source-check.json runs[0].output_sha256"
+    },
+    {
+      "original": "specs/1256-packed-source/evidence/candidate-green.log",
+      "text_copy": "specs/1256-packed-source/evidence/candidate-green.log.txt",
+      "expected_sha256": "e2632e9e4bc966e2a8ae69ea3b8369cb232d81fb859ffa761fcea28219fde0f0",
+      "expected_from": "source-check.json runs[1].output_sha256"
+    },
+    {
+      "original": "specs/1256-packed-source/evidence/one-check.log",
+      "text_copy": "specs/1256-packed-source/evidence/one-check.log.txt",
+      "expected_sha256": null,
+      "observed_sha256_from": "raw-evidence-copy-hashes.sha256"
+    },
+    {
+      "original": "specs/1256-packed-source/evidence/publication-1641/argv.log",
+      "text_copy": "specs/1256-packed-source/evidence/publication-1641/argv.log.txt",
+      "expected_sha256": null,
+      "observed_sha256_from": "raw-evidence-copy-hashes.sha256"
+    },
+    {
+      "original": "specs/1256-packed-source/evidence/publication-1641/base-metadata.log",
+      "text_copy": "specs/1256-packed-source/evidence/publication-1641/base-metadata.log.txt",
+      "expected_sha256": null,
+      "observed_sha256_from": "raw-evidence-copy-hashes.sha256"
+    },
+    {
+      "original": "specs/1256-packed-source/evidence/publication-1641/source-hash-check.log",
+      "text_copy": "specs/1256-packed-source/evidence/publication-1641/source-hash-check.log.txt",
+      "expected_sha256": null,
+      "observed_sha256_from": "raw-evidence-copy-hashes.sha256"
+    }
+  ],
+  "unchanged_original_proof": "source-check.json and its RED3/GREEN0 output hashes. No regression replay.",
+  "historical_counts_before_completion": {
+    "17_11_metadata_preflight_body": 1,
+    "17_24_stage_failure_body": 1,
+    "commit_calls": 0,
+    "push_calls": 0,
+    "admission_refusals74": 0
+  },
+  "allowed_next_scope": "One normal ≤120s SMALL completion body; exactly source3+unignored spec/proof paths, normal configured hooks/signature/prepush/SSH feature branch and PRmemory-sound/assigneephsb5321. No gitadd-f/ignore-policy override/unstage/test/compiler/namespace/model/merge/main/force/auth/cap changes. No p1 cue."
+}

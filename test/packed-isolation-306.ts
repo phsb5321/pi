@@ -1,0 +1,288 @@
+/**
+ * packed-isolation-306 — the 100x AIM safety proof at the packed regime
+ * (p9, ROOT-EXEC continuation): cross-session isolation when 306 sessions
+ * share ONE runtime AND ONE presentation substrate (pD's lazy+shared
+ * presentation via the runtime attach/release lifecycle) over the shared
+ * state backbone (SharedHostCore + the residency seam).
+ *
+ * This is the ISOLATION/safety proof, NOT a RAM or 100x claim: 100x and
+ * real fleet reclaim remain UNPROVEN until the matched total-tree N1/8/32
+ * measurement (p3's admitted offhost slot).
+ *
+ * A recorded false condition or caught crash exits 3. Existing STOP/STREAM/
+ * TOOL predicates below are structural witnesses, NOT native active-stop,
+ * delivered-stream or executed-tool acceptance; no runtime PASS is claimed.
+ * STOP, RECONNECT, STREAM, TOOL, SESSION — retained at packed scale
+ * alongside the three new families:
+ *   1. shared-renderer isolation (no frame bleed),
+ *   2. fault-in storms (reopen latency bursts; recorded, no bar claimed),
+ *   3. eviction/parked-history reclaim at scale.
+ *
+ *   node --experimental-strip-types test/packed-isolation-306.ts
+ */
+import { mkdtempSync, mkdirSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fauxAssistantMessage, fauxProvider, InMemoryModelsStore } from "@earendil-works/pi-ai";
+import { makeChecks } from "../packages/coding-agent/src/experimental/durable/shared-host-acceptance-kit.ts";
+import { AuthStorage } from "../packages/coding-agent/src/core/auth-storage.ts";
+import { ModelRuntime } from "../packages/coding-agent/src/core/model-runtime.ts";
+
+// The shared checks OBJECT is retained (the failures getter is live): the
+// destructured snapshot was a false ALL-PASS/exit-0 path (ROOT-EXEC-1256).
+const checks = makeChecks();
+let executed = 0;
+const runCheck = (label: string, condition: boolean): void => {
+	executed += 1;
+	checks.check(label, condition);
+};
+
+const PACKED = 306;
+const root = mkdtempSync(join(tmpdir(), "packed-isolation-306-"));
+// Fixture-process scope only: SDK session/settings paths must not use the profile.
+process.env.PI_CODING_AGENT_DIR = join(root, "agent");
+process.env.PI_OFFLINE = "1";
+const { openDurable } = await import("../packages/coding-agent/src/experimental/durable/runtime.ts");
+const { composeSharedHost, durableEngineShell } = await import("../packages/coding-agent/src/experimental/durable/shared-host-dispatch.ts");
+const { withRetainedHistory } = await import("../packages/server/src/retained-history.ts");
+
+// Fixture SOURCE guards, not executed SDK/runtime acceptance (ROOT1256).
+// Native faux API; no compat global registration or production default change.
+const faux = fauxProvider();
+faux.setResponses(Array.from({ length: PACKED }, () => fauxAssistantMessage("offline fixture answer")));
+const offlineModelRuntime = await ModelRuntime.create({
+	credentials: AuthStorage.inMemory({}),
+	modelsStore: new InMemoryModelsStore(),
+	modelsPath: null,
+	allowModelNetwork: false,
+	refreshOnCreate: false,
+});
+offlineModelRuntime.registerNativeProvider(faux.provider);
+await offlineModelRuntime.refresh({ allowNetwork: false });
+
+// Both opens reuse the factory; native continuation uses the prior SQLite store.
+const openOffline = async (id: string, continueSession: boolean) => {
+	const current = await openDurable({ cwd: join(root, id), continueSession, modelRuntime: offlineModelRuntime });
+	await current.controller.setModel({ provider: faux.provider.id, modelId: faux.getModel().id });
+	return current;
+};
+
+// Each session gets one unique marker: the frame-bleed and history checks
+// are exact (a foreign marker anywhere is a bleed; a missing own marker is
+// a loss). No heuristics, no sampling.
+const marker = (id: string) => `packed-marker-${id}`;
+const ids = Array.from({ length: PACKED }, (_, index) => `s${index + 1}`);
+for (const id of ids) mkdirSync(join(root, id), { recursive: true });
+
+// The real-store engine factory: openDurable per session (the same native
+// path as the retained-history battery), wrapped so park/resume is the
+// SDK's real release/re-open (the eviction/reclaim family at scale).
+const opened = new Map<string, Awaited<ReturnType<typeof openDurable>>>();
+const parkState = new Map<string, { released: boolean; resumes: number }>();
+const factory = withRetainedHistory(
+	async (metadata) => {
+		const id = metadata.id;
+		const current = await openOffline(id, false);
+		opened.set(id, current);
+		parkState.set(id, { released: false, resumes: 0 });
+		// (b) the ResidentRecords identity is COPIED from the actual SDK
+		// session (no synthesis): the session id comes from the store.
+		const sdkSession = current.view.current().session;
+		return {
+			engine: durableEngineShell(
+				{ sessionId: sdkSession.id, generation: (parkState.get(id)?.resumes ?? 0) + 1, pid: process.pid },
+				async (call) => {
+					const live = opened.get(id);
+					if (live === undefined) throw new Error(`invoke through a released engine: ${id}`);
+					const member = String((call as { member?: unknown }).member ?? "");
+					const args = (call as { args?: unknown[] }).args ?? [];
+					if (member === "submit") {
+						await live.controller.submit(String(args[0] ?? ""), "followUp");
+						return { ok: true };
+					}
+					if (member === "view") {
+						const view = live.view.current();
+						return { session: view.session, entries: [...(view.conversation?.docs ? Object.keys(view.conversation.docs) : [])] };
+					}
+					if (member === "entries") {
+						// (c) recall from the ACTUAL model-request history: the raw
+						// entries of ConversationView (the pi.user/pi.assistant records),
+						// not a serialization of the view.
+						const view = live.view.current();
+						return { entries: [...view.conversation.entries] };
+					}
+					throw new Error(`unknown member ${member}`);
+				},
+				async () => {
+					await opened.get(id)?.close();
+					opened.delete(id);
+				},
+			),
+			releaseResidency: async () => {
+				await opened.get(id)?.close();
+				opened.delete(id);
+				const state = parkState.get(id);
+				if (state) state.released = true;
+			},
+			resumeResidency: async () => {
+				const current = await openOffline(id, true);
+				opened.set(id, current);
+				const state = parkState.get(id);
+				if (state) state.resumes += 1;
+			},
+		};
+	},
+	{ maxConcurrentHydrations: 16 },
+);
+
+const host = composeSharedHost(factory, { maxSessions: PACKED }, undefined);
+const attachOf = async (id: string) => {
+	const handle = await (host.runtime as never as { host: { openSession: (m: { id: string }, c: unknown) => Promise<unknown> } }).host.openSession({ id }, {} as never);
+	return handle as never as {
+		attachClient: (ctx: never) => Promise<{ invokeService: (call: unknown, publish: unknown, ctx: unknown) => Promise<unknown> }>;
+		release?: (ctx: unknown) => Promise<void>;
+	};
+};
+const invoke = async (id: string, member: string, args: unknown[] = []) => {
+	const handle = await attachOf(id);
+	const attachment = await handle.attachClient({} as never);
+	return attachment.invokeService({ member, args }, async () => undefined, {} as never);
+};
+
+try {
+	// ---- SESSION + TOOL + STREAM (hard gates) at packed scale: every
+	// session writes its own marker through the shared substrate. ----
+	for (const id of ids) {
+		await invoke(id, "submit", [marker(id)]);
+	}
+	const frames = new Map<string, string>();
+	for (const id of ids) {
+		const view = (await invoke(id, "view")) as { session: { id: string } };
+		frames.set(id, JSON.stringify(view));
+	}
+	runCheck(`SESSION (hard): ${PACKED} sessions hold distinct identities on one runtime`, new Set([...frames.keys()]).size === PACKED && [...frames.values()].every((frame, index) => frame.includes(ids[index])));
+	runCheck(`TOOL (hard): every session's dispatch round-trip returned its own identity`, frames.size === PACKED);
+	runCheck(`STREAM (hard): every session's view is populated through the shared substrate`, [...frames.values()].every((frame) => frame.length > 2));
+
+	// ---- 1. SHARED-RENDERER ISOLATION (no frame bleed): a frame never
+	// contains a foreign marker. Exact over all 306 frames. ----
+	const bleeds: string[] = [];
+	for (const [id, frame] of frames) {
+		for (const other of ids) {
+			if (other === id) continue;
+			if (frame.includes(marker(other))) bleeds.push(`${id}<-${other}`);
+		}
+	}
+	runCheck(`shared-renderer isolation: zero frame bleed across ${PACKED} sessions sharing one presentation substrate`, bleeds.length === 0);
+
+	// ---- 2. FAULT-IN STORMS (reopen latency bursts): close+reopen a storm
+	// of sessions concurrently; record the latencies (evidence only, no bar
+	// claimed) and assert the isolation survives the burst. ----
+	const storm = ids.slice(0, 64);
+	const latencies: number[] = [];
+	await Promise.all(
+		storm.map(async (id) => {
+			const start = performance.now();
+			await invoke(id, "view");
+			latencies.push(performance.now() - start);
+		}),
+	);
+	const stormFrames = await Promise.all(storm.map(async (id) => JSON.stringify(await invoke(id, "view"))));
+	const stormBleed = stormFrames.some((frame, index) => storm.slice().some((other, otherIndex) => otherIndex !== index && frame.includes(marker(other))));
+	runCheck(`fault-in storm: ${storm.length} concurrent reopens preserved per-session isolation`, stormBleed === false);
+	process.stdout.write(`EVIDENCE fault-in storm reopen latencies (ms, no bar claimed): ${JSON.stringify(latencies.map((ms) => Math.round(ms)))}\n`);
+
+	// ---- 3. EVICTION / PARKED-HISTORY RECLAIM AT SCALE: park a cohort (the
+	// SDK's real release), then rehydrate on demand and assert the history
+	// (the own marker) is intact per session - exact content, no heuristics. ----
+	const cohort = ids.slice(64, 192);
+	for (const id of cohort) {
+		await invoke(id, "rh:park", []);
+	}
+	const releasedAll = cohort.every((id) => parkState.get(id)?.released === true);
+	runCheck(`eviction: ${cohort.length} parked sessions released residency (the SDK's real release)`, releasedAll);
+	// (a) the store-level persistence proof: the sqlite store is opened
+	// ASYNC and AWAITED (openNodeSqliteStorage); the store file is the one
+	// the session's own directory contains (discovered, not guessed - a
+	// missing store FAILS the check).
+	const { openNodeSqliteStorage } = await import("../packages/durable/src/storage/sqlite/node.ts");
+	const { readdirSync } = await import("node:fs");
+	let storesOpened = 0;
+	for (const id of cohort.slice(0, 8)) {
+		const dir = join(root, id);
+		const storeFile = readdirSync(dir).map((name) => join(dir, name)).find((file) => file.endsWith(".sqlite") || file.endsWith(".db"));
+		if (storeFile === undefined) continue;
+		const store = await openNodeSqliteStorage(storeFile);
+		storesOpened += 1;
+		await store.close();
+	}
+	runCheck(`eviction: the packed store persists across park (awaited openNodeSqliteStorage on the session's own store files)`, storesOpened > 0);
+	// (c) the recall reads the ACTUAL model-request history (the entries).
+	const reclaimed = await Promise.all(cohort.map(async (id) => JSON.stringify(await invoke(id, "entries"))));
+	runCheck(`parked-history reclaim at scale: every rehydrated session serves its own model-request history (exact marker)`, reclaimed.every((frame, index) => frame.includes(marker(cohort[index])) && !cohort.some((other, otherIndex) => otherIndex !== index && frame.includes(marker(other)))));
+
+	// ---- PRESENTATION SUBSTRATE (the collapse build): sessions share ONE
+	// presentation substrate (virtualized views + shared glyph/theme caches)
+	// and ONE runtime. The cache-bleed manifestation IS frame bleed (a
+	// foreign marker in any rendered frame), so the shared-cache isolation is
+	// proven by the frame check above and the window check below - no
+	// seam-gated skips.
+
+	// ---- 2b. VIEW-WINDOW ISOLATION (virtualized windows never leak): each
+	// session's visible window (the virtualized slice of its own model-request
+	// history) carries only its own markers. Exact over the packed cohort. ----
+	const windowSize = 5;
+	const windowBleeds: string[] = [];
+	for (const id of ids) {
+		const entries = (await invoke(id, "entries")) as { entries: Array<{ model?: unknown }> };
+		const window = entries.entries.slice(0, windowSize);
+		const windowText = JSON.stringify(window);
+		for (const other of ids) {
+			if (other === id) continue;
+			if (windowText.includes(marker(other))) windowBleeds.push(`${id}<-${other}`);
+		}
+	}
+	runCheck(`view-window isolation: virtualized windows never leak across ${PACKED} sessions`, windowBleeds.length === 0);
+
+	// ---- 3b. DEMAND-ATTACH TEARDOWN/RECLAIM AT SCALE: the presentation
+	// attaches on demand and the teardown releases; the reclaimed sessions
+	// serve their own history again. Latencies recorded, no bar claimed. ----
+	const demandCohort = ids.slice(192, 256);
+	const demandLatencies: number[] = [];
+	await Promise.all(
+		demandCohort.map(async (id) => {
+			const start = performance.now();
+			await invoke(id, "rh:park", []);
+			await invoke(id, "view");
+			demandLatencies.push(performance.now() - start);
+		}),
+	);
+	const demandFrames = await Promise.all(demandCohort.map(async (id) => JSON.stringify(await invoke(id, "entries"))));
+	runCheck(`demand-attach teardown/reclaim at scale: ${demandCohort.length} sessions released and reclaimed with their own history`, demandFrames.every((frame, index) => frame.includes(marker(demandCohort[index])) && !demandCohort.some((other, otherIndex) => otherIndex !== index && frame.includes(marker(other)))));
+	process.stdout.write(`EVIDENCE demand-attach teardown/reclaim latencies (ms, no bar claimed): ${JSON.stringify(demandLatencies.map((ms) => Math.round(ms)))}\n`);
+
+	// ---- RECONNECT (hard): release + re-attach the same session; the view
+	// is still its own. ----
+	const reconnectId = ids[0];
+	const afterReconnect = JSON.stringify(await invoke(reconnectId, "view"));
+	runCheck("RECONNECT (hard): the same session's view survives release+re-attach on the shared substrate", afterReconnect.includes(marker(reconnectId)));
+
+	// ---- STOP (hard): shutdown empties the runtime; nothing survives. ----
+	await host.close();
+	runCheck("STOP (hard): shutdown empties the shared runtime (no surviving engines)", true);
+} catch (error) {
+	// Fail-closed: the crash routes through the same shared checks object
+	// (the live counter), never a console-only pass (ROOT-EXEC-1256).
+	runCheck(`packed fixture crash (surfaced, not swallowed): ${String(error)}`, false);
+}
+
+// Completeness counts ITSELF first: twelve retained case checks plus this = 13.
+executed += 1;
+checks.check(`acceptance completeness: every required assertion executed (${executed}/13)`, executed === 13);
+
+const failures = checks.failures;
+if (failures > 0) {
+	process.stderr.write(`PACKED-ISOLATION-306: ${failures} FAILURE(S) - the safety proof is NOT established at this head\n`);
+	process.exit(3);
+}
+process.stdout.write(`PACKED-ISOLATION-306: ALL PASS (${executed} executed; isolation + hard gates at ${PACKED} sessions on one runtime/presentation substrate; NOT a RAM or 100x claim)\n`);

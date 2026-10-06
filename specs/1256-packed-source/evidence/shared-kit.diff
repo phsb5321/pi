@@ -1,0 +1,20 @@
+diff --git a/specs/1256-packed-source/evidence/before-shared-host-acceptance-kit.ts.txt b/packages/coding-agent/src/experimental/durable/shared-host-acceptance-kit.ts
+index 236992d18..c909235c4 100644
+--- a/specs/1256-packed-source/evidence/before-shared-host-acceptance-kit.ts.txt
++++ b/packages/coding-agent/src/experimental/durable/shared-host-acceptance-kit.ts
+@@ -3,7 +3,6 @@
+  * acceptances/canaries in this directory: fail-fast checks + session
+  * open/attach/invoke wiring over the seam (one copy).
+  */
+-import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
+ import type { SessionMetadata } from "@earendil-works/pi-server";
+ 
+ export type Invoke = (id: string, member: string, args?: unknown[]) => Promise<unknown>;
+@@ -39,6 +38,7 @@ export function makeChecks(): { check: (label: string, condition: boolean) => vo
+ }
+ 
+ export async function openAttachedSessions(host: OpenableHost, ids: readonly string[]): Promise<Invoke> {
++	const { BACKGROUND_CONTEXT } = await import("@earendil-works/chord/context");
+ 	const attachments = new Map<
+ 		string,
+ 		{ invokeService: (call: unknown, publish: unknown, ctx: unknown) => Promise<unknown> }

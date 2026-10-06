@@ -1,0 +1,57 @@
+{
+  "authority": "ROOT-PROGRESS-1641-PI-SOURCE",
+  "kind": "Independent remaining native store/API read-only crosswalk; NOT a green-regression rerun or runtime check",
+  "native_admissions_after_sole_publication_attempt": 0,
+  "native_code_compiler_SDK_model_tests_after_attempt": 0,
+  "method": "Native read/write file tools only, full named source reads, no Bash fallback/execution/provider hop",
+  "released_source": {
+    "worktree": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source",
+    "source_hashes_verified_in_sole_admitted_body": {
+      "test/packed-isolation-306.ts": "bd67d8b079286855edaf0bb0b6637d9efb84e38682e0931fdcd82c98fdd6a619",
+      "packages/coding-agent/src/experimental/durable/shared-host-acceptance-kit.ts": "e7d24d8e0b3790c88535d2dd2006e39c54567a64e4ad74473d7e058d8756f2d8",
+      "test/packed-source-regression-1256.ts": "185bf0e63aa18cfdd9c6dd6146557d178ce33e2773b30cdffc3b934150dbfc74",
+      "specs/1256-packed-source/evidence/source-check.json": "6bfe9ff5a9998ed437f7b3999023dbd80355949d5a93ef4f3876115c0878e22c"
+    },
+    "existing_source_acceptance": "RED3/GREEN0 preserved, not rerun",
+    "base_experimental_runtime_file": "Absent from released upstream-base worktree; no hydration or new SDK files added"
+  },
+  "readonly_donor_sources": {
+    "root": "/home/notroot/Documents/Code/pi-upstream-1206-overlay/port09-candidate-0735/source",
+    "files_read_fully": [
+      "packages/coding-agent/src/experimental/durable/runtime.ts",
+      "packages/coding-agent/src/experimental/durable/sessions.ts",
+      "packages/coding-agent/src/config.ts"
+    ],
+    "identity_limitation": "These named cached selected-source files were read only. No fresh donor manifest/hash/Git-object comparison; not asserted byte-identical to f667 or a new READY1968 validation. Findings conditional on the actual read source graph. Protected source/input bytes were not edited.",
+    "released_model_runtime_read_fully": "packages/coding-agent/src/core/model-runtime.ts; no API edits or runtime calls"
+  },
+  "remaining_store_path_crosswalk": {
+    "fixture_lookup": "join(fixtureRoot, sessionId) then readdirSync(cwd), looking only for immediate .sqlite or .db file",
+    "native_selector": "selectSession(cwd, continueSession): realpath(resolve(cwd)); getAgentDir()/experimental/durable-sessions/sha256(cwd).slice(0,24)/<13digitTimestamp-UUID>/session.sqlite",
+    "native_open": "openDurable selects location, awaits openNodeSqliteStorage(location.database), exposes view.session.directory=location.directory",
+    "agent_dir": "getAgentDir reads environment key derived from APP_NAME; for pi, fixture's PI_CODING_AGENT_DIR chooses fixtureRoot/agent. Even that intended agent root is not fixtureRoot/sessionId cwd.",
+    "static_conclusion": "The fixture's cwd-local immediate database search does not follow the read native selector's location.database. If composed with this graph, a store may exist under the agent/session root while storesOpened remains0. This is remaining persistence-witness debt, not a reproduced SDK/runtime failure.",
+    "continuation": "Both common opener callers use the same cwd plus false/true continuation. Native continuation selects newest timestamp-UUID in the cwd-hash session root, not a cwd-local db.",
+    "not_done": "No SDK/store opening, directory scan, locks or runtime witness; no source fix. Future separately scoped correction should use actual returned session.directory/location identity, not a guessed cwd database path."
+  },
+  "remaining_submission_completion_crosswalk": {
+    "fixture": "await current.controller.submit(..., followUp) followed by view/history queries",
+    "native_runtime": "submit awaits queued current.submit and attaches watchAnswer; watchAnswer starts submission.wait(...).then(...) without awaiting settlement before controller.submit resolves",
+    "static_conclusion": "Return from controller.submit is not a completed model-response/delivered-stream/executed-tool witness in this read graph. Existing view-length/cardinality predicates remain insufficient native witnesses.",
+    "not_done": "No submit/model/provider call, no changed assertion, no fabricated runtime failure/success"
+  },
+  "factory_refresh_crosswalk": {
+    "released_factory_options": "in-memory credentials/models store; modelsPath null; refreshOnCreate false; allowModelNetwork false; PI_OFFLINE fixture-process scope",
+    "model_runtime_registration": "registerNativeProvider returns void and schedules void refresh({allowNetwork:false}); fixture then explicitly awaits refresh({allowNetwork:false})",
+    "limitation": "Static option/API correspondence only. No concurrent-refresh/cache/availability/provider execution acceptance or catalogue changes."
+  },
+  "normal_hook_crosswalk": {
+    "actual_effective_core_hooksPath": "/home/notroot/.config/git/hooks",
+    "global_precommit": "Fork origin is not NixOS, so NixOS lefthook branch skipped; universal managed code-slop-gate --staged and alignment-gate --staged remain configured",
+    "inactive_husky": "Repo .husky/pre-commit contains npm run check, but is not the effective core.hooksPath. Not invented as the publication/compiler gate.",
+    "commit_msg": "Global normal commit-msg delegates to lefthook; no repo lefthook.yml was found by file read. Actual hook result NOT_RUN, not guessed failure/success.",
+    "gate_execution": "NOT_RUN: publisher protected-base precondition stopped before git add/commit. No hook bypass/override."
+  },
+  "changes": "Evidence only; three authorized source/check files remain unchanged/unstaged",
+  "preservation": "all22+independent actualYT/priorPORT23, N1negative37.89/41.84, OSC52BEL/ST negatives, READY1968/43data/274links,pD WIP/drafts, original private OpenAI Sol6.1/account/session/funding/caps; no coordinator p1 cue or namespace/CLI/source patch"
+}

@@ -1,0 +1,1 @@
+06/10/2026 17:11:46 -03 gh api repos/phsb5321/pi/branches/memory-sound --jq \{name\,protected\,sha:.commit.sha\} 

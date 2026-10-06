@@ -1,0 +1,1 @@
+env -i PATH="$PATH" HOME="$HOME" UV_THREADPOOL_SIZE=1 NODE_OPTIONS=--v8-pool-size=1 node --experimental-strip-types test/packed-source-regression-1256.ts

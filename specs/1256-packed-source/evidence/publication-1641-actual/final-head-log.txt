@@ -1,0 +1,6 @@
+4e494929998d6bc4fccf75e0a233f727db4b70ee
+c3474377cbe79047531b9961398eb5aaccf2eaf5
+1defa151e0c1dac87d38a2d0ac09d67f817b30f9
+E
+
+feat(tui): allow disable copy on fullscreen, ctrl + x copies selection (#8731)

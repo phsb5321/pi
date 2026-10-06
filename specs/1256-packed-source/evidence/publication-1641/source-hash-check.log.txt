@@ -1,0 +1,4 @@
+test/packed-isolation-306.ts: OK
+packages/coding-agent/src/experimental/durable/shared-host-acceptance-kit.ts: OK
+test/packed-source-regression-1256.ts: OK
+specs/1256-packed-source/evidence/source-check.json: OK

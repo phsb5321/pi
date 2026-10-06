@@ -1,0 +1,7 @@
+bd67d8b079286855edaf0bb0b6637d9efb84e38682e0931fdcd82c98fdd6a619  test/packed-isolation-306.ts
+185bf0e63aa18cfdd9c6dd6146557d178ce33e2773b30cdffc3b934150dbfc74  test/packed-source-regression-1256.ts
+e7d24d8e0b3790c88535d2dd2006e39c54567a64e4ad74473d7e058d8756f2d8  packages/coding-agent/src/experimental/durable/shared-host-acceptance-kit.ts
+57e77eee8594aab3da80052b0d2804f83cb3c3713750ec151a417ba22e89e891  packages/coding-agent/src/core/model-runtime.ts
+6bfe9ff5a9998ed437f7b3999023dbd80355949d5a93ef4f3876115c0878e22c  specs/1256-packed-source/evidence/source-check.json
+7175c4a2a24711993a106a87e7e2f2316598400246cb4b947b2bcfa87965b9da  specs/1256-packed-source/evidence/interim-to-candidate.diff
+c9abce3cfb2411b76baf050854a7807dc3b6a425d4d98aa6145e573f15b5754e  specs/1256-packed-source/evidence/shared-kit.diff

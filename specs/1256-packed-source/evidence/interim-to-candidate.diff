@@ -1,0 +1,100 @@
+diff --git a/specs/1256-packed-source/evidence/interim-packed-isolation-306.ts.txt b/test/packed-isolation-306.ts
+index deefc90c2..faa45c310 100644
+--- a/specs/1256-packed-source/evidence/interim-packed-isolation-306.ts.txt
++++ b/test/packed-isolation-306.ts
+@@ -9,8 +9,10 @@
+  * real fleet reclaim remain UNPROVEN until the matched total-tree N1/8/32
+  * measurement (p3's admitted offhost slot).
+  *
+- * Hard gates (a failure exits 3; never skipped, never weakened):
+- * STOP, RECONNECT, STREAM, TOOL, SESSION — asserted at packed scale
++ * A recorded false condition or caught crash exits 3. Existing STOP/STREAM/
++ * TOOL predicates below are structural witnesses, NOT native active-stop,
++ * delivered-stream or executed-tool acceptance; no runtime PASS is claimed.
++ * STOP, RECONNECT, STREAM, TOOL, SESSION — retained at packed scale
+  * alongside the three new families:
+  *   1. shared-renderer isolation (no frame bleed),
+  *   2. fault-in storms (reopen latency bursts; recorded, no bar claimed),
+@@ -21,7 +23,7 @@
+ import { mkdtempSync, mkdirSync } from "node:fs";
+ import { tmpdir } from "node:os";
+ import { join } from "node:path";
+-import { InMemoryModelsStore, registerFauxProvider } from "@earendil-works/pi-ai";
++import { fauxAssistantMessage, fauxProvider, InMemoryModelsStore } from "@earendil-works/pi-ai";
+ import { makeChecks } from "../packages/coding-agent/src/experimental/durable/shared-host-acceptance-kit.ts";
+ import { AuthStorage } from "../packages/coding-agent/src/core/auth-storage.ts";
+ import { ModelRuntime } from "../packages/coding-agent/src/core/model-runtime.ts";
+@@ -37,16 +39,17 @@ const runCheck = (label: string, condition: boolean): void => {
+ 
+ const PACKED = 306;
+ const root = mkdtempSync(join(tmpdir(), "packed-isolation-306-"));
++// Fixture-process scope only: SDK session/settings paths must not use the profile.
++process.env.PI_CODING_AGENT_DIR = join(root, "agent");
++process.env.PI_OFFLINE = "1";
+ const { openDurable } = await import("../packages/coding-agent/src/experimental/durable/runtime.ts");
+ const { composeSharedHost, durableEngineShell } = await import("../packages/coding-agent/src/experimental/durable/shared-host-dispatch.ts");
+ const { withRetainedHistory } = await import("../packages/server/src/retained-history.ts");
+ 
+-// THE FROZEN OFFLINE FACTORY (the accepted fixture shape, ROOT-EXEC-1256):
+-// in-memory auth + in-memory models store, no models file, no model network,
+-// no auto-refresh, plus the registered native faux and an allowNetwork:false
+-// refresh. The default ModelRuntime.create() path can reach the live network
+-// and is never used here.
+-registerFauxProvider({});
++// Fixture SOURCE guards, not executed SDK/runtime acceptance (ROOT1256).
++// Native faux API; no compat global registration or production default change.
++const faux = fauxProvider();
++faux.setResponses(Array.from({ length: PACKED }, () => fauxAssistantMessage("offline fixture answer")));
+ const offlineModelRuntime = await ModelRuntime.create({
+ 	credentials: AuthStorage.inMemory({}),
+ 	modelsStore: new InMemoryModelsStore(),
+@@ -54,11 +57,15 @@ const offlineModelRuntime = await ModelRuntime.create({
+ 	allowModelNetwork: false,
+ 	refreshOnCreate: false,
+ });
++offlineModelRuntime.registerNativeProvider(faux.provider);
+ await offlineModelRuntime.refresh({ allowNetwork: false });
+ 
+-// THE SMALLEST COMMON OPEN: initial and resume BOTH reuse it, so no sibling
+-// network path remains (ROOT-EXEC-1256).
+-const openOffline = (id: string) => openDurable({ cwd: join(root, id), continueSession: false, modelRuntime: offlineModelRuntime });
++// Both opens reuse the factory; native continuation uses the prior SQLite store.
++const openOffline = async (id: string, continueSession: boolean) => {
++	const current = await openDurable({ cwd: join(root, id), continueSession, modelRuntime: offlineModelRuntime });
++	await current.controller.setModel({ provider: faux.provider.id, modelId: faux.getModel().id });
++	return current;
++};
+ 
+ // Each session gets one unique marker: the frame-bleed and history checks
+ // are exact (a foreign marker anywhere is a bleed; a missing own marker is
+@@ -75,7 +82,7 @@ const parkState = new Map<string, { released: boolean; resumes: number }>();
+ const factory = withRetainedHistory(
+ 	async (metadata) => {
+ 		const id = metadata.id;
+-		const current = await openOffline(id);
++		const current = await openOffline(id, false);
+ 		opened.set(id, current);
+ 		parkState.set(id, { released: false, resumes: 0 });
+ 		// (b) the ResidentRecords identity is COPIED from the actual SDK
+@@ -118,7 +125,7 @@ const factory = withRetainedHistory(
+ 				if (state) state.released = true;
+ 			},
+ 			resumeResidency: async () => {
+-				const current = await openOffline(id);
++				const current = await openOffline(id, true);
+ 				opened.set(id, current);
+ 				const state = parkState.get(id);
+ 				if (state) state.resumes += 1;
+@@ -269,10 +276,9 @@ try {
+ 	runCheck(`packed fixture crash (surfaced, not swallowed): ${String(error)}`, false);
+ }
+ 
+-// Completeness counts ITSELF first, then compares (11 case checks + this =
+-// 12 executed assertions).
++// Completeness counts ITSELF first: twelve retained case checks plus this = 13.
+ executed += 1;
+-checks.check(`acceptance completeness: every required assertion executed (${executed}/12)`, executed === 12);
++checks.check(`acceptance completeness: every required assertion executed (${executed}/13)`, executed === 13);
+ 
+ const failures = checks.failures;
+ if (failures > 0) {

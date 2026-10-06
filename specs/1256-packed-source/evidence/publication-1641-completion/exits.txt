@@ -1,0 +1,8 @@
+06/10/2026 17:40:53 -03 exit=0 phase=source-proof-hashes
+06/10/2026 17:40:53 -03 exit=0 phase=raw-copy-baseline-red.log
+06/10/2026 17:40:53 -03 exit=0 phase=raw-copy-candidate-green.log
+06/10/2026 17:40:53 -03 exit=0 phase=raw-copy-one-check.log
+06/10/2026 17:40:53 -03 exit=0 phase=raw-copy-argv.log
+06/10/2026 17:40:53 -03 exit=0 phase=raw-copy-base-metadata.log
+06/10/2026 17:40:53 -03 exit=0 phase=raw-copy-source-hash-check.log
+06/10/2026 17:40:53 -03 exit=0 phase=raw-copy-ledger

@@ -1,0 +1,12 @@
+specs/1256-packed-source/evidence/baseline-red.log: OK
+specs/1256-packed-source/evidence/baseline-red.log.txt: OK
+specs/1256-packed-source/evidence/candidate-green.log: OK
+specs/1256-packed-source/evidence/candidate-green.log.txt: OK
+specs/1256-packed-source/evidence/one-check.log: OK
+specs/1256-packed-source/evidence/one-check.log.txt: OK
+specs/1256-packed-source/evidence/publication-1641/argv.log: OK
+specs/1256-packed-source/evidence/publication-1641/argv.log.txt: OK
+specs/1256-packed-source/evidence/publication-1641/base-metadata.log: OK
+specs/1256-packed-source/evidence/publication-1641/base-metadata.log.txt: OK
+specs/1256-packed-source/evidence/publication-1641/source-hash-check.log: OK
+specs/1256-packed-source/evidence/publication-1641/source-hash-check.log.txt: OK

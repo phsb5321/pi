@@ -1,0 +1,29 @@
+{
+  "authority": "ROOT-PROGRESS-1641-PI-SOURCE",
+  "started_brt": "06/10/2026 17:11:46 -03",
+  "finished_brt": "06/10/2026 17:11:47 -03",
+  "last_phase": "base-metadata",
+  "outcome": "HOLD_BASE_NOT_PROTECTED",
+  "exit_code": 1,
+  "actual_HEAD": "4e494929998d6bc4fccf75e0a233f727db4b70ee",
+  "actual_tree": "c3474377cbe79047531b9961398eb5aaccf2eaf5",
+  "base": "4e494929998d6bc4fccf75e0a233f727db4b70ee",
+  "SSH_push_acknowledged": false,
+  "PR_url": "",
+  "caller": {
+    "pane": "w2E:p4",
+    "provider": "openai-codex",
+    "model": "gpt-6.1-sol",
+    "changed": false
+  },
+  "publication_attempts": 1,
+  "test_regression_reruns": 0,
+  "compiler_build_SDK_model_heavy_calls": 0,
+  "fetch_pull_rebase_force_main_merge_calls": 0,
+  "hook_override": false,
+  "new_workers": 0,
+  "coordinator_p1_cued": false,
+  "installed_runtime_N1_savings_claimed": false,
+  "MC_consumer_pointer": "/home/notroot/Documents/Notes-2330-comparator-scope/1. Projects/Herdr Fleet Coordination/evidence/portfolio-pi-source-publication-1641-2026-10-06",
+  "scope": "Original released isolated source+existing specs only; all22+independentYT/PORT23, N1negative37.89/41.84, OSC52BEL/ST negatives, READY1968/43data/274links,pD/occupieddrafts/provider/account/funding/caps preserved"
+}
