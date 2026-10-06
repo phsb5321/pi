@@ -524,3 +524,15 @@ a REVERSIBLE live canary is staged (default OFF). Offhost W3 run
 preserved; heavy jobs serialized; no desktop waves, no paid resources.
 Portfolio coordination: portfolio-pi (home:w2N:p2) prioritizes; portfolio-
 loops (home:w2N:p5) owns loop orchestration.
+
+## STANDING RULE (Pedro 05/10 22:59 — release cadence + issue watch)
+
+1. **Always update our patches to the newest pi release.** Each upstream
+   release = sync memory-sound to the release tag, rebase every patch/staged
+   set onto it (PR-only-new-content; delta = unlanded PRs + fleet wiring),
+   re-measure where the release touched memory-relevant surfaces
+   (MS-04-v2 style). Current: v1.0.4 (05/10 22:03Z) — sync target.
+2. **Check if they answered our issue.** Daily check of earendil-works/pi
+   #10308 (page is the truth): state + comments. 05/10 22:5x check =
+   UNANSWERED (closed-untriaged; base-rate normal). Trigger stands: one
+   Discord message if untriaged past 08/10; never repost on no-action.
