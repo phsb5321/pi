@@ -536,3 +536,16 @@ loops (home:w2N:p5) owns loop orchestration.
    #10308 (page is the truth): state + comments. 05/10 22:5x check =
    UNANSWERED (closed-untriaged; base-rate normal). Trigger stands: one
    Discord message if untriaged past 08/10; never repost on no-action.
+
+## OPERATOR AUTHORIZATION (Pedro 06/10 13:13)
+
+"I authorize everything" — the pending execution grants open: the future
+build attempt on the frozen 2308 tuple, the N-series measurement on
+admitted lanes, v1.0.4 sync, and the execution of every queued item.
+Infra admissions/caps stand unchanged (authorization ≠ infra-override).
+NEW MANDATE: **ace ALL static-analysis tool metrics — check all of them
+on Dokku** (SonarQube sonarqube.home301server.com.br v26.3.0 + sibling
+analyzers + the code-slop trio). Deliverables must go green across
+reliability/security/maintainability/coverage/duplications + the
+pre-commit gates. Privacy posture unchanged (per-project tokens,
+never USER_TOKEN; vault creds via rbw).
