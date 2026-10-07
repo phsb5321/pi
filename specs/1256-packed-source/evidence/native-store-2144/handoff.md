@@ -1,0 +1,30 @@
+# ROOT2144 — actual native SQLite PASS; explicit new tuple; compiler gate
+
+Actual native run06/10/2026 **22:07:24–22:07:27 BRT**, one admitted SMALL check, Node22.23.2/UV1/OMP1/V8pool1. Childexit0/2.851s, unit2.959s/2.653CPU/90.5MiB peak/swap0. Exact published5e92a083 fixture hashbf7050ff tested through original offline factory/common opener/retained-history factory/store consumer slices, with **actual SDK openDurable + production withRetainedHistory/durableEngineShell + actual NodeSqliteStorage + DatabaseSync**. No SDK metadata/adapter mocks, no borrowed dist/download.
+
+**Eight native sessions sequentially parked/closed**, actual handle map removed after awaited release; every session.sqlite header/integritySQLok and published all8 adapter consumerPASS. First native session has actual user/assistant history (one native faux turn, three entries/five documents), seven others are genuine initialized native stores (zero entries/five documents), not fabricated files. Production wrapper resumes FIRST session: same native id/directory, actual SDK entries retain user marker + assistant answer. Old cwd scan is genuinely empty for all8. First-session resume is asserted; no claim all8 resumed or SharedHostCore topology/quiescence/frame/stream/tool/full306/RAM equivalence.
+
+Raw result/source slice/program hashes, argv/env/stdio/exit and eight SQLite databases are owned here (`native-store-result.json`, `native-source-binding.json`, `native-invocation.json`, `native-data/`). No compiler/real-provider/key/auth call; one actual native faux-provider turn as stated above. Tool service memory peak is execution telemetry, NOT a matched PSS ratio or future compiler allocation. No strict-network namespace qualification borrowed from this run.
+
+## Explicit refreshed compiler custody
+
+Old1968/43/274 manifestfd62457d/inputb3376190/pD2 unchanged. Those1968 do NOT contain the three published tests and kit8a0f8981 differs from publishede7d24d8e. New **1971/43/274** under `prepared-source-2144/` copies exactly old manifest source, adds three exact published tests and replaces one kit; fourteen aliases rebound to newown source. Other cached pinned inputs/data read-only. Existing old-source13:32 dist outputs are unqualified and neither copied nor used: strict source resolver loads own TS.
+
+- New source manifest SHA **dae0397e91485a7595ad3fe99c9d0f55cddc2628698d2c26ef287d4028bbba44**.
+- New input manifest SHA **481cde04fc6c628a887ae3eeaf0b55b7a68f9260f9b59b45365718f41e969f96**.
+- `new-source-input-exact-preflight.json` PASS1971source blob/modes +274 exact validlinks +43 catalogue hashes + **zero unexpected physical paths/zero broken**. Initial copied old `selected_manifest_sha256` metadata corrected before native/compiler use; old parent hash retained separately.
+- Separate snapshot—not silent mutation/adoption of0735/prepared original or pD. Existing source/catalogue/live fidelity/compile acceptance distinctions remain.
+
+## Genuine next gate, owner/event
+
+Original Infra/pJ owns exact2679/348860e7 source→CI invocation→derivation→output/closure + supported nonactivating preview qualification. Current original Infra packets bind nativeCI SUCCESS/246checks and invocatione2552505791c465ebbfca8e038c529ec/sourceblob a546517c/sourceSHA933e29fa, but **cache_metadata[] and exact_tree_records[]** do not yet identify a qualified binary/closure/route. Infra is working on that event; no p2 duplicate namespace/router/launcher/preview or profile activation.
+
+Latest ROOT-PROGRESS2144OFFLINE: original pJ recovered same-head SUCCESSinvocation/source/tree but success runner deletes build log and records onlystate/count. Identified FAILEDsame-head2985a6e8ffd0471b9b10ea0172d53fc1 explicitly records THREE derivation roots; original Infra followed only those, all3 `not a valid store path`. Exact producer evidence `Notes-2290-infra-passive-spoke/1. Projects/Desktop Job Containment/evidence/2144-exact-preview-route-20261006`. No qualified launcher drv/output/hash/closure: **previewargvNULL/compilergrantFALSE**.
+
+Sole original prepared RAMcompiler **side-projects:w28:p4 remains preserved/NOT RUN**, no duplicateworker/compiler or further sourceexport. Existing prior-authorized1971 snapshot is separate native-binding custody only, **not adopted as original prepared compiler source**; actual SDK/storage/retained-runtime bytes are unchanged old1968 entries apart from test/kit additions already listed. Source1968/43/274/SQLite-path/N1 acceptances remain independent. Original resource eligibility remains unrelated to SOURCE/pub/native-checkCI. Historical1heavy+7Small, sourceCIgreen,1256namespaceprobe and spent0958HOLD are NOT grants.
+
+Current predicate FIRST: exactCI artifact/source-bound supported absoluteCLI +desktop registered hash/closure +ordinary native offline isolated-network/refusal qualification +actual unitInvocationID/bounds/deadline. Only if NEW producer-owned immutable artifact receipt arrives does next scope become its explicit immutable preview, NO activation/fallback/cap/threshold change. No preview route manufactured here; no compiler cue until genuine originalowner grant. Original p4 quota refusal retained/no recovery/repin/new worker; no second compiler/heavy payload/grant reuse.
+
+After actual compiler/source-input acceptance and separate ordinary measurement authorization, do **one same-method pair** with original N1 adapter/850-entry SQLite/PTY/faux method. Retained N1 negatives **+37.89% idle/+41.84% mid-turn** remain the only measured ratio. Current native store check/source publication is **not RAM improvement**.
+
+PR12 remains Root-reported OPEN/DIRTY/checks[] at5e92a083, not executed green hostedCI. Earlier dd450e270 job billing lock before start/no steps/no log is a real hosted gate, not a compiler/TypeScript defect. No directmain/force/hook/ignore/trust bypass. Auth natural continuation/P1 phantom-count correction remain separate, no more auth probes. All23 originals plus Stacksmith/Reddit/all22+actualYT/OSC52/history/Mac/private pins/WIP preserved. Durable owned Code and linked vault-feature artifacts, not scratch; no shared caches/worktrees cleanup.

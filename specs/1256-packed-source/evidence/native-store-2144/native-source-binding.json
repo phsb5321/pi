@@ -1,0 +1,12 @@
+{
+  "sourceCommit": "5e92a08365f3c22c3e78a13f76a8c1fe0227c6b6",
+  "fixtureSHA": "bf7050ff5dffeef2a3c87fc91aef67dbd445a7bd887b60cbce6155797d27720c",
+  "actualSliceSHA": {
+    "offlineFactory": "152ec98f68c4dee2bc27a1168d58dde3fdffa0a90dcd114df144fd5780267638",
+    "opener": "c57a139b27ddf158ac95445c18c1e9f5f778abdf0e110ec21c53598ff89d7226",
+    "retainedFactory": "f4d1bfc3acb9e0d491879aade204aa22ee7c6a9e3034e42d1ac8026cbfb22ffe",
+    "storeConsumer": "dfa3ecce0a1406cb0e69a3c9513331b95856baea59dfdf1f69a8e18460232be5"
+  },
+  "executedProgramSHA": "d52d58aad167b0f5f515935a3aef508db7de9cf49e3488dbcec5f4193efd0dee",
+  "seams": "Direct actual SDK/source adapter imports. Faux provider is native offline model test dependency; no SDK metadata or SQLite adapter injection."
+}

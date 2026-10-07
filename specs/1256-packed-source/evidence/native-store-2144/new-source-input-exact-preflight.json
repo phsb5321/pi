@@ -1,0 +1,11 @@
+{
+  "result": "PASS_EXACT_NEW_SOURCE_AND_DECLARED_INPUT_NEGATIVE_SPACE",
+  "entries": 1971,
+  "input_links": 274,
+  "catalogue_hashes": 43,
+  "unexpected_physical_paths": 0,
+  "broken_links": 0,
+  "source_manifest_sha256": "dae0397e91485a7595ad3fe99c9d0f55cddc2628698d2c26ef287d4028bbba44",
+  "input_manifest_sha256": "481cde04fc6c628a887ae3eeaf0b55b7a68f9260f9b59b45365718f41e969f96",
+  "unqualified_dist_not_in_target": true
+}

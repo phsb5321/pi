@@ -1,0 +1,94 @@
+{
+  "at_brt": "06/10/2026 22:15:46 -0300",
+  "result": "POST_NATIVE_CUSTODY_PASS",
+  "original1968_manifest_unchanged": "fd62457d679f49b18d91a152509797a5bcccfd10746e2eb16eaef3facc83cedf",
+  "original274_input_manifest_unchanged": "b3376190c7a00b9b85fe5bfcb5f8ed6b3edbf1ea6f50c57fd11c47283b148300",
+  "new1971_manifest": "dae0397e91485a7595ad3fe99c9d0f55cddc2628698d2c26ef287d4028bbba44",
+  "new274_input_manifest": "481cde04fc6c628a887ae3eeaf0b55b7a68f9260f9b59b45365718f41e969f96",
+  "source_and_inputs_unchanged_after_native": true,
+  "source_entries": 1971,
+  "links": 274,
+  "catalogue_hashes": 43,
+  "pD": [
+    {
+      "path": "/home/notroot/Documents/Code/pi-upstream-006-thin-client/packages/coding-agent/src/experimental/durable/shared-host-dispatch.ts",
+      "sha256": "2b423ca6cca1d24d0146213cc3aed5f1d3c841d359536de74202c93e0b2ebcc9",
+      "unchanged": true
+    },
+    {
+      "path": "/home/notroot/Documents/Code/pi-upstream-006-thin-client/packages/coding-agent/src/experimental/durable/shared-host-residency.ts",
+      "sha256": "77cedf91ab4f695e331da9f5c96572002b33a9e834754b0ad30a3951071f529c",
+      "unchanged": true
+    }
+  ],
+  "native_closed_databases": [
+    {
+      "path": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/e4fafc567f26769a071da543/1791335246718-60261684-a891-4fb8-8502-ccf03d0444e2/session.sqlite",
+      "sha256_after_all_close": "feae1d5e81cbae4bcce7deb6b6d024e8e9e41eb9abba1c67ebcaf51dbcfaa008",
+      "size": 163840,
+      "actual_integrity_record": "ok",
+      "entryCount": 3,
+      "documents": 5
+    },
+    {
+      "path": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/55fbaec88ccc04a7f2da72b1/1791335246831-67572c85-e0b0-46ed-a6d7-32f4255b4d66/session.sqlite",
+      "sha256_after_all_close": "dd20c41b863c7f08e6ebce6df8b97700d2fda81533a423c86a67d11f1446991a",
+      "size": 118784,
+      "actual_integrity_record": "ok",
+      "entryCount": 0,
+      "documents": 5
+    },
+    {
+      "path": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/d405db214a3656bbe214a39d/1791335246939-01cf0988-75c0-4b83-b9de-38fb97004113/session.sqlite",
+      "sha256_after_all_close": "1021aa6cdb5b26de97b7150627120caa65bba01f41a3b6f002f6d3492c8e9409",
+      "size": 118784,
+      "actual_integrity_record": "ok",
+      "entryCount": 0,
+      "documents": 5
+    },
+    {
+      "path": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/e3afb7b3e629391688378979/1791335246955-7bba0262-6f37-4f87-abd5-c3fa753866eb/session.sqlite",
+      "sha256_after_all_close": "b979319196da72d05ab8e62c8bf1ada9a6817ff0501a9d94d3f36f9e91dfd158",
+      "size": 118784,
+      "actual_integrity_record": "ok",
+      "entryCount": 0,
+      "documents": 5
+    },
+    {
+      "path": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/656b50a567b1bb97d2cf8b2a/1791335246977-2aeda156-09c1-4a88-842b-28265db08f67/session.sqlite",
+      "sha256_after_all_close": "e218f38227ec83a93c287c2ab5ed6bd2e5c965341e880b6c189913ccb1ab3be0",
+      "size": 118784,
+      "actual_integrity_record": "ok",
+      "entryCount": 0,
+      "documents": 5
+    },
+    {
+      "path": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/34eb1e72d219936826f4685c/1791335247040-c131dc11-5747-428c-ada8-0396518c8aca/session.sqlite",
+      "sha256_after_all_close": "df6eccbea2eef56427057027e20c4df40230f54131fee62f05f57ebd83c3b39a",
+      "size": 118784,
+      "actual_integrity_record": "ok",
+      "entryCount": 0,
+      "documents": 5
+    },
+    {
+      "path": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/413770b80f3d0ce23e617d7f/1791335247056-e387d95f-0ae1-4449-9f2a-35145284f84a/session.sqlite",
+      "sha256_after_all_close": "c76ef40e1eb65fb4b08fcd44fc0b317427b1cedbc380c753b9988965c658299e",
+      "size": 118784,
+      "actual_integrity_record": "ok",
+      "entryCount": 0,
+      "documents": 5
+    },
+    {
+      "path": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/6b94da931d889f7575bcf46e/1791335247134-b2f00625-841d-4423-a236-17bae86f83fa/session.sqlite",
+      "sha256_after_all_close": "d8e180c07761644ce1fce60550b6c693afb876e3ab2b93abf9825410c28b7c54",
+      "size": 118784,
+      "actual_integrity_record": "ok",
+      "entryCount": 0,
+      "documents": 5
+    }
+  ],
+  "native_session_lock_dirs_remaining": 0,
+  "native_checks": 1,
+  "compiler_or_memory_pair_executions": 0,
+  "scope": "Read-only data/custody verification, no native check replay"
+}

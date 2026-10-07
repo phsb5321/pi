@@ -1,0 +1,122 @@
+{
+  "result": "PASS_ACTUAL_NATIVE_SDK_SQLITE_PARK_RESUME",
+  "sourceCommit": "5e92a08365f3c22c3e78a13f76a8c1fe0227c6b6",
+  "selectedEntries": 1971,
+  "storesOpened": 8,
+  "observations": [
+    {
+      "id": "native2144-0",
+      "nativeSession": {
+        "id": "1791335246718-60261684-a891-4fb8-8502-ccf03d0444e2",
+        "directory": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/e4fafc567f26769a071da543/1791335246718-60261684-a891-4fb8-8502-ccf03d0444e2",
+        "cwd": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/native2144-0"
+      },
+      "file": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/e4fafc567f26769a071da543/1791335246718-60261684-a891-4fb8-8502-ccf03d0444e2/session.sqlite",
+      "integrity": "ok",
+      "entryCount": 3,
+      "documents": 5,
+      "nativeClosedBeforeSQL": true
+    },
+    {
+      "id": "native2144-1",
+      "nativeSession": {
+        "id": "1791335246831-67572c85-e0b0-46ed-a6d7-32f4255b4d66",
+        "directory": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/55fbaec88ccc04a7f2da72b1/1791335246831-67572c85-e0b0-46ed-a6d7-32f4255b4d66",
+        "cwd": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/native2144-1"
+      },
+      "file": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/55fbaec88ccc04a7f2da72b1/1791335246831-67572c85-e0b0-46ed-a6d7-32f4255b4d66/session.sqlite",
+      "integrity": "ok",
+      "entryCount": 0,
+      "documents": 5,
+      "nativeClosedBeforeSQL": true
+    },
+    {
+      "id": "native2144-2",
+      "nativeSession": {
+        "id": "1791335246939-01cf0988-75c0-4b83-b9de-38fb97004113",
+        "directory": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/d405db214a3656bbe214a39d/1791335246939-01cf0988-75c0-4b83-b9de-38fb97004113",
+        "cwd": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/native2144-2"
+      },
+      "file": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/d405db214a3656bbe214a39d/1791335246939-01cf0988-75c0-4b83-b9de-38fb97004113/session.sqlite",
+      "integrity": "ok",
+      "entryCount": 0,
+      "documents": 5,
+      "nativeClosedBeforeSQL": true
+    },
+    {
+      "id": "native2144-3",
+      "nativeSession": {
+        "id": "1791335246955-7bba0262-6f37-4f87-abd5-c3fa753866eb",
+        "directory": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/e3afb7b3e629391688378979/1791335246955-7bba0262-6f37-4f87-abd5-c3fa753866eb",
+        "cwd": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/native2144-3"
+      },
+      "file": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/e3afb7b3e629391688378979/1791335246955-7bba0262-6f37-4f87-abd5-c3fa753866eb/session.sqlite",
+      "integrity": "ok",
+      "entryCount": 0,
+      "documents": 5,
+      "nativeClosedBeforeSQL": true
+    },
+    {
+      "id": "native2144-4",
+      "nativeSession": {
+        "id": "1791335246977-2aeda156-09c1-4a88-842b-28265db08f67",
+        "directory": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/656b50a567b1bb97d2cf8b2a/1791335246977-2aeda156-09c1-4a88-842b-28265db08f67",
+        "cwd": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/native2144-4"
+      },
+      "file": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/656b50a567b1bb97d2cf8b2a/1791335246977-2aeda156-09c1-4a88-842b-28265db08f67/session.sqlite",
+      "integrity": "ok",
+      "entryCount": 0,
+      "documents": 5,
+      "nativeClosedBeforeSQL": true
+    },
+    {
+      "id": "native2144-5",
+      "nativeSession": {
+        "id": "1791335247040-c131dc11-5747-428c-ada8-0396518c8aca",
+        "directory": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/34eb1e72d219936826f4685c/1791335247040-c131dc11-5747-428c-ada8-0396518c8aca",
+        "cwd": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/native2144-5"
+      },
+      "file": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/34eb1e72d219936826f4685c/1791335247040-c131dc11-5747-428c-ada8-0396518c8aca/session.sqlite",
+      "integrity": "ok",
+      "entryCount": 0,
+      "documents": 5,
+      "nativeClosedBeforeSQL": true
+    },
+    {
+      "id": "native2144-6",
+      "nativeSession": {
+        "id": "1791335247056-e387d95f-0ae1-4449-9f2a-35145284f84a",
+        "directory": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/413770b80f3d0ce23e617d7f/1791335247056-e387d95f-0ae1-4449-9f2a-35145284f84a",
+        "cwd": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/native2144-6"
+      },
+      "file": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/413770b80f3d0ce23e617d7f/1791335247056-e387d95f-0ae1-4449-9f2a-35145284f84a/session.sqlite",
+      "integrity": "ok",
+      "entryCount": 0,
+      "documents": 5,
+      "nativeClosedBeforeSQL": true
+    },
+    {
+      "id": "native2144-7",
+      "nativeSession": {
+        "id": "1791335247134-b2f00625-841d-4423-a236-17bae86f83fa",
+        "directory": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/6b94da931d889f7575bcf46e/1791335247134-b2f00625-841d-4423-a236-17bae86f83fa",
+        "cwd": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/native2144-7"
+      },
+      "file": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-data/agent/experimental/durable-sessions/6b94da931d889f7575bcf46e/1791335247134-b2f00625-841d-4423-a236-17bae86f83fa/session.sqlite",
+      "integrity": "ok",
+      "entryCount": 0,
+      "documents": 5,
+      "nativeClosedBeforeSQL": true
+    }
+  ],
+  "actualSDK": true,
+  "actualNodeSqliteAdapter": true,
+  "actualSQLiteIntegrity": true,
+  "actualRetainedHistoryParkResume": true,
+  "actualFauxTurn": 1,
+  "externalProviderCalls": 0,
+  "SDKOrStorageMocks": false,
+  "full306": false,
+  "sharedHostTopologyNotClaimed": true,
+  "compilerAndRAMAcceptance": false
+}

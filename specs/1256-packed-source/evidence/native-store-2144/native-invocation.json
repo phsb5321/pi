@@ -1,0 +1,27 @@
+{
+  "started_brt": "2026-10-06T22:07:24.339817-03:00",
+  "argv": [
+    "/etc/profiles/per-user/notroot/bin/node",
+    "--import",
+    "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/prepared-source-2144/packages/coding-agent/src/experimental/source-resolver.ts",
+    "--experimental-strip-types",
+    "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/native-store-check.mjs"
+  ],
+  "native_checks_launched": 1,
+  "child_deadline_seconds": 90,
+  "prior_NODE_OPTIONS": "",
+  "thread_env": {
+    "UV_THREADPOOL_SIZE": "1",
+    "OMP_NUM_THREADS": "1",
+    "NODE_OPTIONS": "--v8-pool-size=1"
+  },
+  "scope": "Actual source SDK/faux/SQLite/retained-history lifecycle, no SDK/storage mocks, not compiler/RAM/full306",
+  "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/herdr.slice/herdr-jobs.slice/herdr-jobs-small.slice/desktop-job-small-1.service\n",
+  "pid_namespace_self_pid": 2,
+  "exit": 0,
+  "elapsed_seconds": 2.8509968140278943,
+  "finished_brt": "2026-10-06T22:07:27.190954-03:00",
+  "stdout_sha256": "ba9e468cc45a8228b6ff26edfb0551d191568e06404d815f66ccafae1c509f04",
+  "stderr_sha256": "400752d69c5522dbc44057176ba6d71bcad9057478fa6cf076b596f3a7d8d491",
+  "result": "ACTUAL_NATIVE_CHECK_EXIT0"
+}

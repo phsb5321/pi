@@ -1,0 +1,2 @@
+PASS eviction: all eight packed stores persist across park (awaited openNodeSqliteStorage on the session's own store files)
+PASS actual SDK directory + actual SQLite all8 + awaited park + same-store native resume/history; not RAM acceptance

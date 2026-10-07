@@ -1,0 +1,60 @@
+{
+  "at_brt": "06/10/2026 22:02:07 -0300",
+  "result": "SEPARATE_COMPOSITION_READY_NOT_COMPILER_ACCEPTANCE",
+  "old_manifest_1968_unchanged": "fd62457d679f49b18d91a152509797a5bcccfd10746e2eb16eaef3facc83cedf",
+  "old_input_manifest_274_unchanged": "b3376190c7a00b9b85fe5bfcb5f8ed6b3edbf1ea6f50c57fd11c47283b148300",
+  "old_source_positive_blob_mode_count": 1968,
+  "new_source": "/home/notroot/Documents/Code/pi-upstream-1256-packed-source/specs/1256-packed-source/evidence/native-store-2144/prepared-source-2144",
+  "new_entries": 1971,
+  "new_manifest_sha256": "dae0397e91485a7595ad3fe99c9d0f55cddc2628698d2c26ef287d4028bbba44",
+  "new_input_manifest_sha256": "481cde04fc6c628a887ae3eeaf0b55b7a68f9260f9b59b45365718f41e969f96",
+  "dependency_links": 274,
+  "catalogue_hashes": 43,
+  "changed_source": [
+    {
+      "path": "test/packed-isolation-306.ts",
+      "before_blob": null,
+      "published_commit": "5e92a08365f3c22c3e78a13f76a8c1fe0227c6b6",
+      "new_blob": "afa563dfbc684aaeffbba26a39f4b96684c0fa6d",
+      "sha256": "bf7050ff5dffeef2a3c87fc91aef67dbd445a7bd887b60cbce6155797d27720c"
+    },
+    {
+      "path": "test/packed-source-regression-1256.ts",
+      "before_blob": null,
+      "published_commit": "5e92a08365f3c22c3e78a13f76a8c1fe0227c6b6",
+      "new_blob": "8e2c1652bbb6a9c90db2667e77d6748b6eeb0b76",
+      "sha256": "185bf0e63aa18cfdd9c6dd6146557d178ce33e2773b30cdffc3b934150dbfc74"
+    },
+    {
+      "path": "test/packed-sqlite-path-regression-2016.ts",
+      "before_blob": null,
+      "published_commit": "5e92a08365f3c22c3e78a13f76a8c1fe0227c6b6",
+      "new_blob": "1592446466e31380ea6a13545c321596658492cd",
+      "sha256": "87c7f0e5f2358194c69dfdf1d064920f8de59e8887f418b12dd0b65cdddf5ee4"
+    },
+    {
+      "path": "packages/coding-agent/src/experimental/durable/shared-host-acceptance-kit.ts",
+      "before_blob": "236992d18b4f45c3b2f79b61d30bf74437befc29",
+      "published_commit": "5e92a08365f3c22c3e78a13f76a8c1fe0227c6b6",
+      "new_blob": "c909235c41de286edb44823eee52c908eeab2185",
+      "sha256": "e7d24d8e0b3790c88535d2dd2006e39c54567a64e4ad74473d7e058d8756f2d8"
+    }
+  ],
+  "existing_unqualified_dist_outputs_not_copied": true,
+  "source_resolver_will_force_own_TS_not_dist": true,
+  "pD": [
+    {
+      "path": "/home/notroot/Documents/Code/pi-upstream-006-thin-client/packages/coding-agent/src/experimental/durable/shared-host-dispatch.ts",
+      "sha256": "2b423ca6cca1d24d0146213cc3aed5f1d3c841d359536de74202c93e0b2ebcc9",
+      "unchanged": true
+    },
+    {
+      "path": "/home/notroot/Documents/Code/pi-upstream-006-thin-client/packages/coding-agent/src/experimental/durable/shared-host-residency.ts",
+      "sha256": "77cedf91ab4f695e331da9f5c96572002b33a9e834754b0ad30a3951071f529c",
+      "unchanged": true
+    }
+  ],
+  "originals_exports_and_WIP_not_modified": true,
+  "compiler_runs": 0,
+  "metadata_erratum": "Initial copied selected_manifest_sha256 still named old1968; corrected to new1971 before any native/compiler use, old parent SHA kept separately."
+}
