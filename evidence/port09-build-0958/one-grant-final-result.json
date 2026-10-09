@@ -1,0 +1,32 @@
+{
+  "at_brt": "06/10/2026 10:32:40 -0300",
+  "authority": "ROOT-PROGRESS-0958-RAM",
+  "grant_count": 1,
+  "grant_outcome": "HOLD_NO_SUPPORTED_STRICT_OFFLINE_ROUTE",
+  "original_worker": "side-projects:w28:p4",
+  "native_heavy_admission_attempts": 0,
+  "native_heavy_allocations": 0,
+  "compiler_payload_runs": 0,
+  "retries_or_fallbacks": 0,
+  "payload_exit": null,
+  "envelope_exit": null,
+  "actual_allocated_limits": null,
+  "actual_invocation_id": null,
+  "actual_deadline": null,
+  "cleanup": "No allocatedjob/children/lease existed; no ownedjobcleanupneeded, no foreignsignal/reset/eviction or sharedcleanup. Smallread-onlycallmetrics are NOTcompileradmission/RAMtelemetry.",
+  "source_preflight": "MCfresh1968/274/43/14aliasAI7.19readonlyPASS; workerFS-catalogueguard and in-jobprepayloadcapsNOTREACHED dueearlier unsupportedroute. Priorcheck-model-dataPASSretainednotrerun.",
+  "route_evidence": "Installed6aan8 launcher CLI timeout/cwd/env/argv; its unitpropertiesand1d0pmsadmit have no documentednetwork/offline isolationmechanism; caller cannotinventSDKargs/env/otherlauncher. NPM_CONFIG_OFFLINE!=unitnetworkisolation.",
+  "source_manifest_sha256": "fd62457d679f49b18d91a152509797a5bcccfd10746e2eb16eaef3facc83cedf",
+  "input_manifest_sha256": "b3376190c7a00b9b85fe5bfcb5f8ed6b3edbf1ea6f50c57fd11c47283b148300",
+  "retained": "old0005FAIL1/N1negative/all22+actualYTp6/explicitA/providers/accounts/pins/Mac/history/WIP/pD/cache/index/MCp4budget;07:26fetchdeviation no wholeaskzero-networkclaim",
+  "artifact_custody": {
+    "owner_tool_write_path": "/home/notroot/Documents/Notes/1. Projects/Memory-Sound Program/evidence/MS-20/source-freeze-2308/BUILD-0958-HOLD.md",
+    "owner_tool_content_sha256": "d84f81126f8fa2e9d5f9e76ce56d2146d38435eb69d42251c27305a598b64c60",
+    "physical_main_path_exists": true,
+    "physical_main_sha256": "d84f81126f8fa2e9d5f9e76ce56d2146d38435eb69d42251c27305a598b64c60",
+    "physical_matches_tool_content": true,
+    "conformance": "Ownerreceipt toolpathnames sharedmain, despitebriefOWNEDONLY andrawclaimownedcanonical2308. DoNOTclaimdestinationcompliancefromwriterwording. MCpreservesrawtool+physicalfacts andcopiesONLYtoownedfeature destinations; no maincleanup/delete/synchronization. No heavycompiler launched.",
+    "main_mutation_by_MC": false
+  },
+  "next_owner_event": "Infra supportedstrict-offline native route capability/delivery fact plus future genuinelyneweligiblegrant; NOretryunderthisgrant, no manualnative/protectedsource/12metadata SOURCEgate. Sourcepublication normalhooksallowed, no protectionbypass/globalrollout."
+}

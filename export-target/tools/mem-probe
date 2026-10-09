@@ -1,0 +1,886 @@
+#!/usr/bin/env python3
+"""mem-probe — PSS+SwapPss of whole process trees, per seat.
+
+The only accepted memory instrument for the memory-sound fork
+(MEMORY-SOUND.md "Method"; acceptance contract ACCEPTANCE-PROTOCOL §7).
+For every seat (a matched root process + its entire descendant tree) it
+reports, from /proc/<pid>/smaps_rollup:
+
+  - per-pid pss_kb / swappss_kb (recorded in the JSON for D1 recomputation),
+    seat sums, SwapPss shown separately AND summed with PSS,
+  - C4 validity proofs per seat:
+      condition=idle     -> last_write_age_s of the session JSONL (proof ok
+                            when >= 300 s); the path comes from the
+                            PI_SESSION_FILE env (launcher-controlled) or the
+                            herdr api snapshot agent_session join (fleet
+                            wrapper seats; probe-v2 method, MS-04).
+      condition=mid-turn -> tool child pid + cmdline (proof ok when the
+                            tree has >= 1 child at capture).
+      condition=boot     -> one-shot pid/cmdline + harness receipt (exit 0,
+                            output sha256) via --receipts; contract §7
+                            amendment 01/10 (G3 boot frame).
+  - process count, age, root argv[0]/cwd, cpu_ticks (informational only —
+    it is NOT the idle proof).
+
+Fail-closed (capture invalid, nonzero exit 2): a requested --seat-pid
+that is missing (C7: seat died mid-capture), or any seat-tree pid whose
+smaps_rollup is unreadable (tree drop; one retry is attempted). Pids that
+vanish at stat are churn: dead before the scan, zero contribution,
+unknowable tree membership — recorded per attempt in scan_attempts and
+named in the header, but never a silent drop and never a failure.
+
+Usage (admissible capture: --out writes <prefix>.json + <prefix>.pids):
+  tools/mem-probe --condition idle|mid-turn|boot --out PREFIX
+                  [--match REGEX | --seat-pids FILE] [--cwd DIR]...
+                  [--receipts FILE (boot runs: harness jsonl of
+                   {pid, exit_code, output_sha256} completing the boot proof)]
+                  [--top N] [--json]
+  tools/mem-probe --stamp-receipts PREFIX --receipts FILE
+                  # post-exit: completes boot proofs in a held-boot capture
+  tools/mem-probe ... --advisory     # eyeball run, no capture files
+
+Exit codes: 0 ok · 2 missing/unreadable pid (capture invalid)
+            3 seats failed their condition proof (rows flagged)
+            64 usage. Advisory runs still exit 2 on pid errors.
+
+Fork-only tool (U1); never shipped upstream. Linux only (procfs).
+"""
+
+import json
+import os
+import platform
+import re
+import socket
+import subprocess
+import sys
+import time
+from datetime import datetime, timezone
+
+VERSION = "1.2.2"
+
+# Label set per p6 §7 extension (01/10): {idle, mid-turn, boot, resume_peak,
+# mid_peak}. The two peak labels are accepted so ONE scoped D4 covers them,
+# but their proofs stay fail-closed until p6's one-piece definitions land
+# (see pending_proof).
+CONDITIONS = ("idle", "mid-turn", "boot", "resume_peak", "mid_peak")
+
+KB = 1024.0
+IDLE_MIN_S = 300
+ENV_KEYS = ("HERDR_SESSION", "HERDR_PANE_ID", "PI_SESSION_FILE")
+
+
+def fmt_mib(kib):
+    return f"{kib / KB:.1f}"
+
+
+def parse_stat(text):
+    """Return (ppid, starttime_ticks, cpu_ticks) from /proc/<pid>/stat.
+
+    comm may contain spaces and parens, so parse after the LAST ')'.
+    cpu_ticks = utime + stime (fields 14+15), informational only.
+    """
+    rest = text[text.rfind(")") + 1 :].split()
+    return int(rest[1]), int(rest[19]), int(rest[11]) + int(rest[12])
+
+
+def parse_rollup(text):
+    """Return (rss, pss, swap) in KiB from smaps_rollup content."""
+    rss = pss = swap = 0
+    for line in text.splitlines():
+        if line.startswith("Rss:"):
+            rss = int(line.split()[1])
+        elif line.startswith("Pss:"):
+            pss = int(line.split()[1])
+        elif line.startswith("SwapPss:"):
+            swap = int(line.split()[1])
+    return rss, pss, swap
+
+
+def is_seat(cmdline):
+    """True if this process itself is a pi agent (not a wrapper quoting one)."""
+    if not cmdline:
+        return False
+    argv0 = cmdline.split(" ", 1)[0]
+    if argv0 == "pi":
+        return True
+    base = argv0.rsplit("/", 1)[-1]
+    return base == "node" and "coding-agent/dist/cli.js" in cmdline
+
+
+def read_proc():
+    """Snapshot every readable /proc/<pid>.
+
+    Returns (procs, vanished) where vanished lists pids that were listed but
+    could not be stat'ed (they died mid-scan -> capture invalid, exit 2).
+    """
+    procs, vanished = {}, []
+    for name in os.listdir("/proc"):
+        if not name.isdigit():
+            continue
+        pid = int(name)
+        d = f"/proc/{pid}"
+        try:
+            with open(f"{d}/stat") as f:
+                ppid, starttime, cpu = parse_stat(f.read())
+        except OSError:
+            vanished.append(pid)
+            continue
+        try:
+            with open(f"{d}/cmdline", "rb") as f:
+                argv = f.read().split(b"\0")
+            cmdline = " ".join(a.decode("utf-8", "replace") for a in argv if a)
+        except OSError:
+            cmdline = ""
+        try:
+            cwd = os.readlink(f"{d}/cwd")
+        except OSError:
+            cwd = ""
+        env = {}
+        try:
+            with open(f"{d}/environ", "rb") as f:
+                for kv in f.read().split(b"\0"):
+                    if b"=" in kv:
+                        k, v = kv.split(b"=", 1)
+                        key = k.decode(errors="replace")
+                        if key in ENV_KEYS:
+                            env[key] = v.decode(errors="replace")
+        except OSError:
+            pass
+        procs[pid] = {
+            "pid": pid,
+            "ppid": ppid,
+            "starttime": starttime,
+            "cpu_ticks": cpu,
+            "cmdline": cmdline,
+            "cwd": cwd,
+            "env": env,
+            "smaps_ok": False,
+            "rss": 0,
+            "pss": 0,
+            "swap": 0,
+        }
+    return procs, vanished
+
+
+def read_smaps(procs, scope_pids):
+    """Read smaps_rollup for every pid in scope. Fail-closed on errors.
+
+    Returns (unreadable_scope, unreadable_out_of_scope, access_denied_out_of_scope).
+    """
+    bad_scope, bad_ood, denied_ood = [], [], []
+    for pid, v in procs.items():
+        try:
+            with open(f"/proc/{pid}/smaps_rollup") as f:
+                v["rss"], v["pss"], v["swap"] = parse_rollup(f.read())
+            v["smaps_ok"] = True
+        except OSError as e:
+            if pid in scope_pids:
+                bad_scope.append(pid)
+            elif getattr(e, "errno", None) in (13, 1):  # EACCES/EPERM
+                denied_ood.append(pid)
+            else:
+                bad_ood.append(pid)  # e.g. kernel threads: no smaps file
+    return bad_scope, bad_ood, denied_ood
+
+
+def seat_roots(procs, pattern_str, seat_pids):
+    """Seat roots = explicit pid list, or matched pids without a matched ancestor."""
+    if seat_pids is not None:
+        return sorted(p for p in seat_pids if p in procs)
+    if pattern_str:
+        pat = re.compile(pattern_str)
+        matched = {p for p, v in procs.items() if pat.search(v["cmdline"])}
+    else:
+        matched = {p for p, v in procs.items() if is_seat(v["cmdline"])}
+    roots = []
+    for pid in matched:
+        a = procs[pid]["ppid"]
+        while a in procs:
+            if a in matched:
+                break
+            a = procs[a]["ppid"]
+        else:
+            roots.append(pid)
+    return sorted(roots)
+
+
+def subtree(procs, root):
+    """All descendant pids of root (inclusive)."""
+    children = {}
+    for pid, v in procs.items():
+        children.setdefault(v["ppid"], []).append(pid)
+    out, queue = [], [root]
+    while queue:
+        pid = queue.pop()
+        out.append(pid)
+        queue.extend(children.get(pid, ()))
+    return out
+
+
+def herdr_session_paths(procs):
+    """herdr api snapshot join: (session, pane) -> agent_session path.
+
+    One snapshot call per HERDR_SESSION found (probe-v2 method, MS-04).
+    """
+    sessions = sorted({v["env"].get("HERDR_SESSION") for v in procs.values() if v["env"].get("HERDR_SESSION")})
+    out = {}
+    for sess in sessions:
+        try:
+            raw = subprocess.run(
+                ["herdr", "--session", sess, "api", "snapshot"],
+                capture_output=True, text=True, timeout=15,
+            ).stdout
+            j = json.loads(raw[raw.index("{"): raw.rindex("}") + 1])
+            body = j.get("result", {}).get("snapshot", j.get("result", j))
+            for p in body.get("agents") or body.get("panes") or []:
+                sp = (p.get("agent_session") or {}).get("value")
+                if sp:
+                    out[(sess, p.get("pane_id"))] = sp
+        except Exception:
+            pass  # unresolved -> proof stamps the failure; never invents a path
+    return out
+
+
+def idle_proof(v, session_paths, now):
+    """C4 idle proof: last_write_age_s of the seat's session JSONL."""
+    sp = v["env"].get("PI_SESSION_FILE")
+    if not sp:
+        sp = session_paths.get((v["env"].get("HERDR_SESSION"), v["env"].get("HERDR_PANE_ID")))
+    if not sp:
+        return {"type": "idle", "session": None, "last_write_age_s": None, "ok": False}
+    try:
+        age = now - os.path.getmtime(sp)
+    except OSError:
+        return {"type": "idle", "session": sp, "last_write_age_s": None, "ok": False}
+    return {"type": "idle", "session": sp, "last_write_age_s": round(age, 1), "ok": age >= IDLE_MIN_S}
+
+
+def midturn_proof(children):
+    """C4 mid-turn proof: tool child pid + cmdline."""
+    tool = [{"pid": p["pid"], "cmd": p["cmdline"][:200]} for p in children]
+    return {"type": "mid-turn", "tool": tool, "ok": len(tool) >= 1}
+
+
+def pending_proof(condition, v):
+    """Accepted-but-undefined label (p6 §7 extension pending): rows are
+    recorded with full stamps but proof.ok stays False — fail-closed until
+    p6's definition lands. Never silently OK."""
+    return {
+        "type": condition,
+        "cmd": v["cmdline"][:200],
+        "reason": "definition pending p6 one-piece spec",
+        "ok": False,
+    }
+
+
+def boot_proof(v, receipts):
+    """Boot proof (contract §7 amendment 01/10, p6): one-shot pid/cmdline
+    plus the harness receipt (exit code 0 and output-bytes sha256) for that
+    pid. The probe snapshots /proc; exit code and output bytes are run
+    artifacts, so the launch harness records them and the probe stamps the
+    matching receipt into the capture — together they are the proof, and
+    D1 can recompute the hashes from the raw outputs."""
+    r = receipts.get(v["pid"])
+    return {
+        "type": "boot",
+        "cmd": v["cmdline"][:200],
+        "receipt": r,
+        "ok": bool(r) and r.get("exit_code") == 0 and bool(r.get("output_sha256")),
+    }
+
+
+def load_receipts(path):
+    """Harness receipts: jsonl of {pid, exit_code, output_sha256, ...}.
+
+    Missing keys and malformed lines are tolerated like missing values: the
+    affected fields stay None and the proof stamps a failure downstream —
+    fail-closed, never a traceback."""
+    out = {}
+    malformed = 0
+    if not path:
+        return out, 0
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+                pid = int(r["pid"])
+            except (ValueError, KeyError, TypeError, json.JSONDecodeError):
+                malformed += 1
+                continue
+            try:
+                r["exit_code"] = int(r["exit_code"])
+            except (KeyError, TypeError, ValueError):
+                r["exit_code"] = None
+            out[pid] = r
+    return out, malformed
+
+
+def stamp_receipts(prefix, receipts_path):
+    """Post-hoc boot-proof completion: one-shots must be measured while held
+    (numbers are pre-exit by necessity) but their exit code and output hash
+    only exist after release. This loads a boot capture, injects matching
+    receipts, recomputes proof.ok, and rewrites the pair — numbers untouched
+    (D1 recomputes them from the unchanged per-pid rows)."""
+    receipts, _malformed = load_receipts(receipts_path)
+    with open(prefix + ".json") as f:
+        data = json.load(f)
+    if data.get("condition") != "boot":
+        print("mem-probe: stamp-receipts applies to boot captures only", file=sys.stderr)
+        return 2
+    bad = []
+    for s in data["seats"]:
+        r = receipts.get(s["root"])
+        s["proof"]["receipt"] = r
+        s["proof"]["ok"] = bool(r) and r.get("exit_code") == 0 and bool(r.get("output_sha256"))
+        if not s["proof"]["ok"]:
+            bad.append(s["root"])
+    data["receipts_stamped"] = datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+    write_capture(data, prefix)
+    print(f"# stamped {len(data['seats'])} boot rows from {receipts_path}; proof-OK: {len(data['seats']) - len(bad)}")
+    return 3 if bad else 0
+
+
+def resume_peak_proof(v, receipts, series, now):
+    """p6 §7 T1 contract: root pid + cmdline + resumed session path + byte
+    size + span [launch_ts, ready_ts] with the capture inside the span;
+    one-shot invocations additionally need exit 0 + output hash. Reported
+    value = max of the >=1 Hz series over the span (peak_sample_ts kept)."""
+    r = receipts.get(v["pid"]) or {}
+    launch_ts = now - v["age_s"] if v.get("age_s") else None
+    span_ok = (
+        launch_ts is not None
+        and r.get("ready_ts") is not None
+        and series
+        and launch_ts <= series[0][0] <= r["ready_ts"]
+        and launch_ts <= series[-1][0] <= r["ready_ts"]
+    )
+    one_shot = r.get("one_shot", bool(r.get("exit_code")) or bool(r.get("output_sha256")))
+    ok = (
+        bool(r.get("session_path"))
+        and r.get("session_bytes") is not None
+        and span_ok
+        and (not one_shot or (r.get("exit_code") == 0 and bool(r.get("output_sha256"))))
+    )
+    return {
+        "type": "resume_peak",
+        "cmd": v["cmdline"][:200],
+        "session_path": r.get("session_path"),
+        "session_bytes": r.get("session_bytes"),
+        "launch_ts": launch_ts,
+        "ready_ts": r.get("ready_ts"),
+        "receipt": r or None,
+        "ok": ok,
+    }
+
+
+def mid_peak_proof(children_series):
+    """p6 §7 T2 contract: the mid-turn proof (tool child pid + cmdline) plus
+    peak semantics — the series covers the tool window (samples where the
+    child was observed) and the reported max falls inside it. The tool window
+    is observed natively from the sample series."""
+    tool = []
+    for sample in children_series:
+        for c in sample["children"]:
+            if not any(t["pid"] == c["pid"] for t in tool):
+                tool.append({"pid": c["pid"], "cmd": c["cmdline"][:200]})
+    window_ts = [sample["ts"] for sample in children_series if sample["children"]]
+    return {"type": "mid_peak", "tool": tool, "tool_window_ts": window_ts, "ok": len(tool) >= 1 and bool(window_ts)}
+
+
+def fast_sample(roots, members):
+    """Scoped rescan for peak series: stat-only /proc enumeration, full reads
+    (cmdline + smaps_rollup) only for the cohort's known tree members and any
+    NEW pid whose ppid is inside a tree (tool children appearing mid-window).
+    A full capture() pass costs ~6-7 s on a loaded host; this is ~0.3 s."""
+    member_set = set(members)
+    stat_cache = {}
+    for name in os.listdir("/proc"):
+        if not name.isdigit():
+            continue
+        pid = int(name)
+        try:
+            with open(f"/proc/{pid}/stat") as f:
+                ppid, _st, _cpu = parse_stat(f.read())
+        except OSError:
+            continue  # churn: dead before this sample, zero contribution
+        stat_cache[pid] = ppid
+    # adopt new descendants of known members
+    for pid, ppid in stat_cache.items():
+        if pid not in member_set and ppid in member_set:
+            member_set.add(pid)
+            members = members | {pid}
+    seats = {}
+    bad = []
+    for root in roots:
+        if root not in stat_cache:
+            continue  # seat died; its series just stops
+        # collect the root's tree among currently-alive pids
+        tree = {root}
+        changed = True
+        while changed:
+            changed = False
+            for pid, ppid in stat_cache.items():
+                if ppid in tree and pid not in tree:
+                    tree.add(pid)
+                    changed = True
+        rows = []
+        pss = sw = rss = cpu = 0
+        for pid in tree:
+            try:
+                with open(f"/proc/{pid}/smaps_rollup") as f:
+                    r, p, s = parse_rollup(f.read())
+                cmd = ""
+                try:
+                    with open(f"/proc/{pid}/cmdline", "rb") as f:
+                        cmd = " ".join(a.decode("utf-8", "replace") for a in f.read().split(b"\0") if a)
+                except OSError:
+                    pass
+                rows.append({"pid": pid, "pss_kb": p, "swappss_kb": s, "rss_kb": r, "cpu_ticks": 0, "cmd": cmd[:200]})
+                rss += r
+                pss += p
+                sw += s
+            except OSError:
+                bad.append(pid)
+        if bad:
+            return None, bad
+        seats[root] = {
+            "root": root,
+            "nproc": len(rows),
+            "rss_kb": rss,
+            "pss_kb": pss,
+            "swappss_kb": sw,
+            "total_kb": pss + sw,
+            "pids": rows,
+        }
+    return seats, bad
+
+
+def run_peak_series(args, hz, seconds):
+    """Sample the cohort at >=1 Hz and reduce to per-seat maxima (p6 §7 peak
+    semantics). Sample 1 is a full capture() (root resolution, environ for
+    proofs); subsequent samples use the scoped fast_sample path. The per-pid
+    rows kept for D1 are those of the PEAK sample; peak_sample_ts recorded;
+    requested and effective rates both carried on the data."""
+    import time as _time
+
+    interval = 1.0 / hz
+    n = max(2, int(round(seconds * hz)))
+    series = {}  # root -> [(ts, total_kb)]
+    peak_at = {}  # root -> (ts, seat-dict-at-peak)
+    children_series = []
+    first = capture(args)
+    roots = [s["root"] for s in first["seats"]]
+    members = {p["pid"] for s in first["seats"] for p in s["pids"]}
+    last = first
+    ts_first = None
+    for i in range(n):
+        if i == 0:
+            seats = {s["root"]: s for s in first["seats"]}
+            sample_dur = 0.0
+        else:
+            t0 = _time.time()
+            seats, bad = fast_sample(roots, members)
+            sample_dur = _time.time() - t0
+            if seats is None:
+                last["pids_unreadable_in_trees"] = bad
+                return series, peak_at, last, children_series, {"error": "tree drop in fast sample", "bad": bad}
+            for root, s in seats.items():
+                members |= {p["pid"] for p in s["pids"]}
+        ts = _time.time()
+        if ts_first is None:
+            ts_first = ts
+        children_series.append(
+            {"ts": ts, "children": [{"pid": p["pid"], "cmdline": p["cmd"]} for root, s in seats.items() for p in s["pids"] if p["pid"] != root]}
+        )
+        for root, s in seats.items():
+            total = s["total_kb"]
+            series.setdefault(root, []).append((ts, total))
+            cur = peak_at.get(root)
+            if cur is None or total > cur[1]["total_kb"]:
+                peak_at[root] = (ts, s)
+        last = dict(first)
+        last["seats"] = list(seats.values())
+        if i < n - 1:
+            _time.sleep(max(0.0, interval - sample_dur))
+    ts_last = ts
+    eff = (n - 1) / (ts_last - ts_first) if ts_last > ts_first else 0.0
+    meta = {"requested_hz": hz, "effective_hz": round(eff, 3), "samples": n, "fast_path": True, "first_by_root": {s["root"]: s for s in first["seats"]}}
+    return series, peak_at, last, children_series, meta
+
+
+def percentile(sorted_vals, q):
+    if not sorted_vals:
+        return 0.0
+    i = min(len(sorted_vals) - 1, max(0, round(q * (len(sorted_vals) - 1))))
+    return sorted_vals[i]
+
+
+def capture(args):
+    """One measurement pass. Peak conditions repeat this at --sample-hz and
+    reduce to the max (see run_peak_series)."""
+    seat_missing = []
+    if args["seat_pids"]:
+        with open(args["seat_pids"]) as f:
+            seat_pids = [int(line.split()[0]) for line in f if line.strip()]
+    else:
+        seat_pids = None
+
+    # Fail-closed semantics (adjudicated 30/09, p6 BLOCK remediation):
+    # - a requested --seat-pid that is missing = C7 violation -> fail;
+    # - an in-tree pid with unreadable smaps_rollup (incl. ESRCH after stat)
+    #   = tree drop -> retry once, fail if it persists;
+    # - a pid that vanishes AT stat has unknowable tree membership and zero
+    #   contribution (dead before scan) -> churn class: recorded per attempt
+    #   in scan_attempts + header note, NEVER silently, but does not fail.
+    attempts = []
+    for _attempt in range(2):
+        procs, vanished = read_proc()
+        if seat_pids is not None:
+            seat_missing = [p for p in seat_pids if p not in procs]
+        roots = seat_roots(procs, args["match"], seat_pids)
+        if args["cwd"]:
+            want = {os.path.realpath(c) for c in args["cwd"]}
+            roots = [r for r in roots if procs[r]["cwd"] in want]
+        trees = {r: subtree(procs, r) for r in roots}
+        scope = set()
+        for t in trees.values():
+            scope.update(t)
+        bad_scope, bad_ood, denied_ood = read_smaps(procs, scope)
+        attempts.append({"vanished": vanished, "unreadable_in_trees": bad_scope})
+        if not bad_scope and not seat_missing:
+            break
+
+    session_paths = herdr_session_paths(procs) if args["condition"] == "idle" else {}
+    receipts, _malformed = load_receipts(args["receipts"]) if args["condition"] in ("boot", "resume_peak") else ({}, 0)
+    hz = os.sysconf("SC_CLK_TCK")
+    with open("/proc/uptime") as f:
+        uptime = float(f.read().split()[0])
+    now = time.time()
+
+    seats = []
+    for root in roots:
+        pids = trees[root]
+        children = [procs[p] for p in pids if p != root]
+        proof = (
+            idle_proof(procs[root], session_paths, now)
+            if args["condition"] == "idle"
+            else midturn_proof(children)
+            if args["condition"] == "mid-turn"
+            else boot_proof(procs[root], receipts)
+            if args["condition"] == "boot"
+            else pending_proof(args["condition"], procs[root])
+        )
+        seats.append(
+            {
+                "root": root,
+                "age_s": max(0.0, uptime - procs[root]["starttime"] / hz),
+                "nproc": len(pids),
+                "argv0": procs[root]["cmdline"].split(" ", 1)[0] if procs[root]["cmdline"] else "?",
+                "cwd": procs[root]["cwd"],
+                "cpu_ticks": sum(procs[p]["cpu_ticks"] for p in pids),
+                "rss_kb": sum(procs[p]["rss"] for p in pids),
+                "pss_kb": sum(procs[p]["pss"] for p in pids),
+                "swappss_kb": sum(procs[p]["swap"] for p in pids),
+                "total_kb": sum(procs[p]["pss"] + procs[p]["swap"] for p in pids),
+                "proof": proof,
+                "pids": [
+                    {
+                        "pid": p,
+                        "pss_kb": procs[p]["pss"],
+                        "swappss_kb": procs[p]["swap"],
+                        "rss_kb": procs[p]["rss"],
+                        "cpu_ticks": procs[p]["cpu_ticks"],
+                        "cmd": procs[p]["cmdline"][:200],
+                    }
+                    for p in pids
+                ],
+            }
+        )
+    seats.sort(key=lambda s: -s["total_kb"])
+    return {
+        "version": VERSION,
+        "host": socket.gethostname(),
+        "ts": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
+        "condition": args["condition"],
+        "match": args["match"] or ("seat-pids:" + args["seat_pids"] if args["seat_pids"] else "default(pi|node+coding-agent/dist/cli.js)"),
+        "idle_min_s": IDLE_MIN_S,
+        "scan_attempts": attempts,
+        "seat_pids_missing": seat_missing,
+        "seats": seats,
+        "pids_unreadable_in_trees": bad_scope,
+        "pids_out_of_scope_no_smaps": len(bad_ood) + len(denied_ood),
+    }
+
+
+def write_capture(data, prefix):
+    with open(prefix + ".json", "w") as f:
+        json.dump(data, f, indent=1)
+    with open(prefix + ".pids", "w") as f:
+        f.write(
+            f"# mem-probe v{VERSION} pid-list evidence ts={data['ts']}"
+            f" host={data['host']} condition={data['condition']} match={data['match']}\n"
+        )
+        for s in data["seats"]:
+            pr = s["proof"]
+            if pr["type"] == "idle":
+                proof = f"last_write_age_s={pr['last_write_age_s']} session={pr['session']}"
+            elif pr["type"] == "boot":
+                proof = f"exit_code={pr['receipt'].get('exit_code') if pr['receipt'] else None} output_sha256={pr['receipt'].get('output_sha256') if pr['receipt'] else None} cmd={pr['cmd'][:80]}"
+            elif pr["type"] == "resume_peak":
+                proof = f"session={pr.get('session_path')} bytes={pr.get('session_bytes')} span=[{pr.get('launch_ts')},{pr.get('ready_ts')}]"
+            else:
+                proof = "tools=" + ";".join(f"{t['pid']}:{t['cmd'][:60]}" for t in pr["tool"])
+            f.write(
+                f"# seat root={s['root']} cwd={s['cwd']} nproc={s['nproc']} proof_ok={pr['ok']}"
+                f" {proof} rss_kb={s['rss_kb']} pss_kb={s['pss_kb']}"
+                f" swappss_kb={s['swappss_kb']} total_kb={s['total_kb']}\n"
+            )
+            for p in s["pids"]:
+                f.write(
+                    f"{p['pid']} rss_kb={p['rss_kb']} pss_kb={p['pss_kb']} swappss_kb={p['swappss_kb']}"
+                    f" cpu_ticks={p['cpu_ticks']} cmd={p['cmd']}\n"
+                )
+
+
+def print_report(data, top):
+    print(
+        f"mem-probe v{VERSION} host={data['host']} ts={data['ts']}"
+        f" condition={data['condition']} match={data['match']}"
+    )
+    if data["seat_pids_missing"]:
+        print(f"# FAIL-CLOSED: requested seat pids missing (dead or raced): {data['seat_pids_missing']} (C7: capture invalid)")
+    last = data["scan_attempts"][-1]
+    if last["unreadable_in_trees"] or data["pids_unreadable_in_trees"]:
+        print(f"# FAIL-CLOSED: unreadable smaps in seat trees (tree drop; capture invalid): {data['pids_unreadable_in_trees']}")
+    churn = sum(len(a["vanished"]) for a in data["scan_attempts"])
+    if churn:
+        print(f"# {churn} pids vanished at stat mid-scan (churn class: dead before scan, outside measured trees, recorded in scan_attempts; not a tree drop)")
+    if data["pids_out_of_scope_no_smaps"]:
+        print(f"# {data['pids_out_of_scope_no_smaps']} out-of-scope pids without smaps access (kernel/other-user), not in seat trees")
+    print(f"{'ROOT':>7} {'AGE':>7} {'NPROC':>5} {'PSS':>7} {'SWAP':>7} {'TOTAL':>7}  PROOF  ARGV0/CWD")
+    for s in data["seats"][:top]:
+        age = f"{s['age_s'] / 86400:.0f}d" if s["age_s"] >= 86400 else f"{s['age_s'] / 60:.0f}m"
+        pr = s["proof"]
+        tag = (
+            f"idle:{pr['last_write_age_s']}s"
+            if pr["type"] == "idle"
+            else f"boot:exit={pr['receipt']['exit_code'] if pr['receipt'] else '?'}"
+            if pr["type"] == "boot"
+            else f"resume_peak:bytes={pr.get('session_bytes')}"
+            if pr["type"] == "resume_peak"
+            else f"peak:tools={len(pr.get('tool', []))}"
+            if pr["type"] == "mid_peak"
+            else f"tools:{len(pr['tool'])}"
+        )
+        print(
+            f"{s['root']:>7} {age:>7} {s['nproc']:>5} {fmt_mib(s['pss_kb']):>7}"
+            f" {fmt_mib(s['swappss_kb']):>7} {fmt_mib(s['total_kb']):>7}"
+            f"  {'OK ' if pr['ok'] else 'BAD'} {tag}"
+            f"  {s['argv0']} {s['cwd'][:38]}"
+        )
+    ok_seats = [s for s in data["seats"] if s["proof"]["ok"]]
+    totals = sorted(s["total_kb"] for s in ok_seats)
+    n = len(ok_seats)
+    if n:
+        print(
+            f"summary (proof-OK, {data['condition']}): n={n} of {len(data['seats'])}"
+            f" p50={fmt_mib(percentile(totals, 0.5))}MiB p10={fmt_mib(percentile(totals, 0.1))}"
+            f" p90={fmt_mib(percentile(totals, 0.9))} mean={fmt_mib(sum(totals) / n)}MiB"
+            f" | sum_pss={fmt_mib(sum(s['pss_kb'] for s in ok_seats))}MiB"
+            f" sum_swap={fmt_mib(sum(s['swappss_kb'] for s in ok_seats))}MiB"
+            f" sum_total={fmt_mib(sum(totals))}MiB"
+        )
+    else:
+        print("summary: n=0 proof-OK seats (no seat matched the condition)")
+    print("# total = PSS + SwapPss, whole tree per seat; MiB = kb/1024; RSS kept in JSON only as info")
+
+
+def main(argv):
+    args = {
+        "match": None, "seat_pids": None, "cwd": [], "top": 25, "out": None,
+        "json": False, "advisory": False, "condition": None, "receipts": None,
+        "sample_hz": 1.0, "sample_seconds": None,
+    }
+    stamp_prefix = None
+    i = 1
+    while i < len(argv):
+        a = argv[i]
+        if a == "--match":
+            i += 1
+            args["match"] = argv[i]
+        elif a == "--seat-pids":
+            i += 1
+            args["seat_pids"] = argv[i]
+        elif a == "--cwd":
+            i += 1
+            args["cwd"].append(argv[i])
+        elif a == "--top":
+            i += 1
+            args["top"] = int(argv[i])
+        elif a == "--out":
+            i += 1
+            args["out"] = argv[i]
+        elif a == "--condition":
+            i += 1
+            args["condition"] = argv[i]
+        elif a == "--receipts":
+            i += 1
+            args["receipts"] = argv[i]
+        elif a == "--stamp-receipts":
+            i += 1
+            stamp_prefix = argv[i]
+        elif a == "--sample-hz":
+            i += 1
+            args["sample_hz"] = float(argv[i])
+        elif a == "--sample-seconds":
+            i += 1
+            args["sample_seconds"] = float(argv[i])
+        elif a == "--json":
+            args["json"] = True
+        elif a == "--advisory":
+            args["advisory"] = True
+        elif a == "--self-test":
+            return self_test()
+        elif a in ("--version",):
+            print(f"mem-probe v{VERSION}")
+            return 0
+        elif a in ("-h", "--help"):
+            print(__doc__)
+            return 0
+        else:
+            print(f"mem-probe: unknown arg {a!r} (see --help)", file=sys.stderr)
+            return 64
+        i += 1
+
+    if platform.system() != "Linux":
+        print("mem-probe: Linux only (procfs)", file=sys.stderr)
+        return 2
+    if stamp_prefix:
+        if not args["receipts"]:
+            print("mem-probe: --stamp-receipts PREFIX requires --receipts FILE", file=sys.stderr)
+            return 64
+        return stamp_receipts(stamp_prefix, args["receipts"])
+    if args["condition"] not in CONDITIONS:
+        print(f"mem-probe: --condition {'|'.join(CONDITIONS)} is required (contract §7)", file=sys.stderr)
+        return 64
+    if args["condition"] == "boot" and not args["receipts"] and not args["advisory"]:
+        print("mem-probe: --receipts FILE is required for --condition boot (proof: exit-0 + output sha256)", file=sys.stderr)
+        return 64
+    if args["condition"] in ("resume_peak", "mid_peak"):
+        if not args["sample_seconds"]:
+            print("mem-probe: --sample-seconds N is required for peak conditions (>=1 Hz series per §7)", file=sys.stderr)
+            return 64
+        if args["sample_hz"] < 1.0:
+            print("mem-probe: --sample-hz must be >= 1 (contract §7 peak semantics)", file=sys.stderr)
+            return 64
+        if args["condition"] == "resume_peak" and not args["receipts"] and not args["advisory"]:
+            print("mem-probe: --receipts FILE is required for --condition resume_peak (session path/bytes + span)", file=sys.stderr)
+            return 64
+    if not args["advisory"] and not args["out"]:
+        print("mem-probe: --out PREFIX required for an admissible capture (or pass --advisory)", file=sys.stderr)
+        return 64
+
+    data = capture(args)
+    if args["condition"] in ("resume_peak", "mid_peak"):
+        series, peak_at, data, children_series, meta = run_peak_series(args, args["sample_hz"], args["sample_seconds"])
+        if meta.get("error"):
+            print(f"# FAIL-CLOSED: fast-sample tree drop: {meta.get('bad')} (capture invalid)")
+            return 2
+        if meta.get("effective_hz", 0) < 1.0:
+            print(f"# FAIL-CLOSED: effective sample rate {meta.get('effective_hz')} Hz < 1 Hz (contract §7 peak semantics)")
+            return 2
+        now = time.time()
+        receipts_main, _m = load_receipts(args["receipts"])
+        first_by_root = meta.get("first_by_root", {})
+        peak_seats = []
+        for root in sorted(peak_at):
+            ts, seat = peak_at[root]
+            s = dict(seat)  # values + per-pid rows from the PEAK sample (D1)
+            s["root"] = root
+            s["peak_sample_ts"] = ts
+            fb = first_by_root.get(root, {})
+            for k in ("age_s", "argv0", "cwd", "cpu_ticks"):
+                if k in fb and k not in s:
+                    s[k] = fb[k]
+            rows = series.get(root, [])
+            s["series"] = [{"ts": t, "total_kb": v} for t, v in rows]
+            root_row = next((p for p in s["pids"] if p["pid"] == s["root"]), {})
+            v = {"pid": s["root"], "cmdline": root_row.get("cmd", ""), "age_s": s["age_s"]}
+            if args["condition"] == "resume_peak":
+                s["proof"] = resume_peak_proof(v, receipts_main, rows, now)
+            else:
+                mp = mid_peak_proof(children_series)
+                s["proof"] = {
+                    "type": "mid_peak",
+                    "tool": mp["tool"],
+                    "tool_window_ts": mp["tool_window_ts"],
+                    "ok": mp["ok"] and s.get("peak_sample_ts") in mp["tool_window_ts"],
+                }
+            peak_seats.append(s)
+        data["seats"] = sorted(peak_seats, key=lambda s: -s["total_kb"])
+        data["sample_hz"] = meta["requested_hz"]
+        data["sample_effective_hz"] = meta["effective_hz"]
+        data["samples"] = meta["samples"]
+    if args["out"]:
+        write_capture(data, args["out"])
+        print(f"# capture written: {args['out']}.json + {args['out']}.pids")
+    print_report(data, args["top"])
+    if args["json"]:
+        print(json.dumps(data, indent=1))
+
+    last = data["scan_attempts"][-1]
+    if data["seat_pids_missing"] or last["unreadable_in_trees"]:
+        return 2
+    if any(not s["proof"]["ok"] for s in data["seats"]):
+        return 3
+    return 0
+
+
+def self_test():
+    """Pure-logic checks: the smallest tests that break if parsing/proofs regress."""
+    assert is_seat("pi")
+    assert is_seat("pi --no-session")
+    assert is_seat("node /repo/packages/coding-agent/dist/cli.js --no-session")
+    assert is_seat("/nix/store/x-node/bin/node /repo/packages/coding-agent/dist/cli.js")
+    assert not is_seat("timeout 1560 script -qec cd /d && exec -a pi node /repo/packages/coding-agent/dist/cli.js")
+    assert not is_seat("script -qec exec -a pi node /x/coding-agent/dist/cli.js --no-session /dev/null")
+    assert not is_seat("")
+    stat = "12345 (a com(m) ent) S 999 1 999 34819 200 0 0 0 0 0 0 5 0 0 20 0 1 0 200"
+    ppid, start, cpu = parse_stat(stat)
+    assert (ppid, start, cpu) == (999, 200, 5), (ppid, start, cpu)
+    roll = "Rss:   100 kB\nPss:    40 kB\nSwap:   5 kB\nSwapPss:  2 kB\n"
+    assert parse_rollup(roll) == (100, 40, 2)
+    assert parse_rollup("Pss:\t0\n") == (0, 0, 0)
+    # idle proof: age>=300 ok, <300 not; missing session not ok
+    fake = {"env": {}}
+    pr = idle_proof(fake, {}, 0.0)
+    assert pr["ok"] is False and pr["session"] is None
+    # boot proof: receipt must match, exit 0, hash present
+    pr = boot_proof({"pid": 42, "cmdline": "pi --help"}, {42: {"pid": 42, "exit_code": 0, "output_sha256": "abc"}})
+    assert pr["ok"] and pr["type"] == "boot"
+    assert not boot_proof({"pid": 42, "cmdline": "x"}, {})["ok"]
+    assert not boot_proof({"pid": 42, "cmdline": "x"}, {42: {"pid": 42, "exit_code": 1, "output_sha256": "abc"}})["ok"]
+    pp = pending_proof("resume_peak", {"pid": 7, "cmdline": "pi -c"})
+    assert pp["ok"] is False and pp["type"] == "resume_peak"
+    # peak proofs: shape + span checks
+    v = {"pid": 1, "cmdline": "pi -c", "age_s": 45}
+    r = {"session_path": "/s.jsonl", "session_bytes": 100, "ready_ts": 2000.0, "exit_code": 0, "output_sha256": "h"}
+    good_series = [(1960.0, 10), (1961.0, 12), (1962.0, 11)]
+    pr = resume_peak_proof(v, {1: r}, good_series, now=1963.0)
+    assert pr["ok"] is True and pr["session_bytes"] == 100  # series within [launch=1918, ready=2000]
+    late = resume_peak_proof(v, {1: r}, [(2010.0, 10)], now=2011.0)
+    assert late["ok"] is False  # sample outside the span
+    mp = mid_peak_proof([{"ts": 1.0, "children": [{"pid": 9, "cmdline": "sleep 20"}]}, {"ts": 2.0, "children": []}])
+    assert mp["ok"] and mp["tool_window_ts"] == [1.0]
+    m = midturn_proof([{"pid": 1, "cmdline": "bash -c sleep 20"}])
+    assert m["ok"] and m["tool"][0]["pid"] == 1
+    assert midturn_proof([])["ok"] is False
+    print(f"mem-probe v{VERSION} self-test: ok")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

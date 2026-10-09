@@ -1,0 +1,71 @@
+---
+title: BUILD-0958-HOLD — strict-offline admission qualification (ROOT-PROGRESS-0958-RAM)
+created: 2026-10-06
+updated: 2026-10-06T10:2x-03:00
+owner: p4 (sole runner; ONE grant — this HOLD spends it)
+tags: [pi, memory-sound, MS-20, hold, strict-offline, 0958]
+---
+
+# BUILD-0958 — ONE HOLD: no supported strict-offline route (no heavy launch, no compile)
+
+## The capability qualification (documented LIVE, read-only)
+
+- **`desktop-job-run` usage (live, the native heavy launcher):**
+  `desktop-job-run [--timeout SECONDS] [--cwd DIR] [--env K=V]... -- COMMAND [ARG...]`
+  — **only** timeout/cwd/env/argv; **no network/offline property exists**.
+- **The single native call's unit property set** (the launcher's own
+  comment + invocation): atomic admission (StartTransientUnit, fail-if-
+  exists), `--collect`, `--service-type=exec`, `--expand-environment=no`,
+  `--wait --pipe`, `RuntimeMaxSec`, `TimeoutStopSec`, `KillMode=control-
+  group`, optional `io.max` — memory/CPU/IO/pids via the slice policy.
+  **No `PrivateNetwork`, `IPAddressDeny`, `RestrictAddressFamilies`, or any
+  network-isolation property is present anywhere in the baked policy.**
+  "The child's environment is ONLY env -i's argv."
+- **`desktop-job-admit` (live, PSI admission gate):** thresholds/state
+  validation in front of the tested launcher; strict admission = slot/PSI
+  discipline — **no network policy**.
+
+**Verdict: the launcher advertises NO documented LIVE strict-offline
+capability.** Per the grant's explicit rule ("If no supported strict-offline
+route, honest ONE HOLD/no heavy launch is correct; do NOT build ordinary
+network-enabled and call npm offline strict isolation"), and per "do NOT
+pass guessed networkPolicy fields/env or wrap nested unrestricted/other
+launcher as fallback":
+
+## HOLD (one exact record; no retry; no wait-in-lease; no compile)
+
+No heavy unit was launched. `NPM_CONFIG_OFFLINE` is npm client behavior,
+not network isolation — it would be exactly the forbidden "ordinary
+network-enabled build called strict isolation". No invented flags/env/
+overrides were passed; no fallback launcher was used; no compile body ran.
+
+The pre-compiler rechecks (source/input raw hashes, the 1968 physical
+projection incl. deletions, the 274 declared valid links, the 43 data, the
+14 aliases incl. pi-env → selected source, openai 7.19.0, and the FS-only
+`check-model-data` guard) were **not reached** — the admission
+qualification is the earlier gate and it refuses honestly. Their last
+verified state remains: source manifest `fd62457d…`, input manifest
+`b3376190…` (274 links, 0 broken), `check-model-data` = "Generated model
+data is valid."
+
+## What a future grant would need (not a retry instruction)
+
+A launcher/admission route with a **documented** strict-offline capability
+(a real network-isolation property in the admitted unit) — then the exact
+plan in `infra-selected-source-input-ready-plan.json` (argv/env/cwd,
+UV1/V8pool1/OMP1, in-unit capture) executes unchanged.
+
+## Preserved (all)
+
+The old 0005 FAIL1 record and the 07:26 prohibited fetch deviation stand
+as recorded (not a whole-ask zero-network claim). Original index/cache/pD
+WIP/source/artifacts, the old-2302 snapshot, all-22+actualYT, explicitA,
+Mac, N1 negatives, pins, the MC/p4 budget: unchanged. No network/Git/
+install/source repair/hook bypass/model/provider/native/profile/activation.
+Native 0-of-6 / protected floor / 12 live-catalogue metadata remain NOT
+offline Source-test gates. 10:19 unit-not-found was not an allocation.
+
+**Return path (this receipt):**
+`~/Documents/Notes/1. Projects/Memory-Sound Program/evidence/MS-20/source-freeze-2308/BUILD-0958-HOLD.md`
+(the owned canonical 2308 feature evidence; nothing in scratch or shared
+main).

@@ -1,0 +1,1150 @@
+{
+ "overlay_data_files": {
+  ".manifest.json": "74fea40789f006938b962d646b213304d70530b2573cbc80cd6cd6c89d5ea056",
+  "amazon-bedrock.json": "b962444f8daad1e3022d3e4bd59af8e8802d6012615397015c825996219e4af5",
+  "ant-ling.json": "628feab3ef6c7d80ce96f75999804e1d9f05fec3851e5302e30fff3b69db90f6",
+  "anthropic.json": "3ff00b68990382e42626ebd1b65dcc28ae3cad9e6faa8920331ba92f067f1b3a",
+  "azure.json": "554dfa50b77d40919e52793177dc89002b1fff1af223f626fccb00d5961058c9",
+  "baseten.json": "b04d1423d6958bec857ffccc36726f091ec1a8f3a09cf0836b64cc94b0ee697d",
+  "cerebras.json": "3eccb58c5de3d0dc7ba49dc6e477ba29f00cb3150ce0a35cc90d59e6b5ab368e",
+  "cloudflare-ai-gateway.json": "52decade622d1d25f1af90385b1aec7331dad00d56e010a5e4d15118efae67ce",
+  "cloudflare-workers-ai.json": "b9f76cc83756a05920a8a7046c515919a1de918331b860a211f309bb716c4bb0",
+  "deepseek.json": "10a296fb3e898f7715c80890c8af0af4f5fd58f22dbcd6612fdc5d762157ccdc",
+  "fireworks.json": "d6144ba451bd7a0617669527bec1898f97a633f7d7ea5035d8e03234550340c0",
+  "github-copilot.json": "573f05c2dfc0c8158e252dd286d6b174cd323f965284d7ae157439d8e3dea92c",
+  "google-vertex.json": "40090c680538bc867f2624d986a449f361be4dfa6ba96d7a27402050f036e009",
+  "google.json": "c0f5a633e5e5a5044432db3e537f4bc674d4de18df09325c6349547fcc13cabe",
+  "groq.json": "910952ad9dad07856983459d63fce0148dba1203edd7b10d801a77c5824f3405",
+  "huggingface.json": "1b8604bd31a5e05fe43a40ec1ec6dfc1a51a28b0b020151ef057fab43f57c923",
+  "kimi-coding.json": "582250b920454d98940da3e7e99d30b807edbea28f2eb8ac15f658d2ef41e8fc",
+  "meta.json": "0c7e9a370a7005c5a89dc94f0f93bc67b8935c3f802de324f11af6ff56fff429",
+  "minimax-cn.json": "f962c20ee6a6a342820f778e9dc363a18a524bf11998f6e2c57f2989915d62e5",
+  "minimax.json": "17a432f80d0ea6dd26eade80a4314250d3a855678601728a5f70dd8fa0d21dd2",
+  "mistral.json": "10f33bff9adf1248f7e6848e5890c265399f1f94e5b42cfdc28c109d547af98d",
+  "moonshotai-cn.json": "79c9585dc84ee525ebaebbc78b3c55f3d369ec884d4f943488f1e0b14e3587f5",
+  "moonshotai.json": "1da2c4e34f22aef17a07c974d85bdee8e1b68b6dc712e3769c935b3f1e7dadca",
+  "nvidia.json": "3b4e7b799bf3eaacd1af0491eef77fe33147ea7f72a3a9fa54d77af0e7eacf4c",
+  "openai-codex.json": "3cc35a7e122e5c77ee8ec30a9a3bd8bd59629997e85ba2cb3f9e0ed62e9a09c0",
+  "openai.json": "87faafcdd168c9b6fdaef521137834a207437daf0d71641fd0a2f3dddf4d1ecb",
+  "opencode-go.json": "d05b3eb87b81c6e5a94801484e668e660fe60c68f06a972b716d581c3bbd7c25",
+  "opencode.json": "1c504731d37468cc992a88b231cde29d46f0273e2710d8af227247c58afaa1b7",
+  "openrouter.json": "61439795ae1cb8f0b8c600dce9f460b38493de43d44975e7ca9a04e20a6647ff",
+  "qwen-token-plan-cn.json": "2469a4091c474ec3db0a49a9962d8d2726c074ad9065b96bc4e0c87861c4c6c5",
+  "qwen-token-plan-individual.json": "0fb7cf64faf39d1a3b0a884210a86c87084b805eda15644f5f39293287b959dd",
+  "qwen-token-plan.json": "eff10620cb577142de4ec02698d5961a71fda2fe4f6ae7ea9432bad9d6844176",
+  "radius.json": "c8e24a65119360946749c6d5e45782d84ab2794df661b369bb27c2bff3b72e67",
+  "together.json": "94ec3839972061405885d64f5fdbde48eb1f29a159be5e607e9770befd54e28e",
+  "typesafe.json": "a4429a2f696d5cc5273969af61a7310bda07d6bdcd27bf9ac9c76c534cc43716",
+  "vercel-ai-gateway.json": "fd6b15467f8c885dc1db4a6230574c35a428cba7843188b801d7f10bcef61c10",
+  "xai.json": "879c49b78b663a52a220ac4ee013e726b10c4f50aaa03bc58ee53a4b54c76928",
+  "xiaomi-token-plan-ams.json": "ca65178f4525d9705bc8d085ed136cecbe149c4080e857ea6a64ae643d2ac00a",
+  "xiaomi-token-plan-cn.json": "b065326926681c2262084e59c1c19ebdaf146c07107b5242c76b456becf74db0",
+  "xiaomi-token-plan-sgp.json": "92c3d6d707f81fd9cd2b6d1fb57dc431d90ba51e10fe49d97bc8806035c23492",
+  "xiaomi.json": "b81d01a374f7b558728c78d81f4168efa9c8996e6e2b5618409a8094b083c759",
+  "zai-coding-cn.json": "ee5ee705fb6e413a6088db5e3616c27fce802a8ece6c355f1db35490d787f610",
+  "zai.json": "58e6642fdfb736f0b9a4a277c760c536a3cea66a030abbfb2615f7b2851d5c6f"
+ },
+ "symlinks": [
+  {
+   "path": "node_modules/.bin",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/.bin"
+  },
+  {
+   "path": "node_modules/@anthropic-ai",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@anthropic-ai"
+  },
+  {
+   "path": "node_modules/@aws",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@aws"
+  },
+  {
+   "path": "node_modules/@aws-sdk",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@aws-sdk"
+  },
+  {
+   "path": "node_modules/@babel",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@babel"
+  },
+  {
+   "path": "node_modules/@bcoe",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@bcoe"
+  },
+  {
+   "path": "node_modules/@biomejs",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@biomejs"
+  },
+  {
+   "path": "node_modules/@cto.af",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@cto.af"
+  },
+  {
+   "path": "node_modules/@earendil-works/chord",
+   "target": "/home/notroot/Documents/Code/pi-upstream-1206-overlay/port09-candidate-0735/source/packages/chord"
+  },
+  {
+   "path": "node_modules/@earendil-works/pi-agent-core",
+   "target": "/home/notroot/Documents/Code/pi-upstream-1206-overlay/port09-candidate-0735/source/packages/agent"
+  },
+  {
+   "path": "node_modules/@earendil-works/pi-ai",
+   "target": "/home/notroot/Documents/Code/pi-upstream-1206-overlay/port09-candidate-0735/source/packages/ai"
+  },
+  {
+   "path": "node_modules/@earendil-works/pi-client",
+   "target": "/home/notroot/Documents/Code/pi-upstream-1206-overlay/port09-candidate-0735/source/packages/client"
+  },
+  {
+   "path": "node_modules/@earendil-works/pi-codemode",
+   "target": "/home/notroot/Documents/Code/pi-upstream-1206-overlay/port09-candidate-0735/source/packages/codemode"
+  },
+  {
+   "path": "node_modules/@earendil-works/pi-coding-agent",
+   "target": "/home/notroot/Documents/Code/pi-upstream-1206-overlay/port09-candidate-0735/source/packages/coding-agent"
+  },
+  {
+   "path": "node_modules/@earendil-works/pi-durable",
+   "target": "/home/notroot/Documents/Code/pi-upstream-1206-overlay/port09-candidate-0735/source/packages/durable"
+  },
+  {
+   "path": "node_modules/@earendil-works/pi-env",
+   "target": "/home/notroot/Documents/Code/pi-upstream-1206-overlay/port09-candidate-0735/source/packages/env"
+  },
+  {
+   "path": "node_modules/@earendil-works/pi-evals",
+   "target": "/home/notroot/Documents/Code/pi-upstream-1206-overlay/port09-candidate-0735/source/packages/evals"
+  },
+  {
+   "path": "node_modules/@earendil-works/pi-mcp",
+   "target": "/home/notroot/Documents/Code/pi-upstream-1206-overlay/port09-candidate-0735/source/packages/mcp"
+  },
+  {
+   "path": "node_modules/@earendil-works/pi-protocol",
+   "target": "/home/notroot/Documents/Code/pi-upstream-1206-overlay/port09-candidate-0735/source/packages/protocol"
+  },
+  {
+   "path": "node_modules/@earendil-works/pi-server",
+   "target": "/home/notroot/Documents/Code/pi-upstream-1206-overlay/port09-candidate-0735/source/packages/server"
+  },
+  {
+   "path": "node_modules/@earendil-works/pi-telemetry",
+   "target": "/home/notroot/Documents/Code/pi-upstream-1206-overlay/port09-candidate-0735/source/packages/telemetry"
+  },
+  {
+   "path": "node_modules/@earendil-works/pi-tui",
+   "target": "/home/notroot/Documents/Code/pi-upstream-1206-overlay/port09-candidate-0735/source/packages/tui"
+  },
+  {
+   "path": "node_modules/@esbuild",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@esbuild"
+  },
+  {
+   "path": "node_modules/@google",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@google"
+  },
+  {
+   "path": "node_modules/@jridgewell",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@jridgewell"
+  },
+  {
+   "path": "node_modules/@napi-rs",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@napi-rs"
+  },
+  {
+   "path": "node_modules/@nodelib",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@nodelib"
+  },
+  {
+   "path": "node_modules/@oxc-project",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@oxc-project"
+  },
+  {
+   "path": "node_modules/@pondwader",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@pondwader"
+  },
+  {
+   "path": "node_modules/@protobufjs",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@protobufjs"
+  },
+  {
+   "path": "node_modules/@rolldown",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@rolldown"
+  },
+  {
+   "path": "node_modules/@silvia-odwyer",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@silvia-odwyer"
+  },
+  {
+   "path": "node_modules/@smithy",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@smithy"
+  },
+  {
+   "path": "node_modules/@stablelib",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@stablelib"
+  },
+  {
+   "path": "node_modules/@standard-schema",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@standard-schema"
+  },
+  {
+   "path": "node_modules/@tybys",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@tybys"
+  },
+  {
+   "path": "node_modules/@types",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@types"
+  },
+  {
+   "path": "node_modules/@typescript",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@typescript"
+  },
+  {
+   "path": "node_modules/@vitest",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@vitest"
+  },
+  {
+   "path": "node_modules/@vitest-evals",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@vitest-evals"
+  },
+  {
+   "path": "node_modules/@xterm",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@xterm"
+  },
+  {
+   "path": "node_modules/agent-base",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/agent-base"
+  },
+  {
+   "path": "node_modules/ajv",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/ajv"
+  },
+  {
+   "path": "node_modules/argparse",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/argparse"
+  },
+  {
+   "path": "node_modules/asn1",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/asn1"
+  },
+  {
+   "path": "node_modules/assertion-error",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/assertion-error"
+  },
+  {
+   "path": "node_modules/ast-v8-to-istanbul",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/ast-v8-to-istanbul"
+  },
+  {
+   "path": "node_modules/autoevals",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/autoevals"
+  },
+  {
+   "path": "node_modules/balanced-match",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/balanced-match"
+  },
+  {
+   "path": "node_modules/base64-js",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/base64-js"
+  },
+  {
+   "path": "node_modules/bcrypt-pbkdf",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/bcrypt-pbkdf"
+  },
+  {
+   "path": "node_modules/bignumber.js",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/bignumber.js"
+  },
+  {
+   "path": "node_modules/binary-search",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/binary-search"
+  },
+  {
+   "path": "node_modules/bl",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/bl"
+  },
+  {
+   "path": "node_modules/bowser",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/bowser"
+  },
+  {
+   "path": "node_modules/brace-expansion",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/brace-expansion"
+  },
+  {
+   "path": "node_modules/braces",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/braces"
+  },
+  {
+   "path": "node_modules/buffer",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/buffer"
+  },
+  {
+   "path": "node_modules/buffer-equal-constant-time",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/buffer-equal-constant-time"
+  },
+  {
+   "path": "node_modules/buildcheck",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/buildcheck"
+  },
+  {
+   "path": "node_modules/canvas",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/canvas"
+  },
+  {
+   "path": "node_modules/cbor2",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/cbor2"
+  },
+  {
+   "path": "node_modules/chai",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/chai"
+  },
+  {
+   "path": "node_modules/chalk",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/chalk"
+  },
+  {
+   "path": "node_modules/cheminfo-types",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/cheminfo-types"
+  },
+  {
+   "path": "node_modules/chownr",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/chownr"
+  },
+  {
+   "path": "node_modules/commander",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/commander"
+  },
+  {
+   "path": "node_modules/compute-cosine-similarity",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/compute-cosine-similarity"
+  },
+  {
+   "path": "node_modules/compute-dot",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/compute-dot"
+  },
+  {
+   "path": "node_modules/compute-l2norm",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/compute-l2norm"
+  },
+  {
+   "path": "node_modules/convert-source-map",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/convert-source-map"
+  },
+  {
+   "path": "node_modules/cpu-features",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/cpu-features"
+  },
+  {
+   "path": "node_modules/cross-spawn",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/cross-spawn"
+  },
+  {
+   "path": "node_modules/data-uri-to-buffer",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/data-uri-to-buffer"
+  },
+  {
+   "path": "node_modules/debug",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/debug"
+  },
+  {
+   "path": "node_modules/decompress-response",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/decompress-response"
+  },
+  {
+   "path": "node_modules/deep-extend",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/deep-extend"
+  },
+  {
+   "path": "node_modules/detect-libc",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/detect-libc"
+  },
+  {
+   "path": "node_modules/diff",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/diff"
+  },
+  {
+   "path": "node_modules/ecdsa-sig-formatter",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/ecdsa-sig-formatter"
+  },
+  {
+   "path": "node_modules/end-of-stream",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/end-of-stream"
+  },
+  {
+   "path": "node_modules/es-errors",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/es-errors"
+  },
+  {
+   "path": "node_modules/es-module-lexer",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/es-module-lexer"
+  },
+  {
+   "path": "node_modules/esbuild",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/esbuild"
+  },
+  {
+   "path": "node_modules/estree-walker",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/estree-walker"
+  },
+  {
+   "path": "node_modules/execa",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/execa"
+  },
+  {
+   "path": "node_modules/expand-template",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/expand-template"
+  },
+  {
+   "path": "node_modules/expect-type",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/expect-type"
+  },
+  {
+   "path": "node_modules/extend",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/extend"
+  },
+  {
+   "path": "node_modules/fast-deep-equal",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/fast-deep-equal"
+  },
+  {
+   "path": "node_modules/fast-glob",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/fast-glob"
+  },
+  {
+   "path": "node_modules/fast-sha256",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/fast-sha256"
+  },
+  {
+   "path": "node_modules/fast-uri",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/fast-uri"
+  },
+  {
+   "path": "node_modules/fastq",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/fastq"
+  },
+  {
+   "path": "node_modules/fetch-blob",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/fetch-blob"
+  },
+  {
+   "path": "node_modules/fft.js",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/fft.js"
+  },
+  {
+   "path": "node_modules/fill-range",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/fill-range"
+  },
+  {
+   "path": "node_modules/formdata-polyfill",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/formdata-polyfill"
+  },
+  {
+   "path": "node_modules/fs-constants",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/fs-constants"
+  },
+  {
+   "path": "node_modules/function-bind",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/function-bind"
+  },
+  {
+   "path": "node_modules/gaxios",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/gaxios"
+  },
+  {
+   "path": "node_modules/gcp-metadata",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/gcp-metadata"
+  },
+  {
+   "path": "node_modules/get-east-asian-width",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/get-east-asian-width"
+  },
+  {
+   "path": "node_modules/get-stream",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/get-stream"
+  },
+  {
+   "path": "node_modules/github-from-package",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/github-from-package"
+  },
+  {
+   "path": "node_modules/glob-parent",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/glob-parent"
+  },
+  {
+   "path": "node_modules/google-auth-library",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/google-auth-library"
+  },
+  {
+   "path": "node_modules/google-logging-utils",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/google-logging-utils"
+  },
+  {
+   "path": "node_modules/graceful-fs",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/graceful-fs"
+  },
+  {
+   "path": "node_modules/grok-mermaid",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/grok-mermaid"
+  },
+  {
+   "path": "node_modules/has-flag",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/has-flag"
+  },
+  {
+   "path": "node_modules/hasown",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/hasown"
+  },
+  {
+   "path": "node_modules/highlight.js",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/highlight.js"
+  },
+  {
+   "path": "node_modules/hosted-git-info",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/hosted-git-info"
+  },
+  {
+   "path": "node_modules/html-escaper",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/html-escaper"
+  },
+  {
+   "path": "node_modules/http-proxy-agent",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/http-proxy-agent"
+  },
+  {
+   "path": "node_modules/https-proxy-agent",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/https-proxy-agent"
+  },
+  {
+   "path": "node_modules/husky",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/husky"
+  },
+  {
+   "path": "node_modules/ieee754",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/ieee754"
+  },
+  {
+   "path": "node_modules/ignore",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/ignore"
+  },
+  {
+   "path": "node_modules/inherits",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/inherits"
+  },
+  {
+   "path": "node_modules/ini",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/ini"
+  },
+  {
+   "path": "node_modules/interpret",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/interpret"
+  },
+  {
+   "path": "node_modules/is-any-array",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/is-any-array"
+  },
+  {
+   "path": "node_modules/is-core-module",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/is-core-module"
+  },
+  {
+   "path": "node_modules/is-extglob",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/is-extglob"
+  },
+  {
+   "path": "node_modules/is-glob",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/is-glob"
+  },
+  {
+   "path": "node_modules/is-number",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/is-number"
+  },
+  {
+   "path": "node_modules/is-stream",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/is-stream"
+  },
+  {
+   "path": "node_modules/isexe",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/isexe"
+  },
+  {
+   "path": "node_modules/istanbul-lib-coverage",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/istanbul-lib-coverage"
+  },
+  {
+   "path": "node_modules/istanbul-lib-report",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/istanbul-lib-report"
+  },
+  {
+   "path": "node_modules/istanbul-reports",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/istanbul-reports"
+  },
+  {
+   "path": "node_modules/jiti",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/jiti"
+  },
+  {
+   "path": "node_modules/js-levenshtein",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/js-levenshtein"
+  },
+  {
+   "path": "node_modules/js-tokens",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/js-tokens"
+  },
+  {
+   "path": "node_modules/js-yaml",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/js-yaml"
+  },
+  {
+   "path": "node_modules/json-bigint",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/json-bigint"
+  },
+  {
+   "path": "node_modules/json-schema-to-ts",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/json-schema-to-ts"
+  },
+  {
+   "path": "node_modules/json-schema-traverse",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/json-schema-traverse"
+  },
+  {
+   "path": "node_modules/jwa",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/jwa"
+  },
+  {
+   "path": "node_modules/jws",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/jws"
+  },
+  {
+   "path": "node_modules/lightningcss",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/lightningcss"
+  },
+  {
+   "path": "node_modules/lightningcss-linux-x64-gnu",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/lightningcss-linux-x64-gnu"
+  },
+  {
+   "path": "node_modules/lightningcss-linux-x64-musl",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/lightningcss-linux-x64-musl"
+  },
+  {
+   "path": "node_modules/linear-sum-assignment",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/linear-sum-assignment"
+  },
+  {
+   "path": "node_modules/lodash-es",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/lodash-es"
+  },
+  {
+   "path": "node_modules/long",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/long"
+  },
+  {
+   "path": "node_modules/lru-cache",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/lru-cache"
+  },
+  {
+   "path": "node_modules/magic-string",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/magic-string"
+  },
+  {
+   "path": "node_modules/magicast",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/magicast"
+  },
+  {
+   "path": "node_modules/make-dir",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/make-dir"
+  },
+  {
+   "path": "node_modules/marked",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/marked"
+  },
+  {
+   "path": "node_modules/merge2",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/merge2"
+  },
+  {
+   "path": "node_modules/micromatch",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/micromatch"
+  },
+  {
+   "path": "node_modules/mimic-response",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/mimic-response"
+  },
+  {
+   "path": "node_modules/minimatch",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/minimatch"
+  },
+  {
+   "path": "node_modules/minimist",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/minimist"
+  },
+  {
+   "path": "node_modules/mkdirp-classic",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/mkdirp-classic"
+  },
+  {
+   "path": "node_modules/ml-array-max",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/ml-array-max"
+  },
+  {
+   "path": "node_modules/ml-array-min",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/ml-array-min"
+  },
+  {
+   "path": "node_modules/ml-array-rescale",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/ml-array-rescale"
+  },
+  {
+   "path": "node_modules/ml-matrix",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/ml-matrix"
+  },
+  {
+   "path": "node_modules/ml-spectra-processing",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/ml-spectra-processing"
+  },
+  {
+   "path": "node_modules/ml-xsadd",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/ml-xsadd"
+  },
+  {
+   "path": "node_modules/ms",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/ms"
+  },
+  {
+   "path": "node_modules/mustache",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/mustache"
+  },
+  {
+   "path": "node_modules/nan",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/nan"
+  },
+  {
+   "path": "node_modules/nanoid",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/nanoid"
+  },
+  {
+   "path": "node_modules/napi-build-utils",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/napi-build-utils"
+  },
+  {
+   "path": "node_modules/nice-try",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/nice-try"
+  },
+  {
+   "path": "node_modules/node-abi",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/node-abi"
+  },
+  {
+   "path": "node_modules/node-addon-api",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/node-addon-api"
+  },
+  {
+   "path": "node_modules/node-domexception",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/node-domexception"
+  },
+  {
+   "path": "node_modules/node-fetch",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/node-fetch"
+  },
+  {
+   "path": "node_modules/node-forge",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/node-forge"
+  },
+  {
+   "path": "node_modules/npm-run-path",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/npm-run-path"
+  },
+  {
+   "path": "node_modules/obug",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/obug"
+  },
+  {
+   "path": "node_modules/once",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/once"
+  },
+  {
+   "path": "node_modules/openai",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/openai"
+  },
+  {
+   "path": "node_modules/p-finally",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/p-finally"
+  },
+  {
+   "path": "node_modules/p-retry",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/p-retry"
+  },
+  {
+   "path": "node_modules/partial-json",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/partial-json"
+  },
+  {
+   "path": "node_modules/path-key",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/path-key"
+  },
+  {
+   "path": "node_modules/path-parse",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/path-parse"
+  },
+  {
+   "path": "node_modules/pathe",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/pathe"
+  },
+  {
+   "path": "node_modules/pi-extension-custom-provider-anthropic",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/pi-extension-custom-provider-anthropic"
+  },
+  {
+   "path": "node_modules/pi-extension-custom-provider-gitlab-duo",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/pi-extension-custom-provider-gitlab-duo"
+  },
+  {
+   "path": "node_modules/pi-extension-gondolin",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/pi-extension-gondolin"
+  },
+  {
+   "path": "node_modules/pi-extension-sandbox",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/pi-extension-sandbox"
+  },
+  {
+   "path": "node_modules/pi-extension-with-deps",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/pi-extension-with-deps"
+  },
+  {
+   "path": "node_modules/picocolors",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/picocolors"
+  },
+  {
+   "path": "node_modules/picomatch",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/picomatch"
+  },
+  {
+   "path": "node_modules/postcss",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/postcss"
+  },
+  {
+   "path": "node_modules/prebuild-install",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/prebuild-install"
+  },
+  {
+   "path": "node_modules/proper-lockfile",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/proper-lockfile"
+  },
+  {
+   "path": "node_modules/protobufjs",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/protobufjs"
+  },
+  {
+   "path": "node_modules/proxy-agent-negotiate",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/proxy-agent-negotiate"
+  },
+  {
+   "path": "node_modules/pump",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/pump"
+  },
+  {
+   "path": "node_modules/queue-microtask",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/queue-microtask"
+  },
+  {
+   "path": "node_modules/quickjs-wasi",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/quickjs-wasi"
+  },
+  {
+   "path": "node_modules/rc",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/rc"
+  },
+  {
+   "path": "node_modules/readable-stream",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/readable-stream"
+  },
+  {
+   "path": "node_modules/rechoir",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/rechoir"
+  },
+  {
+   "path": "node_modules/require-from-string",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/require-from-string"
+  },
+  {
+   "path": "node_modules/resolve",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/resolve"
+  },
+  {
+   "path": "node_modules/retry",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/retry"
+  },
+  {
+   "path": "node_modules/reusify",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/reusify"
+  },
+  {
+   "path": "node_modules/rolldown",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/rolldown"
+  },
+  {
+   "path": "node_modules/run-parallel",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/run-parallel"
+  },
+  {
+   "path": "node_modules/safe-buffer",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/safe-buffer"
+  },
+  {
+   "path": "node_modules/safer-buffer",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/safer-buffer"
+  },
+  {
+   "path": "node_modules/semver",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/semver"
+  },
+  {
+   "path": "node_modules/shebang-command",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/shebang-command"
+  },
+  {
+   "path": "node_modules/shebang-regex",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/shebang-regex"
+  },
+  {
+   "path": "node_modules/shell-quote",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/shell-quote"
+  },
+  {
+   "path": "node_modules/shelljs",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/shelljs"
+  },
+  {
+   "path": "node_modules/shx",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/shx"
+  },
+  {
+   "path": "node_modules/siginfo",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/siginfo"
+  },
+  {
+   "path": "node_modules/signal-exit",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/signal-exit"
+  },
+  {
+   "path": "node_modules/simple-concat",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/simple-concat"
+  },
+  {
+   "path": "node_modules/simple-get",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/simple-get"
+  },
+  {
+   "path": "node_modules/source-map-js",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/source-map-js"
+  },
+  {
+   "path": "node_modules/ssh2",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/ssh2"
+  },
+  {
+   "path": "node_modules/stackback",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/stackback"
+  },
+  {
+   "path": "node_modules/standardwebhooks",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/standardwebhooks"
+  },
+  {
+   "path": "node_modules/std-env",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/std-env"
+  },
+  {
+   "path": "node_modules/string_decoder",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/string_decoder"
+  },
+  {
+   "path": "node_modules/strip-eof",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/strip-eof"
+  },
+  {
+   "path": "node_modules/strip-json-comments",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/strip-json-comments"
+  },
+  {
+   "path": "node_modules/supports-preserve-symlinks-flag",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/supports-preserve-symlinks-flag"
+  },
+  {
+   "path": "node_modules/tar-fs",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/tar-fs"
+  },
+  {
+   "path": "node_modules/tar-stream",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/tar-stream"
+  },
+  {
+   "path": "node_modules/tinybench",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/tinybench"
+  },
+  {
+   "path": "node_modules/tinyexec",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/tinyexec"
+  },
+  {
+   "path": "node_modules/tinyglobby",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/tinyglobby"
+  },
+  {
+   "path": "node_modules/tinyrainbow",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/tinyrainbow"
+  },
+  {
+   "path": "node_modules/to-regex-range",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/to-regex-range"
+  },
+  {
+   "path": "node_modules/ts-algebra",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/ts-algebra"
+  },
+  {
+   "path": "node_modules/tslib",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/tslib"
+  },
+  {
+   "path": "node_modules/tunnel-agent",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/tunnel-agent"
+  },
+  {
+   "path": "node_modules/tweetnacl",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/tweetnacl"
+  },
+  {
+   "path": "node_modules/typebox",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/typebox"
+  },
+  {
+   "path": "node_modules/typescript",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/typescript"
+  },
+  {
+   "path": "node_modules/undici",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/undici"
+  },
+  {
+   "path": "node_modules/undici-types",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/undici-types"
+  },
+  {
+   "path": "node_modules/util-deprecate",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/util-deprecate"
+  },
+  {
+   "path": "node_modules/validate.io-array",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/validate.io-array"
+  },
+  {
+   "path": "node_modules/validate.io-function",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/validate.io-function"
+  },
+  {
+   "path": "node_modules/vite",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/vite"
+  },
+  {
+   "path": "node_modules/vitest",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/vitest"
+  },
+  {
+   "path": "node_modules/vitest-evals",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/vitest-evals"
+  },
+  {
+   "path": "node_modules/web-streams-polyfill",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/web-streams-polyfill"
+  },
+  {
+   "path": "node_modules/which",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/which"
+  },
+  {
+   "path": "node_modules/why-is-node-running",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/why-is-node-running"
+  },
+  {
+   "path": "node_modules/wrappy",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/wrappy"
+  },
+  {
+   "path": "node_modules/ws",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/ws"
+  },
+  {
+   "path": "node_modules/yaml",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/yaml"
+  },
+  {
+   "path": "node_modules/zod",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/zod"
+  },
+  {
+   "path": "node_modules/zod-to-json-schema",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/zod-to-json-schema"
+  },
+  {
+   "path": "packages/agent/node_modules",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/packages/agent/node_modules"
+  },
+  {
+   "path": "packages/ai/node_modules",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/packages/ai/node_modules"
+  },
+  {
+   "path": "packages/ai/src/providers/data",
+   "target": "/home/notroot/Documents/Code/pi-upstream-2308-selected-input-overlay/ai-data"
+  },
+  {
+   "path": "packages/chord/node_modules",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/packages/chord/node_modules"
+  },
+  {
+   "path": "packages/client/node_modules",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/packages/client/node_modules"
+  },
+  {
+   "path": "packages/codemode/node_modules",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/packages/codemode/node_modules"
+  },
+  {
+   "path": "packages/coding-agent/node_modules",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/packages/coding-agent/node_modules"
+  },
+  {
+   "path": "packages/coding-agent/node_modules-cache",
+   "target": "/home/notroot/Documents/Code/pi-upstream-2310-settings-retry-leaf/packages/coding-agent/node_modules"
+  },
+  {
+   "path": "packages/durable/node_modules",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/packages/durable/node_modules"
+  },
+  {
+   "path": "packages/evals/node_modules",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/packages/evals/node_modules"
+  },
+  {
+   "path": "packages/mcp/node_modules",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/packages/mcp/node_modules"
+  },
+  {
+   "path": "packages/protocol/node_modules",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/packages/protocol/node_modules"
+  },
+  {
+   "path": "packages/server/node_modules",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/packages/server/node_modules"
+  },
+  {
+   "path": "packages/telemetry/node_modules",
+   "target": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/packages/telemetry/node_modules"
+  }
+ ],
+ "count": 274,
+ "selected_manifest_sha256": "fd62457d679f49b18d91a152509797a5bcccfd10746e2eb16eaef3facc83cedf",
+ "openai_ai": "7.19.0 (msg4bundle package layer; root 6.40.0 excluded)",
+ "workspace_aliases": "all 14 -> candidate source packages/* (SELECTED source, no cache shadowing)",
+ "broken_symlinks": []
+}
