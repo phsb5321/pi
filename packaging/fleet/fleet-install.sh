@@ -43,12 +43,21 @@ manifest_digest() {
   printf '%s' "$listing" | sha512sum | cut -d' ' -f1
 }
 
+# install_lock_digest <src> — upstream v1.1.0 replaced npm-shrinkwrap.json with
+# the checked-in install-lock/ dir (package.json + package-lock.json for the
+# install unit). Same canonical listing discipline as manifest_lines.
+install_lock_digest() {
+  ( cd "$1/install-lock" && find . -type f -print0 \
+      | LC_ALL=C sort -z | xargs -0 -P 8 -n 16 sha512sum ) \
+    | sha512sum | cut -d' ' -f1
+}
+
 file_sha() { sha512sum "$1" | cut -d' ' -f1; }
 
 verify_source() { # verify_source <src> <pin> — full-pin check of a bundle dir
   local src="$1" pin="$2"
   [ -f "$src/package.json" ] || die "no package.json in $src"
-  [ -f "$src/npm-shrinkwrap.json" ] || die "no npm-shrinkwrap.json in $src"
+  [ -d "$src/install-lock" ] || die "no install-lock/ in $src (upstream v1.1.0 replaced npm-shrinkwrap.json)"
   [ -f "$src/dist/cli.js" ] || die "no dist/cli.js in $src"
 
   local got want
@@ -60,9 +69,9 @@ verify_source() { # verify_source <src> <pin> — full-pin check of a bundle dir
   want="$(json_get "$pin" package_json_sha512)"
   [ "$got" = "$want" ] || die "package.json hash mismatch"
 
-  got="$(file_sha "$src/npm-shrinkwrap.json")"
-  want="$(json_get "$pin" npm_shrinkwrap_sha512)"
-  [ "$got" = "$want" ] || die "npm-shrinkwrap.json hash mismatch (dependency tree not the pinned one)"
+  got="$(install_lock_digest "$src")"
+  want="$(json_get "$pin" install_lock_sha512)"
+  [ "$got" = "$want" ] || die "install-lock digest mismatch (dependency tree not the pinned one)"
 
   got="$(file_sha "$src/dist/cli.js")"
   want="$(json_get "$pin" dist_cli_sha512)"
@@ -80,7 +89,7 @@ cmd_compute() {
   local version m8 pj sw cli
   version="$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$src/package.json" | head -n1)"
   pj="$(file_sha "$src/package.json")"
-  sw="$(file_sha "$src/npm-shrinkwrap.json")"
+  sw="$(install_lock_digest "$src")"
   cli="$(file_sha "$src/dist/cli.js")"
   local manifest; manifest="$(manifest_digest "$src")"
   m8="${manifest:0:8}"
@@ -92,7 +101,7 @@ cmd_compute() {
   "bundle_manifest_sha512": "$manifest",
   "bundle_manifest_short": "$m8",
   "package_json_sha512": "$pj",
-  "npm_shrinkwrap_sha512": "$sw",
+  "install_lock_sha512": "$sw",
   "dist_cli_sha512": "$cli",
   "node_flags": "",
   "wrapper_rev": 1
