@@ -140,6 +140,10 @@ cmd_install() {
     # fleet-wrapper.sh can verify + identify ANY installed pin. This is what
     # makes the MS-30 rollback flip (current -> pre-pin) mechanically sound.
     cp "$PIN_FILE" "$target.tmp/.fleet-pin.json"
+    # Installs are immutable (chmod -R a-w below), so a --force replacement
+    # must restore write before removing the old tree — otherwise rm fails
+    # per-file and leaves a half-replaced install (measured 09/10/2026).
+    [ -d "$target" ] && chmod -R u+w "$target"
     rm -rf "$target"
     mv "$target.tmp" "$target"
     chmod -R a-w "$target"
