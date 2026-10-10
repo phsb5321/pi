@@ -1,6 +1,6 @@
 import { Marked, type Token } from "@earendil-works/pi-tui";
 import type { MermaidArt, Span } from "grok-mermaid";
-import { createRequire } from "module";
+import { createRequire } from "node:module";
 import type { MarkdownTransformer } from "../../../core/extensions/types.ts";
 import type { MermaidRenderingMode } from "../../../core/settings-manager.ts";
 import type { Theme } from "../theme/theme.ts";
@@ -12,7 +12,7 @@ type RenderMermaid = (source: string) => MermaidArt | undefined;
 let renderMermaid: RenderMermaid | undefined;
 
 function loadRenderMermaid(): RenderMermaid {
-	if (!renderMermaid) renderMermaid = (require("grok-mermaid") as { render: RenderMermaid }).render;
+	renderMermaid ??= (require("grok-mermaid") as { render: RenderMermaid }).render;
 	return renderMermaid;
 }
 

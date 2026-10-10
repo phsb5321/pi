@@ -1,5 +1,5 @@
 import hljs from "highlight.js/lib/core.js";
-import { createRequire } from "module";
+import { createRequire } from "node:module";
 import { decodeHtmlEntityAt } from "./html.ts";
 
 const require = createRequire(import.meta.url);

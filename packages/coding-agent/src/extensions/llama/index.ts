@@ -5,7 +5,7 @@ import type { LlamaUi } from "./ui.ts";
 
 let commandModulesPromise: ReturnType<typeof loadLlamaCommandModules> | undefined;
 const commandModules = (): ReturnType<typeof loadLlamaCommandModules> => {
-	if (!commandModulesPromise) commandModulesPromise = loadLlamaCommandModules();
+	commandModulesPromise ??= loadLlamaCommandModules();
 	return commandModulesPromise;
 };
 

@@ -1,4 +1,4 @@
-import { createRequire } from "module";
+import { createRequire } from "node:module";
 import { stripBom } from "./text.ts";
 
 const require = createRequire(import.meta.url);
@@ -7,7 +7,7 @@ type ParseYaml = (input: string) => unknown;
 let parseYaml: ParseYaml | undefined;
 
 function loadParseYaml(): ParseYaml {
-	if (!parseYaml) parseYaml = (require("yaml") as { parse: ParseYaml }).parse;
+	parseYaml ??= (require("yaml") as { parse: ParseYaml }).parse;
 	return parseYaml;
 }
 

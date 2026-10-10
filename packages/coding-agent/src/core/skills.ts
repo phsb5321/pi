@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "fs";
-import { createRequire } from "module";
+import { createRequire } from "node:module";
 import { basename, dirname, join, relative, resolve, sep } from "path";
 import { CONFIG_DIR_NAME, getAgentDir } from "../config.ts";
 import { parseFrontmatter } from "../utils/frontmatter.ts";
@@ -24,7 +24,7 @@ type IgnoreMatcher = {
 let createIgnore: (() => IgnoreMatcher) | undefined;
 
 function createIgnoreMatcher(): IgnoreMatcher {
-	if (!createIgnore) createIgnore = require("ignore") as () => IgnoreMatcher;
+	createIgnore ??= require("ignore") as () => IgnoreMatcher;
 	return createIgnore();
 }
 
