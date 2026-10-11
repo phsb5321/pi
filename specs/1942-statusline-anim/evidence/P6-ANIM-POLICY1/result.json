@@ -1,0 +1,1949 @@
+{
+ "tag": "P6-ANIM-POLICY1",
+ "pi": "/home/notroot/Documents/Code/pi-upstream-1942-statusline-anim/specs/1942-statusline-anim/pi-source-variant.sh",
+ "argv": [
+  "/home/notroot/Documents/Code/pi-upstream-1942-statusline-anim/specs/1942-statusline-anim/pi-source-variant.sh",
+  "--no-session"
+ ],
+ "node_flags": "",
+ "phases": [
+  {
+   "name": "pre",
+   "start": 1791686010.1124322,
+   "end": 1791686010.1124408,
+   "seconds": 0.0
+  },
+  {
+   "name": "idle",
+   "start": 1791686010.1124437,
+   "end": 1791686022.1125717,
+   "seconds": 12.0
+  },
+  {
+   "name": "mid_turn",
+   "start": 1791686022.1125765,
+   "end": 1791686041.1127775,
+   "seconds": 19.0
+  },
+  {
+   "name": "tool_turn",
+   "start": 1791686041.1127813,
+   "end": 1791686060.1129885,
+   "seconds": 19.0
+  },
+  {
+   "name": "tail",
+   "start": 1791686060.1129904,
+   "end": 1791686063.1130736,
+   "seconds": 3.0
+  }
+ ],
+ "pty_bytes": {
+  "pre": 3685,
+  "mid_turn": 4503,
+  "tool_turn": 4293,
+  "tail": 29
+ },
+ "animation": {
+  "pre": {
+   "ansi": 196,
+   "spinner": 49,
+   "spark": 0,
+   "bytes": 3685
+  },
+  "mid_turn": {
+   "ansi": 228,
+   "spinner": 26,
+   "spark": 0,
+   "bytes": 4503
+  },
+  "tool_turn": {
+   "ansi": 221,
+   "spinner": 10,
+   "spark": 0,
+   "bytes": 4293
+  },
+  "tail": {
+   "ansi": 4,
+   "spinner": 0,
+   "spark": 0,
+   "bytes": 29
+  }
+ },
+ "samples": [
+  [
+   1791686004.6141207,
+   "pre",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686005.1152427,
+   "pre",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686005.6163883,
+   "pre",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686006.1176713,
+   "pre",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686006.6190133,
+   "pre",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686007.1201723,
+   "pre",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686007.6214325,
+   "pre",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686008.1226423,
+   "pre",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686008.6238718,
+   "pre",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686009.1250076,
+   "pre",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686009.6263459,
+   "pre",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686010.1275098,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686010.6287014,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686011.1298168,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686011.631088,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686012.1323566,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686012.6335533,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686013.1346288,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686013.6357882,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686014.137045,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686014.638156,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686015.1392992,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686015.6404603,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686016.1415877,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686016.6429088,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686017.144052,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686017.6451073,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686018.1463056,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686018.6474693,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686019.1486607,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686019.6499062,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686020.1520028,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686020.653151,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686021.1543632,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686021.6556282,
+   "idle",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686022.1568332,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686022.6579475,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686023.1591334,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686023.6602385,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686024.1615155,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686024.6625936,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686025.163746,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686025.6649609,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686026.166134,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686026.6674447,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686027.1685681,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686027.6699362,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686028.1711144,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686028.6722684,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686029.173435,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686029.6746962,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686030.1762516,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686030.6774974,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686031.1789465,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686031.680073,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686032.1814172,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686032.6825242,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686033.1842349,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686033.6855443,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686034.186687,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686034.6880338,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686035.189241,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686035.6903422,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686036.191524,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686036.6926515,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686037.193906,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686037.6952233,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686038.1963835,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686038.6975503,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686039.199545,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686039.7006884,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686040.2025688,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686040.7038672,
+   "mid_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686041.2050357,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686041.7061338,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686042.20766,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686042.708928,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686043.2100465,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686043.7111769,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686044.212362,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686044.7134912,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686045.2146845,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686045.7158594,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686046.2171838,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686046.7184057,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686047.2196093,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686047.7207873,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686048.222007,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686048.723231,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686049.2244036,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686049.72557,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686050.2268245,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686050.7284985,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686051.229725,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686051.730967,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686052.2321913,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686052.7334247,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686053.2345924,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686053.7357934,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686054.236987,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686054.7383168,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686055.2394514,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686055.7405326,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686056.2417417,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686056.7429,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686057.2440753,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686057.7452836,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686058.2464755,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686058.7476323,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686059.2488487,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686059.7500613,
+   "tool_turn",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686060.2513323,
+   "tail",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686060.7527473,
+   "tail",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686061.2538855,
+   "tail",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686061.7550793,
+   "tail",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686062.2562406,
+   "tail",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ],
+  [
+   1791686062.7574923,
+   "tail",
+   {
+    "utime": 0,
+    "stime": 0,
+    "rchar": 229971,
+    "wchar": 260,
+    "read_bytes": 0,
+    "write_bytes": 0,
+    "VmRSS": 4288,
+    "Threads": 1,
+    "pid": 10,
+    "comm": "bash"
+   }
+  ]
+ ],
+ "session_jsonl_bytes": {},
+ "cwd": "/tmp/footprint-probe-P6-ANIM-POLICY1"
+}

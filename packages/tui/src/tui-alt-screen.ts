@@ -18,6 +18,7 @@ import {
 	type ScrollbarGeometry,
 } from "./layout.ts";
 import { getLayoutNode } from "./layout-node.ts";
+import { resolveSelectionSourceLines } from "./selection-window.ts";
 import type { Terminal } from "./terminal.ts";
 import {
 	deleteAllKittyImages,
@@ -1166,7 +1167,7 @@ export class TuiAltScreen extends TuiBase implements ViewportTUI {
 
 	private getSelectionSourceLine(point: SelectionPoint): string {
 		if (point.scrollView && this.currentLayout) {
-			const lines = getScrollViewBox(this.currentLayout, point.scrollView)?.scrollContentLines;
+			const lines = resolveSelectionSourceLines(this.currentLayout, point.scrollView, point.row, point.row);
 			if (lines) return lines[point.row] ?? "";
 		}
 		return this.previousScreen[point.row] ?? "";
@@ -1441,9 +1442,14 @@ export class TuiAltScreen extends TuiBase implements ViewportTUI {
 		let sourceLines: readonly string[] = this.previousScreen;
 		if (selection.start.scrollView) {
 			if (!this.currentLayout) return undefined;
-			const box = getScrollViewBox(this.currentLayout, selection.start.scrollView);
-			if (!box?.scrollContentLines) return undefined;
-			sourceLines = box.scrollContentLines;
+			const resolved = resolveSelectionSourceLines(
+				this.currentLayout,
+				selection.start.scrollView,
+				selection.start.row,
+				selection.end.row,
+			);
+			if (!resolved) return undefined;
+			sourceLines = resolved;
 		}
 		const lines: string[] = [];
 		for (let row = selection.start.row; row <= selection.end.row; row++) {
