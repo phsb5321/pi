@@ -1,0 +1,67 @@
+[
+ {
+  "state": "pre",
+  "seconds": 0.0,
+  "pty_bytes": 3880,
+  "pty_Bps": 38800.0,
+  "ansi_escapes": 196,
+  "spinner_glyphs": 49,
+  "spark_glyphs": 0,
+  "io_rchar_wchar_delta": "0",
+  "cpu_pct": "0.00",
+  "rss_kb": 4204,
+  "threads": 1
+ },
+ {
+  "state": "idle",
+  "seconds": 12.0,
+  "pty_bytes": 0,
+  "pty_Bps": 0.0,
+  "ansi_escapes": 0,
+  "spinner_glyphs": 0,
+  "spark_glyphs": 0,
+  "io_rchar_wchar_delta": "0",
+  "cpu_pct": "0.00",
+  "rss_kb": 4204,
+  "threads": 1
+ },
+ {
+  "state": "mid_turn",
+  "seconds": 19.0,
+  "pty_bytes": 8099,
+  "pty_Bps": 426.3,
+  "ansi_escapes": 363,
+  "spinner_glyphs": 35,
+  "spark_glyphs": 0,
+  "io_rchar_wchar_delta": "0",
+  "cpu_pct": "0.00",
+  "rss_kb": 4204,
+  "threads": 1
+ },
+ {
+  "state": "tool_turn",
+  "seconds": 19.0,
+  "pty_bytes": 7540,
+  "pty_Bps": 396.8,
+  "ansi_escapes": 341,
+  "spinner_glyphs": 18,
+  "spark_glyphs": 0,
+  "io_rchar_wchar_delta": "0",
+  "cpu_pct": "0.00",
+  "rss_kb": 4204,
+  "threads": 1
+ },
+ {
+  "state": "tail",
+  "seconds": 3.0,
+  "pty_bytes": 29,
+  "pty_Bps": 9.7,
+  "ansi_escapes": 4,
+  "spinner_glyphs": 0,
+  "spark_glyphs": 0,
+  "io_rchar_wchar_delta": "0",
+  "cpu_pct": "0.00",
+  "rss_kb": 4204,
+  "threads": 1
+ }
+]
