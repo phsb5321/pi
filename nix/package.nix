@@ -68,6 +68,15 @@ let
       pack_package packages/agent agent
       pack_package packages/codemode codemode
       pack_package packages/mcp mcp
+      # The experimental Chord layer imports these four from
+      # dist/experimental/server.js. They were undeclared until 11/10/2026, so
+      # the layer compiled but could not load (ERR_MODULE_NOT_FOUND). Packing
+      # them here keeps the whole closure built from this checkout instead of
+      # silently taking the registry release.
+      pack_package packages/protocol protocol
+      pack_package packages/client client
+      pack_package packages/server server
+      pack_package packages/durable durable
       pack_package packages/coding-agent coding-agent
 
       runHook postInstall
@@ -86,6 +95,10 @@ let
       "node_modules/@earendil-works/pi-mcp" = workspacePackages + "/mcp.tgz";
       "node_modules/@earendil-works/pi-telemetry" = workspacePackages + "/telemetry.tgz";
       "node_modules/@earendil-works/pi-tui" = workspacePackages + "/tui.tgz";
+      "node_modules/@earendil-works/pi-protocol" = workspacePackages + "/protocol.tgz";
+      "node_modules/@earendil-works/pi-client" = workspacePackages + "/client.tgz";
+      "node_modules/@earendil-works/pi-server" = workspacePackages + "/server.tgz";
+      "node_modules/@earendil-works/pi-durable" = workspacePackages + "/durable.tgz";
     };
   };
 in
