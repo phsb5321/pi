@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# mem-probe-bounded — bounded-cohort, capped measurement wrapper (M1, 02/10/2026).
+#
+# Policy: docs/MEASUREMENT-OVERHEAD.md. Never sweeps all seats; samples a
+# bounded rotating cohort under caps, and emits an overhead receipt so the
+# instrument's own cost is measured, not assumed.
+#
+# Usage:
+#   tools/mem-probe-bounded [--cohort N] [--seed S] [--timeout SECS] \
+#     [--condition idle|mid-turn] [--advisory] [--out PREFIX]
+#
+# Defaults: cohort 10 (hard cap 25), seed = current HHMM (rotation), timeout
+# 30s, nice/ionice background priority, receipt output capped at 64 KiB.
+#
+# Exit codes (pass-through from mem-probe, recorded in the overhead receipt):
+#   0 = clean capture  2 = missing/unreadable seat tree (fail-closed)
+#   3 = sampled cohort does not satisfy the named condition's proof
+#       (e.g. --condition idle on mid-work seats: JSONL <300s). Expected on
+#       live cohorts; the receipt line keeps the honest rc.
+set -euo pipefail
+
+COHORT=10 SEED=$(date +%H%M) TIMEOUT=30 CONDITION=advisory OUT=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --cohort|--seed|--timeout|--condition|--out)
+      [ "$#" -ge 2 ] || { echo "mem-probe-bounded: $1 needs a value" >&2; exit 64; }
+      case "$1" in
+        --cohort) COHORT="$2" ;; --seed) SEED="$2" ;; --timeout) TIMEOUT="$2" ;;
+        --condition) CONDITION="$2" ;; --out) OUT="$2" ;;
+      esac
+      shift 2 ;;
+    --advisory) CONDITION=advisory; shift ;;
+    *) echo "mem-probe-bounded: unknown arg $1" >&2; exit 64 ;;
+  esac
+done
+
+# Fail-closed value validation: positive integers only, bounds enforced,
+# seed numeric (JSON-safe receipt), condition enum. 0/negative timeout is
+# forbidden — GNU timeout 0 would DISABLE the bound.
+is_uint() { case "$1" in ''|*[!0-9]*) return 1 ;; *) return 0 ;; esac; }
+is_uint "$COHORT" && [ "$COHORT" -ge 1 ] || { echo "mem-probe-bounded: --cohort needs a positive integer" >&2; exit 64; }
+[ "$COHORT" -le 25 ] || { echo "mem-probe-bounded: cohort capped at 25" >&2; exit 64; }
+is_uint "$TIMEOUT" && [ "$TIMEOUT" -ge 1 ] || { echo "mem-probe-bounded: --timeout needs a positive integer" >&2; exit 64; }
+[ "$TIMEOUT" -le 120 ] || { echo "mem-probe-bounded: timeout capped at 120s" >&2; exit 64; }
+is_uint "$SEED" || { echo "mem-probe-bounded: --seed needs digits (JSON-safe receipt)" >&2; exit 64; }
+case "$CONDITION" in advisory|idle|mid-turn) ;; *) echo "mem-probe-bounded: --condition must be advisory|idle|mid-turn" >&2; exit 64 ;; esac
+# Canonicalize numeric values: "08" is digits but invalid as a JSON number.
+COHORT=$((10#$COHORT)) TIMEOUT=$((10#$TIMEOUT))
+
+# Per-file hard byte cap: inherited RLIMIT_FSIZE bounds EVERY file the probe
+# writes (capture files included — stream caps alone cannot). prlimit uses
+# bytes; Bash ulimit units vary and measured128 as128 KiB on this host.
+CAP_BYTES=65536
+
+here=$(cd "$(dirname "$0")" && pwd)
+probe="$here/mem-probe"
+[ -x "$probe" ] || { echo "mem-probe-bounded: mem-probe not found next to me" >&2; exit 69; }
+
+# Bounded rotating cohort: deterministic shuffle of live pi pids, take N.
+mapfile -t all < <(pgrep -x pi 2>/dev/null | sort -n)
+[ "${#all[@]}" -eq 0 ] && { echo "mem-probe-bounded: no seats" >&2; exit 0; }
+mapfile -t pick < <(printf '%s\n' "${all[@]}" | shuf --random-source=<(yes "$SEED" 2>/dev/null) -n "$COHORT")
+
+tmp=$(mktemp -d "${TMPDIR:-/tmp}/mpb.XXXXXX"); trap 'rm -rf "$tmp"' EXIT
+printf '%s\n' "${pick[@]}" > "$tmp/pids"
+
+start=$(date +%s.%N)
+if [ "$CONDITION" = advisory ]; then
+  args=(--condition idle --advisory --seat-pids "$tmp/pids" --json)
+else
+  args=(--condition "$CONDITION" --seat-pids "$tmp/pids" --out "$tmp/capture")
+fi
+set +e
+( prlimit --fsize="$CAP_BYTES:$CAP_BYTES" -- nice -n 15 ionice -c3 timeout -k 2 "$TIMEOUT" "$probe" "${args[@]}" 2> >(head -c 65536 > "$tmp/err") ) | head -c 65536 > "$tmp/out"
+rc=$?
+set -e
+end=$(date +%s.%N)
+
+wall=$(awk -v a="$start" -v b="$end" 'BEGIN{printf "%.3f", b-a}')
+capture_bytes=$(find "$tmp" -maxdepth 2 -type f -name 'capture*' -printf '%s\n' 2>/dev/null | awk '{s+=$1} END{print s+0}')
+{
+  printf '{"instrument":"mem-probe-bounded","seed":"%s","cohort":%s,"pids":%s,"timeout_s":%s,"condition":"%s","wall_s":%s,"exit":%s,"out_bytes":%s,"capture_bytes":%s,"stamp":"%s"}\n' \
+    "$SEED" "$COHORT" "${#pick[@]}" "$TIMEOUT" "$CONDITION" "$wall" "$rc" "$(wc -c < "$tmp/out")" "$capture_bytes" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+} >> "${OUT:-$here/mem-probe-bounded.receipts.jsonl}"
+
+cat "$tmp/out"
+if [ "$rc" -ne 0 ]; then cat "$tmp/err" >&2; fi
+exit "$rc"
