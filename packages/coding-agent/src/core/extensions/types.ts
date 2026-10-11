@@ -50,6 +50,7 @@ import type {
 	EditorComponent,
 	EditorTheme,
 	KeyId,
+	LoaderIndicatorOptions,
 	OverlayHandle,
 	OverlayOptions,
 	TUI,
@@ -130,13 +131,10 @@ export interface ExtensionWidgetOptions {
 /** Raw terminal input listener for extensions. */
 export type TerminalInputHandler = (data: string) => { consume?: boolean; data?: string } | undefined;
 
-/** Working indicator configuration for the interactive streaming loader. */
-export interface WorkingIndicatorOptions {
-	/** Animation frames. Use an empty array to hide the indicator entirely. Custom frames are rendered verbatim. */
-	frames?: string[];
-	/** Frame interval in milliseconds for animated indicators. */
-	intervalMs?: number;
-}
+/** Working indicator configuration for the interactive streaming loader.
+ * Aliased to the pi-tui loader options: identical shape (frames/intervalMs), one source of
+ * truth. Custom frames are rendered verbatim; an empty array hides the indicator. */
+export type WorkingIndicatorOptions = LoaderIndicatorOptions;
 
 /** Wrap the current autocomplete provider with additional behavior. */
 export type AutocompleteProviderFactory = (current: AutocompleteProvider) => AutocompleteProvider;

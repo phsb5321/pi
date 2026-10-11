@@ -145,7 +145,6 @@ export class ToolExecutionComponent extends Container {
 	evictRenderCaches(): void {
 		this.callRendererComponent = undefined;
 		this.resultRendererComponent = undefined;
-		this.convertedImages.clear();
 		this.clearImageChildren();
 	}
 
