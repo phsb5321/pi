@@ -1,5 +1,5 @@
-import hljs from "highlight.js/lib/core.js";
 import { createRequire } from "node:module";
+import hljs from "highlight.js/lib/core.js";
 import { decodeHtmlEntityAt } from "./html.ts";
 
 const require = createRequire(import.meta.url);
@@ -590,6 +590,4 @@ export function highlight(code: string, options: HighlightOptions = {}): string 
 	return renderHighlightedHtml(html, options.theme);
 }
 
-export function supportsLanguage(name: string): boolean {
-	return ensureLanguageRegistered(name);
-}
+export { ensureLanguageRegistered as supportsLanguage };

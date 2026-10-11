@@ -1,4 +1,5 @@
 import type { AgentToolResult } from "@earendil-works/pi-agent-core";
+import type { ImageContent, TextContent } from "@earendil-works/pi-ai";
 import {
 	Box,
 	type Component,
@@ -369,7 +370,10 @@ export class ToolExecutionComponent extends Container {
 				} else {
 					try {
 						const component = resultRenderer(
-							{ content: this.result.content as any, details: this.result.details },
+							{
+								content: this.result.content as Array<TextContent | ImageContent>,
+								details: this.result.details,
+							},
 							{ expanded: this.expanded, isPartial: this.isPartial },
 							theme,
 							this.getRenderContext(this.resultRendererComponent),

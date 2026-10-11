@@ -17,28 +17,26 @@ import {
 	type Model,
 	type Usage,
 } from "@earendil-works/pi-ai/compat";
-import type {
-	AutocompleteItem,
-	AutocompleteProvider,
-	EditorComponent,
-	Keybinding,
-	KeyId,
-	MarkdownTheme,
-	OverlayHandle,
-	OverlayOptions,
-	SlashCommand,
-	TuiMainScreenRenderState,
-} from "@earendil-works/pi-tui";
-import * as TuiLayouts from "@earendil-works/pi-tui";
 import {
+	type AutocompleteItem,
+	type AutocompleteProvider,
 	CombinedAutocompleteProvider,
 	type Component,
 	Container,
+	type EditorComponent,
 	fuzzyFilter,
 	getCapabilities,
 	hyperlink,
+	isViewportTUI,
+	type Keybinding,
+	type KeyId,
 	Markdown,
+	type MarkdownTheme,
 	matchesKey,
+	type OverlayHandle,
+	type OverlayOptions,
+	type ScrollView,
+	type SlashCommand,
 	Spacer,
 	setCapabilityOverrides,
 	setKeybindings,
@@ -48,6 +46,7 @@ import {
 	type TUI,
 	TuiAltScreen,
 	TuiMainScreen,
+	type TuiMainScreenRenderState,
 	visibleWidth,
 } from "@earendil-works/pi-tui";
 import chalk from "chalk";
@@ -441,7 +440,7 @@ export class InteractiveMode {
 	private loadedResourcesContainer: Container;
 	private chatContainer: Container;
 	private documentContainer: Container;
-	private transcriptScrollView: TuiLayouts.ScrollView | undefined;
+	private transcriptScrollView: ScrollView | undefined;
 	private fullscreenLayoutRoot: Component | undefined;
 	private pendingMessagesContainer: Container;
 	private statusContainer: Container;
@@ -637,7 +636,6 @@ export class InteractiveMode {
 		this.footerContainer = new Container();
 		this.footerContainer.addChild(this.footer);
 
-		// Load hide thinking block setting
 		this.hideThinkingBlock = this.settingsManager.getHideThinkingBlock();
 		this.outputPad = this.settingsManager.getOutputPad();
 
@@ -701,7 +699,6 @@ export class InteractiveMode {
 	}
 
 	private createBaseAutocompleteProvider(): AutocompleteProvider {
-		// Define commands for autocomplete
 		const slashCommands: SlashCommand[] = BUILTIN_SLASH_COMMANDS.map((command) => ({
 			name: command.name,
 			description: command.description,
@@ -718,7 +715,6 @@ export class InteractiveMode {
 
 				if (models.length === 0) return null;
 
-				// Create items with provider/id format
 				const items = models.map((m) => ({
 					id: m.id,
 					provider: m.provider,
@@ -850,7 +846,7 @@ export class InteractiveMode {
 
 	private mountInteractiveTui(tui: TuiMainScreen | TuiAltScreen, components: readonly Component[]): void {
 		for (const component of components) tui.addChild(component);
-		if (TuiLayouts.isViewportTUI(tui)) {
+		if (isViewportTUI(tui)) {
 			if (!this.fullscreenLayoutRoot) throw new Error("Fullscreen layout is not initialized");
 			tui.setLayoutRoot(this.fullscreenLayoutRoot);
 		}
@@ -883,7 +879,7 @@ export class InteractiveMode {
 		previousUi.stop({ preserveScreen: true });
 		previousUi.setFocus(null);
 		previousUi.clear();
-		if (TuiLayouts.isViewportTUI(previousUi)) previousUi.setLayoutRoot(undefined);
+		if (isViewportTUI(previousUi)) previousUi.setLayoutRoot(undefined);
 
 		const nextUi = createInteractiveTui({
 			tuiMode: mode,
@@ -994,7 +990,6 @@ export class InteractiveMode {
 				return `${top} ${theme.fg("dim", `v${this.version}`)}\n${bottom} ${hints}`;
 			};
 
-			// Build startup instructions using keybinding hint helpers
 			const hint = (keybinding: AppKeybinding, description: string) => keyHint(keybinding, description);
 
 			const expandedInstructions = () =>
@@ -1045,7 +1040,6 @@ export class InteractiveMode {
 				0,
 			);
 
-			// Setup UI layout
 			this.headerContainer.addChild(new Spacer(1));
 			this.headerContainer.addChild(this.builtInHeader);
 			this.headerContainer.addChild(new Spacer(1));
@@ -1073,10 +1067,8 @@ export class InteractiveMode {
 		// Initialize extensions first so resources are shown before messages
 		await this.rebindCurrentSession();
 
-		// Render initial messages AFTER showing loaded resources
 		this.renderInitialMessages();
 
-		// Set up theme file watcher
 		onThemeChange(() => {
 			this.ui.invalidate();
 			this.updateEditorBorderColor();
@@ -1088,7 +1080,6 @@ export class InteractiveMode {
 			this.ui.requestRender();
 		});
 
-		// Initialize available provider count for footer display
 		await this.updateAvailableProviderCount();
 	}
 
@@ -1121,14 +1112,12 @@ export class InteractiveMode {
 				.finally(() => clearTimeout(timeout));
 		}
 
-		// Start version check asynchronously
 		checkForNewPiVersion(this.version).then((newRelease) => {
 			if (newRelease) {
 				this.showNewVersionNotification(newRelease);
 			}
 		});
 
-		// Start package update check asynchronously
 		this.checkForPackageUpdates()
 			.then((updates) => {
 				if (updates.length > 0) {
@@ -1143,7 +1132,6 @@ export class InteractiveMode {
 				}
 			});
 
-		// Check tmux keyboard setup asynchronously
 		this.checkTmuxKeyboardSetup().then((warning) => {
 			if (warning) {
 				this.showWarning(warning);
@@ -1193,7 +1181,6 @@ export class InteractiveMode {
 
 		void this.maybeWarnAboutAnthropicSubscriptionAuth();
 
-		// Process initial messages
 		if (initialMessage) {
 			try {
 				await this.session.prompt(initialMessage, { images: initialImages });
@@ -2173,7 +2160,6 @@ export class InteractiveMode {
 		const shortcuts = extensionRunner.getShortcuts(this.keybindings.getEffectiveConfig());
 		if (shortcuts.size === 0) return;
 
-		// Create a context for shortcut handlers
 		const createContext = (): ExtensionContext => ({
 			ui: this.createExtensionUIContext(),
 			mode: "tui",
@@ -2209,12 +2195,10 @@ export class InteractiveMode {
 			getSystemPrompt: () => this.session.systemPrompt,
 		});
 
-		// Set up the extension shortcut handler on the default editor
 		this.defaultEditor.onExtensionShortcut = (data: string) => {
 			for (const [shortcutStr, shortcut] of shortcuts) {
 				// Cast to KeyId - extension shortcuts use the same format
 				if (matchesKey(data, shortcutStr as KeyId)) {
-					// Run handler async, don't block input
 					Promise.resolve(shortcut.handler(createContext())).catch((err) => {
 						this.showError(`Shortcut handler error: ${err instanceof Error ? err.message : String(err)}`);
 					});
@@ -2504,7 +2488,6 @@ export class InteractiveMode {
 
 		this.footerContainer.clear();
 		if (factory) {
-			// Create and add custom footer, passing the data provider
 			this.customFooter = factory(this.ui, theme, this.footerDataProvider);
 			this.footerContainer.addChild(this.customFooter);
 		} else {
@@ -2535,7 +2518,6 @@ export class InteractiveMode {
 		const index = this.headerContainer.children.indexOf(currentHeader);
 
 		if (factory) {
-			// Create and add custom header
 			this.customHeader = factory(this.ui, theme);
 			if (isExpandable(this.customHeader)) {
 				this.customHeader.setExpanded(this.toolOutputExpanded);
@@ -2835,14 +2817,12 @@ export class InteractiveMode {
 	private setCustomEditorComponent(factory: EditorFactory | undefined): void {
 		this.editorComponentFactory = factory;
 
-		// Save text from current editor before switching
 		const currentText = this.editor.getText();
 
 		this.disposeActiveSelector();
 		this.editorContainer.clear();
 
 		if (factory) {
-			// Create the custom editor with tui, theme, and keybindings
 			const newEditor = factory(this.ui, getEditorTheme(), this.keybindings);
 
 			// Wire up callbacks from the default editor
@@ -3161,7 +3141,6 @@ export class InteractiveMode {
 			text = text.trim();
 			if (!text) return;
 
-			// Handle commands
 			if (text === "/settings") {
 				this.showSettingsSelector();
 				this.editor.setText("");
@@ -3488,18 +3467,7 @@ export class InteractiveMode {
 					for (const content of this.streamingMessage.content) {
 						if (content.type === "toolCall") {
 							if (!this.pendingTools.has(content.id)) {
-								const component = new ToolExecutionComponent(
-									content.name,
-									content.id,
-									content.arguments,
-									{
-										showImages: this.settingsManager.getShowImages(),
-										imageWidthCells: this.settingsManager.getImageWidthCells(),
-									},
-									this.getRegisteredToolDefinition(content.name),
-									this.ui,
-									this.sessionManager.getCwd(),
-								);
+								const component = this.createToolExecutionComponent(content);
 								component.setExpanded(this.toolOutputExpanded);
 								this.chatContainer.addChild(component);
 								this.pendingTools.set(content.id, component);
@@ -3692,7 +3660,6 @@ export class InteractiveMode {
 			}
 
 			case "auto_retry_start": {
-				// Set up escape to abort retry
 				this.retryEscapeHandler = this.defaultEditor.onEscape;
 				this.defaultEditor.onEscape = () => {
 					this.session.abortRetry();
@@ -3965,21 +3932,9 @@ export class InteractiveMode {
 			// Assistant messages need special handling for tool calls
 			if (message.role === "assistant") {
 				this.addMessageToChat(message);
-				// Render tool call components
 				for (const content of message.content) {
 					if (content.type === "toolCall") {
-						const component = new ToolExecutionComponent(
-							content.name,
-							content.id,
-							content.arguments,
-							{
-								showImages: this.settingsManager.getShowImages(),
-								imageWidthCells: this.settingsManager.getImageWidthCells(),
-							},
-							this.getRegisteredToolDefinition(content.name),
-							this.ui,
-							this.sessionManager.getCwd(),
-						);
+						const component = this.createToolExecutionComponent(content);
 						component.setExpanded(this.toolOutputExpanded);
 						this.chatContainer.addChild(component);
 
@@ -4288,6 +4243,25 @@ export class InteractiveMode {
 	 * call ui.stop() to restore cooked mode, the cursor, and disable bracketed
 	 * paste / Kitty / modifyOtherKeys sequences.
 	 */
+	private createToolExecutionComponent(content: {
+		name: string;
+		id: string;
+		arguments: unknown;
+	}): ToolExecutionComponent {
+		return new ToolExecutionComponent(
+			content.name,
+			content.id,
+			content.arguments,
+			{
+				showImages: this.settingsManager.getShowImages(),
+				imageWidthCells: this.settingsManager.getImageWidthCells(),
+			},
+			this.getRegisteredToolDefinition(content.name),
+			this.ui,
+			this.sessionManager.getCwd(),
+		);
+	}
+
 	private uncaughtCrash(error: Error): never {
 		if (this.isShuttingDown) {
 			process.exit(1);
@@ -4295,13 +4269,19 @@ export class InteractiveMode {
 		this.isShuttingDown = true;
 		try {
 			this.unregisterSignalHandlers();
-		} catch {}
+		} catch {
+			/* best-effort cleanup during crash */
+		}
 		try {
 			killTrackedDetachedChildren();
-		} catch {}
+		} catch {
+			/* best-effort cleanup during crash */
+		}
 		try {
 			this.ui.stop();
-		} catch {}
+		} catch {
+			/* best-effort cleanup during crash */
+		}
 		console.error(`${APP_NAME} exiting due to uncaughtException:`);
 		console.error(error);
 		const extensionHint = this.getCrashExtensionHint(error);
@@ -4756,7 +4736,6 @@ export class InteractiveMode {
 				return;
 			}
 
-			// Execute any extension commands before the first prompt
 			const preCommands = queuedMessages.slice(0, firstPromptIndex);
 			const firstPrompt = queuedMessages[firstPromptIndex];
 			const rest = queuedMessages.slice(firstPromptIndex + 1);
@@ -4772,7 +4751,6 @@ export class InteractiveMode {
 					restoreQueue(error);
 				});
 
-			// Queue remaining messages
 			for (const message of rest) {
 				if (this.isExtensionCommand(message.text)) {
 					await this.session.prompt(message.text);
@@ -5604,7 +5582,6 @@ export class InteractiveMode {
 							return;
 						}
 
-						// Update UI
 						this.chatContainer.clear();
 						this.renderInitialMessages();
 						if (result.editorText && !this.editor.getText().trim()) {
@@ -6937,7 +6914,6 @@ export class InteractiveMode {
 	private async handleBashCommand(command: string, excludeFromContext = false): Promise<void> {
 		const extensionRunner = this.session.extensionRunner;
 
-		// Emit user_bash event to let extensions intercept
 		let eventResult: UserBashEventResult | undefined;
 		try {
 			eventResult = await extensionRunner.emitUserBash({
@@ -6955,7 +6931,6 @@ export class InteractiveMode {
 		if (eventResult?.result) {
 			const result = eventResult.result;
 
-			// Create UI component for display
 			this.bashComponent = new BashExecutionComponent(command, this.ui, excludeFromContext);
 			if (this.session.isStreaming) {
 				this.pendingMessagesContainer.addChild(this.bashComponent);

@@ -1,6 +1,6 @@
+import { createRequire } from "node:module";
 import { Marked, type Token } from "@earendil-works/pi-tui";
 import type { MermaidArt, Span } from "grok-mermaid";
-import { createRequire } from "node:module";
 import type { MarkdownTransformer } from "../../../core/extensions/types.ts";
 import type { MermaidRenderingMode } from "../../../core/settings-manager.ts";
 import type { Theme } from "../theme/theme.ts";

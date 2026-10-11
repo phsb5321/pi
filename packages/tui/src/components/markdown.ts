@@ -285,7 +285,6 @@ export class Markdown extends MemoizedRender implements Component {
 		// Don't render anything if there's no actual text
 		if (!text || text.trim() === "") {
 			const result: string[] = [];
-			// Update cache
 			this.renderMemo.store(this.text, width, result);
 			return result;
 		}
@@ -293,7 +292,6 @@ export class Markdown extends MemoizedRender implements Component {
 		// Replace tabs with 3 spaces for consistent rendering
 		const normalizedText = text.replace(/\t/g, "   ");
 
-		// Parse markdown to HTML-like tokens
 		const cached = this.cachedTokens?.deref();
 		let tokens = cached?.source === normalizedText ? cached.tokens : undefined;
 		if (!tokens) {
@@ -621,7 +619,6 @@ export class Markdown extends MemoizedRender implements Component {
 				break;
 
 			default:
-				// Handle any other token types as plain text
 				if ("text" in token && typeof token.text === "string") {
 					lines.push(token.text);
 				}
@@ -718,14 +715,12 @@ export class Markdown extends MemoizedRender implements Component {
 				}
 
 				case "html":
-					// Render inline HTML as plain text
 					if ("raw" in token && typeof token.raw === "string") {
 						result += applyTextWithNewlines(token.raw);
 					}
 					break;
 
 				default:
-					// Handle any other inline token types as plain text
 					if ("text" in token && typeof token.text === "string") {
 						result += applyTextWithNewlines(token.text);
 					}
@@ -955,11 +950,9 @@ export class Markdown extends MemoizedRender implements Component {
 			}
 		}
 
-		// Render top border
 		const topBorderCells = columnWidths.map((w) => "─".repeat(w));
 		lines.push(`┌─${topBorderCells.join("─┬─")}─┐`);
 
-		// Render header with wrapping
 		const headerCellLines: string[][] = token.header.map((cell, i) => {
 			const text = this.renderInlineTokens(cell.tokens || [], styleContext);
 			return this.wrapCellText(text, columnWidths[i], styleContext?.stylePrefix);
@@ -975,12 +968,10 @@ export class Markdown extends MemoizedRender implements Component {
 			lines.push(`│ ${rowParts.join(" │ ")} │`);
 		}
 
-		// Render separator
 		const separatorCells = columnWidths.map((w) => "─".repeat(w));
 		const separatorLine = `├─${separatorCells.join("─┼─")}─┤`;
 		lines.push(separatorLine);
 
-		// Render rows with wrapping
 		for (let rowIndex = 0; rowIndex < token.rows.length; rowIndex++) {
 			const row = token.rows[rowIndex];
 			const rowCellLines: string[][] = row.map((cell, i) => {
@@ -1002,7 +993,6 @@ export class Markdown extends MemoizedRender implements Component {
 			}
 		}
 
-		// Render bottom border
 		const bottomBorderCells = columnWidths.map((w) => "─".repeat(w));
 		lines.push(`└─${bottomBorderCells.join("─┴─")}─┘`);
 

@@ -1,5 +1,5 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "fs";
 import { createRequire } from "node:module";
+import { existsSync, readdirSync, readFileSync, statSync } from "fs";
 import { basename, dirname, join, relative, resolve, sep } from "path";
 import { CONFIG_DIR_NAME, getAgentDir } from "../config.ts";
 import { parseFrontmatter } from "../utils/frontmatter.ts";
@@ -321,7 +321,6 @@ function loadSkillFromFile(
 	const skillDir = dirname(filePath);
 	const parentDirName = basename(skillDir);
 
-	// Validate description
 	const descErrors = validateDescription(description);
 	for (const error of descErrors) {
 		diagnostics.push({ type: "warning", message: error, path: filePath });
@@ -331,7 +330,6 @@ function loadSkillFromFile(
 	const frontmatterName = typeof frontmatter.name === "string" ? frontmatter.name : undefined;
 	const name = frontmatterName || parentDirName;
 
-	// Validate name
 	const nameErrors = validateName(name);
 	for (const error of nameErrors) {
 		diagnostics.push({ type: "warning", message: error, path: filePath });
