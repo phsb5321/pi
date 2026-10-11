@@ -6,6 +6,8 @@ export interface LoaderIndicatorOptions {
 	frames?: string[];
 	/** Frame interval in milliseconds for animated indicators. */
 	intervalMs?: number;
+	/** Render frames as-is (true, the default whenever options are provided) or through the spinner color function. */
+	renderVerbatim?: boolean;
 }
 
 const DEFAULT_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -67,7 +69,7 @@ export class Loader extends Text {
 	}
 
 	setIndicator(indicator?: LoaderIndicatorOptions): void {
-		this.renderIndicatorVerbatim = indicator !== undefined;
+		this.renderIndicatorVerbatim = indicator?.renderVerbatim ?? indicator !== undefined;
 		this.frames = indicator?.frames !== undefined ? [...indicator.frames] : [...DEFAULT_FRAMES];
 		this.intervalMs = indicator?.intervalMs && indicator.intervalMs > 0 ? indicator.intervalMs : DEFAULT_INTERVAL_MS;
 		this.currentFrame = 0;

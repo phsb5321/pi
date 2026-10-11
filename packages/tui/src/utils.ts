@@ -72,17 +72,14 @@ function isPrintableAscii(str: string): boolean {
 	return true;
 }
 
-type TextWalkEvent =
-	| { kind: "ansi"; code: string }
-	| { kind: "tab" }
-	| { kind: "run"; text: string };
+type TextWalkEvent = { kind: "ansi"; code: string } | { kind: "tab" } | { kind: "run"; text: string };
 
 /**
  * Walk `text` as ANSI / tab / visible-run events in one pass. Shared by the
  * truncate walks (and any future consumer) so the ANSI/tab/segment-dispatch
  * skeleton exists once. `visit` returning `false` stops the walk early.
  */
-function walkText(text: string, visit: (event: TextWalkEvent) => boolean | void): void {
+function walkText(text: string, visit: (event: TextWalkEvent) => boolean | undefined): void {
 	let i = 0;
 	while (i < text.length) {
 		const ansi = extractAnsiCode(text, i);
