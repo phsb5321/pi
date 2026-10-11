@@ -145,7 +145,10 @@ export class ToolExecutionComponent extends Container {
 	evictRenderCaches(): void {
 		this.callRendererComponent = undefined;
 		this.resultRendererComponent = undefined;
-		this.convertedImages.clear();
+		// imageSources must stay in lockstep with imageComponents (both are dropped together):
+		// updateDisplay reuses previousImages[index] when previousSources[index] matches, so
+		// clearing only the components would reuse a dropped Image as undefined.
+		this.imageSources = [];
 		this.clearImageChildren();
 	}
 
