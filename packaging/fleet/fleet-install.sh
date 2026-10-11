@@ -133,9 +133,18 @@ cmd_install() {
   if [ -d "$target" ] && [ "$force" = 0 ]; then
     echo "fleet-install: $target already installed; switching current"
   else
+    # A previous attempt can leave a read-only .tmp (any failure after the
+    # chmod below), and `rm -rf` cannot descend into it.
+    [ -d "$target.tmp" ] && chmod -R u+w "$target.tmp"
     rm -rf "$target.tmp"
     mkdir -p "$root" "$target.tmp"
     cp -a "$src/." "$target.tmp/"
+    # A store source (nix build .#fleet-source) is read-only, and `cp -a`
+    # carries that onto the copy — including $target.tmp itself, which then
+    # refuses the pin below. Measured 11/10/2026: the first Nix-sourced
+    # install died here with "cannot create .fleet-pin.json: Permission".
+    # The install is made immutable again at the end (chmod -R a-w).
+    chmod -R u+w "$target.tmp"
     # Self-describing install: the verified pin travels with the install so
     # fleet-wrapper.sh can verify + identify ANY installed pin. This is what
     # makes the MS-30 rollback flip (current -> pre-pin) mechanically sound.
