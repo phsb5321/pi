@@ -82,6 +82,13 @@ export interface ResolvedPaths {
 	skills: ResolvedResource[];
 	prompts: ResolvedResource[];
 	themes: ResolvedResource[];
+	/** Explicit references that could not be installed or provided nothing. */
+	unresolvedSources?: UnresolvedSource[];
+}
+
+export interface UnresolvedSource {
+	source: string;
+	reason: string;
 }
 
 export type MissingSourceAction = "install" | "skip" | "error";
@@ -970,8 +977,9 @@ export class DefaultPackageManager implements PackageManager {
 		const accumulator = this.createAccumulator();
 		const scope: SourceScope = options?.temporary ? "temporary" : options?.local ? "project" : "user";
 		const packageSources = sources.map((source) => ({ pkg: source as PackageSource, scope }));
-		await this.resolvePackageSources(packageSources, accumulator);
-		return this.toResolvedPaths(accumulator);
+		const unresolved: UnresolvedSource[] = [];
+		await this.resolvePackageSources(packageSources, accumulator, undefined, unresolved);
+		return { ...this.toResolvedPaths(accumulator), unresolvedSources: unresolved };
 	}
 
 	listConfiguredPackages(): ConfiguredPackage[] {
@@ -1252,7 +1260,10 @@ export class DefaultPackageManager implements PackageManager {
 		sources: Array<{ pkg: PackageSource; scope: SourceScope }>,
 		accumulator: ResourceAccumulator,
 		onMissing?: (source: string) => Promise<MissingSourceAction>,
+		unresolved?: UnresolvedSource[],
 	): Promise<void> {
+		const resourceCount = (): number =>
+			accumulator.extensions.size + accumulator.skills.size + accumulator.prompts.size + accumulator.themes.size;
 		for (const { pkg, scope } of sources) {
 			const sourceStr = typeof pkg === "string" ? pkg : pkg.source;
 			const filter = typeof pkg === "object" ? pkg : undefined;
@@ -1287,11 +1298,18 @@ export class DefaultPackageManager implements PackageManager {
 					!existsSync(installedPath) || !(await this.installedNpmMatchesConfiguredVersion(parsed, installedPath));
 				if (needsInstall) {
 					const installed = await installMissing();
-					if (!installed) continue;
+					if (!installed) {
+						unresolved?.push({ source: sourceStr, reason: "install unavailable or refused" });
+						continue;
+					}
 					installedPath = this.getNpmInstallPath(parsed, resolvedScope);
 				}
 				metadata.baseDir = installedPath;
+				const before = resourceCount();
 				this.collectPackageResources(installedPath, accumulator, filter, metadata);
+				if (resourceCount() === before) {
+					unresolved?.push({ source: sourceStr, reason: "installed source provides no resources" });
+				}
 				continue;
 			}
 
@@ -1299,12 +1317,19 @@ export class DefaultPackageManager implements PackageManager {
 				const installedPath = this.getGitInstallPath(parsed, resolvedScope);
 				if (!existsSync(installedPath)) {
 					const installed = await installMissing();
-					if (!installed) continue;
+					if (!installed) {
+						unresolved?.push({ source: sourceStr, reason: "install unavailable or refused" });
+						continue;
+					}
 				} else if (resolvedScope === "temporary" && !parsed.pinned && !isOfflineModeEnabled()) {
 					await this.refreshTemporaryGitSource(parsed, resolvedSource);
 				}
 				metadata.baseDir = installedPath;
+				const before = resourceCount();
 				this.collectPackageResources(installedPath, accumulator, filter, metadata);
+				if (resourceCount() === before) {
+					unresolved?.push({ source: sourceStr, reason: "installed source provides no resources" });
+				}
 			}
 		}
 	}
