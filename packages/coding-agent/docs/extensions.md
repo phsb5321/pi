@@ -674,7 +674,7 @@ pi.on("tool_execution_end", async (event, ctx) => {
 
 #### context
 
-Fired before each LLM call. Modify messages non-destructively. See [Session Format](session-format.md) for message types.
+Fired before each ordinary agent-loop LLM request. Modify messages non-destructively. See [Session Format](session-format.md) for message types.
 
 ```typescript
 pi.on("context", async (event, ctx) => {
@@ -683,6 +683,8 @@ pi.on("context", async (event, ctx) => {
   return { messages: filtered };
 });
 ```
+
+`context` does not run for default standalone compaction or branch-summary requests, or for provider calls made directly by extensions. Use [`session_before_compact`](#session_before_compact--session_compact--session_compact_failed) or [`session_before_tree`](#session_before_tree--session_tree) for custom summaries, and explicitly filter the content you send to the provider. Declining or erroring custom-summary handlers can fall back to the default summary path; these hooks are not fail-closed privacy filters.
 
 #### before_provider_headers
 
