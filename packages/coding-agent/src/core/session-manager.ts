@@ -111,7 +111,8 @@ export interface CustomEntry<T = unknown> extends SessionEntryBase {
 export interface LabelEntry extends SessionEntryBase {
 	type: "label";
 	targetId: string;
-	label: string | undefined;
+	/** Omitted when cleared, matching the persisted JSONL shape exactly. */
+	label?: string;
 }
 
 /** Session metadata entry (e.g., user-defined display name). */
@@ -1111,9 +1112,9 @@ export class SessionManager {
 			summary,
 			firstKeptEntryId,
 			tokensBefore,
-			details,
-			usage,
-			fromHook,
+			...(details !== undefined ? { details } : {}),
+			...(usage !== undefined ? { usage } : {}),
+			...(fromHook !== undefined ? { fromHook } : {}),
 		};
 		this._appendEntry(entry);
 		return entry.id;
@@ -1124,7 +1125,7 @@ export class SessionManager {
 		const entry: CustomEntry = {
 			type: "custom",
 			customType,
-			data,
+			...(data !== undefined ? { data } : {}),
 			id: generateId(this.byId),
 			parentId: this.leafId,
 			timestamp: new Date().toISOString(),
@@ -1180,7 +1181,7 @@ export class SessionManager {
 			customType,
 			content,
 			display,
-			details,
+			...(details !== undefined ? { details } : {}),
 			id: generateId(this.byId),
 			parentId: this.leafId,
 			timestamp: new Date().toISOString(),
@@ -1240,7 +1241,7 @@ export class SessionManager {
 			parentId: this.leafId,
 			timestamp: new Date().toISOString(),
 			targetId,
-			label,
+			...(label !== undefined ? { label } : {}),
 		};
 		this._appendEntry(entry);
 		if (label) {
@@ -1398,9 +1399,9 @@ export class SessionManager {
 			timestamp: new Date().toISOString(),
 			fromId,
 			summary,
-			details,
-			usage,
-			fromHook,
+			...(details !== undefined ? { details } : {}),
+			...(usage !== undefined ? { usage } : {}),
+			...(fromHook !== undefined ? { fromHook } : {}),
 		};
 		this._appendEntry(entry);
 		return entry.id;
@@ -1502,7 +1503,7 @@ export class SessionManager {
 				parentId,
 				timestamp: labelTimestamp,
 				targetId,
-				label,
+				...(label !== undefined ? { label } : {}),
 			};
 			labelEntries.push(labelEntry);
 			parentId = labelEntry.id;
