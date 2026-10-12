@@ -90,9 +90,9 @@ describe("Anthropic forceAdaptiveThinking compat override", () => {
 	});
 
 	it.each([
-		["kimi-for-coding", "medium", "medium"],
-		["k3", "max", "max"],
-		["kimi-for-coding-highspeed", "medium", "medium"],
+		["chat:kimi-for-coding", "medium", "medium"],
+		["chat:k3", "max", "max"],
+		["chat:kimi-for-coding-highspeed", "medium", "medium"],
 	] as const)(
 		"uses adaptive thinking effort without a token budget for Kimi Coding %s",
 		async (modelId, reasoning, effort) => {
