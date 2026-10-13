@@ -18,6 +18,7 @@
 - Fixed extension messages sent with `triggerTurn: false` while the agent is running being inserted between a tool call and its result, which made providers that validate message order reject the replayed history. They are now appended once the turn's tool results are in ([#8537](https://github.com/earendil-works/pi/issues/8537)).
 - Fixed compaction and branch summaries forcing `toolChoice: "none"` ([#8649](https://github.com/earendil-works/pi/issues/8649), [#8638](https://github.com/earendil-works/pi/issues/8638)).
 - Fixed Google Vertex requests failing with `HttpsProxyAgent is not a constructor` when the bundled Node.js runtime uses an HTTP(S) proxy ([#8610](https://github.com/earendil-works/pi/issues/8610)).
+- Fixed session entries keeping undefined-valued optional keys in memory that JSONL persistence drops, so a reopened session compared unequal to the live session. Entry construction now matches the persisted JSON shape exactly (`details`, `usage`, `fromHook`, `data`, `label`).
 
 ## [0.84.3] - 2026-08-24
 

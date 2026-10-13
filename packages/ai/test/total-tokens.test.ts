@@ -378,8 +378,8 @@ describe("totalTokens field", () => {
 	// =========================================================================
 
 	describe.skipIf(!process.env.TOGETHER_API_KEY)("Together AI", () => {
-		it("Kimi-K2.6 - should return totalTokens equal to sum of components", { retry: 3, timeout: 60000 }, async () => {
-			const llm = getModel("together", "moonshotai/Kimi-K2.6");
+		it("Kimi-K3 - should return totalTokens equal to sum of components", { retry: 3, timeout: 60000 }, async () => {
+			const llm = getModel("together", "moonshotai/Kimi-K3");
 
 			console.log(`\nTogether AI / ${llm.id}:`);
 			const { first, second } = await testTotalTokensWithCache(llm, {
@@ -664,7 +664,7 @@ describe("totalTokens field", () => {
 			"kimi-for-coding - should return totalTokens equal to sum of components",
 			{ retry: 3, timeout: 60000 },
 			async () => {
-				const llm = getModel("kimi-coding", "kimi-for-coding");
+				const llm = getModel("kimi-coding", "chat:kimi-for-coding");
 
 				console.log(`\nKimi For Coding / ${llm.id}:`);
 				const { first, second } = await testTotalTokensWithCache(llm, { apiKey: process.env.KIMI_API_KEY });

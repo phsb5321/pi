@@ -298,8 +298,8 @@ describe("Tool Results with Images", () => {
 		});
 	});
 
-	describe.skipIf(!process.env.TOGETHER_API_KEY)("Together AI Provider (Kimi-K2.6)", () => {
-		const llm = getModel("together", "moonshotai/Kimi-K2.6");
+	describe.skipIf(!process.env.TOGETHER_API_KEY)("Together AI Provider (Kimi-K3)", () => {
+		const llm = getModel("together", "moonshotai/Kimi-K3");
 		const options = { reasoningEffort: "high" } satisfies StreamOptionsWithExtras;
 
 		it("should handle tool result with only image", { retry: 3, timeout: 30000 }, async () => {
@@ -431,7 +431,7 @@ describe("Tool Results with Images", () => {
 	});
 
 	describe.skipIf(!process.env.KIMI_API_KEY)("Kimi For Coding Provider (kimi-for-coding)", () => {
-		const llm = getModel("kimi-coding", "kimi-for-coding");
+		const llm = getModel("kimi-coding", "chat:kimi-for-coding");
 
 		it("should handle tool result with only image", { retry: 3, timeout: 30000 }, async () => {
 			await handleToolWithImageResult(llm);

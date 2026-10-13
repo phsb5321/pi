@@ -178,7 +178,7 @@ describe("AI Providers Abort Tests", () => {
 	});
 
 	describe.skipIf(!process.env.TOGETHER_API_KEY)("Together AI Provider Abort", () => {
-		const llm = getModel("together", "moonshotai/Kimi-K2.6");
+		const llm = getModel("together", "moonshotai/Kimi-K3");
 
 		it("should abort mid-stream", { retry: 3 }, async () => {
 			await testAbortSignal(llm, { reasoningEffort: "high" });
@@ -298,7 +298,7 @@ describe("AI Providers Abort Tests", () => {
 	});
 
 	describe.skipIf(!process.env.KIMI_API_KEY)("Kimi For Coding Provider Abort", () => {
-		const llm = getModel("kimi-coding", "kimi-for-coding");
+		const llm = getModel("kimi-coding", "chat:kimi-for-coding");
 
 		it("should abort mid-stream", { retry: 3 }, async () => {
 			await testAbortSignal(llm);

@@ -191,7 +191,7 @@ describe("Tool Call Without Result Tests", () => {
 	});
 
 	describe.skipIf(!process.env.TOGETHER_API_KEY)("Together AI Provider", () => {
-		const model = getModel("together", "moonshotai/Kimi-K2.6");
+		const model = getModel("together", "moonshotai/Kimi-K3");
 
 		it("should filter out tool calls without corresponding tool results", { retry: 3, timeout: 30000 }, async () => {
 			await testToolCallWithoutResult(model, { reasoningEffort: "high" });
@@ -287,7 +287,7 @@ describe("Tool Call Without Result Tests", () => {
 	});
 
 	describe.skipIf(!process.env.KIMI_API_KEY)("Kimi For Coding Provider", () => {
-		const model = getModel("kimi-coding", "kimi-for-coding");
+		const model = getModel("kimi-coding", "chat:kimi-for-coding");
 
 		it("should filter out tool calls without corresponding tool results", { retry: 3, timeout: 30000 }, async () => {
 			await testToolCallWithoutResult(model);

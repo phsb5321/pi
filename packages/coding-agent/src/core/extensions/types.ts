@@ -684,7 +684,11 @@ export type SessionEvent =
 // Agent Events
 // ============================================================================
 
-/** Fired before each LLM call. Can modify messages. */
+/**
+ * Fired before each ordinary agent-loop LLM request. Can modify messages.
+ * Not fired for default standalone compaction/branch-summary requests or direct extension provider calls.
+ * Use session_before_compact/session_before_tree for custom summaries and explicitly filter their outbound content.
+ */
 export interface ContextEvent {
 	type: "context";
 	messages: AgentMessage[];
