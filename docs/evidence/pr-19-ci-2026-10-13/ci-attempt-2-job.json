@@ -1,0 +1,27 @@
+{
+  "id": 115485196701,
+  "run_id": 38301404189,
+  "workflow_name": "CI",
+  "head_branch": "2371-commons-summary",
+  "run_url": "https://api.github.com/repos/phsb5321/pi/actions/runs/38301404189",
+  "run_attempt": 2,
+  "node_id": "CR_kwDOUGWJDM8AAAAa43RBnQ",
+  "head_sha": "7337a1445eab75c12f2268b8c7b5905528d568d5",
+  "url": "https://api.github.com/repos/phsb5321/pi/actions/jobs/115485196701",
+  "html_url": "https://github.com/phsb5321/pi/actions/runs/38301404189/job/115485196701",
+  "status": "completed",
+  "conclusion": "failure",
+  "created_at": "2026-10-13T19:05:31Z",
+  "started_at": "2026-10-13T19:05:31Z",
+  "completed_at": "2026-10-13T19:05:34Z",
+  "name": "build-check-test",
+  "steps": [],
+  "check_run_url": "https://api.github.com/repos/phsb5321/pi/check-runs/115485196701",
+  "labels": [
+    "ubuntu-latest"
+  ],
+  "runner_id": 0,
+  "runner_name": "",
+  "runner_group_id": 0,
+  "runner_group_name": ""
+}

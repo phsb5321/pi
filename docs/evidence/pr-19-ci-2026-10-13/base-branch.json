@@ -1,0 +1,99 @@
+{
+  "name": "main",
+  "commit": {
+    "sha": "4e494929998d6bc4fccf75e0a233f727db4b70ee",
+    "node_id": "C_kwDOUGWJDNoAKDRlNDk0OTI5OTk4ZDZiYzRmY2NmNzVlMGEyMzNmNzI3ZGI0YjcwZWU",
+    "commit": {
+      "author": {
+        "name": "Cristina Poncela Cubeiro",
+        "email": "140309543+cristinaponcela@users.noreply.github.com",
+        "date": "2026-08-27T16:07:54Z"
+      },
+      "committer": {
+        "name": "GitHub",
+        "email": "noreply@github.com",
+        "date": "2026-08-27T16:07:54Z"
+      },
+      "message": "feat(tui): allow disable copy on fullscreen, ctrl + x copies selection (#8731)",
+      "tree": {
+        "sha": "c3474377cbe79047531b9961398eb5aaccf2eaf5",
+        "url": "https://api.github.com/repos/phsb5321/pi/git/trees/c3474377cbe79047531b9961398eb5aaccf2eaf5"
+      },
+      "url": "https://api.github.com/repos/phsb5321/pi/git/commits/4e494929998d6bc4fccf75e0a233f727db4b70ee",
+      "comment_count": 0,
+      "verification": {
+        "verified": true,
+        "reason": "valid",
+        "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqkGDaCRC1aQ7uu5UhlAAAsHkQAD4SYkorVo5bfLNPKs+FpxgJ\n87ZBTOnFAxlJxIW1zzgC1r6dovjNQHWvXFdmtpOKR5iWkhiP83/oXBu28u4m/Ma0\nmewk8e1GZhR8RcikwX6fNxrjEETm9dMDdxJNGtmTXZJq0mbFqVKfBxkwwLanYrKv\nM5OLT5iKZMRqNx/sGMRdsfwLzZu1jmyRmF/yT6z1JojU/IRHzFFzVc2CFE9D5+1h\nl3GMHR3ir9+mmQ8+yDKJKmqUdjssk9lXB7t94W6LldXdVJocWu6pvGtZKv9rFkJR\na0QUuEUMUQvoCbsqFJba+m1WuZ3cd7QTQaVxkSexCCAh+8UJCrebR2w3mxe0+vg4\nVJhX2nwW70y1iVMKn2pxVnC+8Hyiylu9p2w9R9SZ78Ti3UrfIBqLD8XELkaeWhCE\n8OK/y9yxOanigjl0BAWCqmUKpXOuP+bOFGkGxTzKRo2kWamyL0TV7J78X3Slxc0i\n5D3PNcr2mRw2FoazOFx8T9Jeb0iMiFScH9lNn35ozP0xHJmr9OiZT6MUuko8Wf8H\nhzwBJ2zdndE8VXlk17lzufOxVEal805vRQfo5yTKtDAMeSb5h8BhFx585ztl1RX9\niTm9o+nKx4jNcIt5sd6hBlAI1VtGjWaFQ2FUNfNJGinaa3EnhXHyAy596JhLNrsN\njkjevaX1Wt53Vv83J9Za\n=v+8a\n-----END PGP SIGNATURE-----\n",
+        "payload": "tree c3474377cbe79047531b9961398eb5aaccf2eaf5\nparent 1defa151e0c1dac87d38a2d0ac09d67f817b30f9\nauthor Cristina Poncela Cubeiro <140309543+cristinaponcela@users.noreply.github.com> 1787846874 +0200\ncommitter GitHub <noreply@github.com> 1787846874 +0200\n\nfeat(tui): allow disable copy on fullscreen, ctrl + x copies selection (#8731)",
+        "verified_at": "2026-08-27T16:07:55Z"
+      }
+    },
+    "url": "https://api.github.com/repos/phsb5321/pi/commits/4e494929998d6bc4fccf75e0a233f727db4b70ee",
+    "html_url": "https://github.com/phsb5321/pi/commit/4e494929998d6bc4fccf75e0a233f727db4b70ee",
+    "comments_url": "https://api.github.com/repos/phsb5321/pi/commits/4e494929998d6bc4fccf75e0a233f727db4b70ee/comments",
+    "author": {
+      "login": "cristinaponcela",
+      "id": 140309543,
+      "node_id": "U_kgDOCFz0Jw",
+      "avatar_url": "https://avatars.githubusercontent.com/u/140309543?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/cristinaponcela",
+      "html_url": "https://github.com/cristinaponcela",
+      "followers_url": "https://api.github.com/users/cristinaponcela/followers",
+      "following_url": "https://api.github.com/users/cristinaponcela/following{/other_user}",
+      "gists_url": "https://api.github.com/users/cristinaponcela/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/cristinaponcela/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/cristinaponcela/subscriptions",
+      "organizations_url": "https://api.github.com/users/cristinaponcela/orgs",
+      "repos_url": "https://api.github.com/users/cristinaponcela/repos",
+      "events_url": "https://api.github.com/users/cristinaponcela/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/cristinaponcela/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "web-flow",
+      "id": 19864447,
+      "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/web-flow",
+      "html_url": "https://github.com/web-flow",
+      "followers_url": "https://api.github.com/users/web-flow/followers",
+      "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+      "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+      "organizations_url": "https://api.github.com/users/web-flow/orgs",
+      "repos_url": "https://api.github.com/users/web-flow/repos",
+      "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/web-flow/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "1defa151e0c1dac87d38a2d0ac09d67f817b30f9",
+        "url": "https://api.github.com/repos/phsb5321/pi/commits/1defa151e0c1dac87d38a2d0ac09d67f817b30f9",
+        "html_url": "https://github.com/phsb5321/pi/commit/1defa151e0c1dac87d38a2d0ac09d67f817b30f9"
+      }
+    ]
+  },
+  "_links": {
+    "self": "https://api.github.com/repos/phsb5321/pi/branches/main",
+    "html": "https://github.com/phsb5321/pi/tree/main"
+  },
+  "protected": false,
+  "protection": {
+    "enabled": false,
+    "required_status_checks": {
+      "enforcement_level": "off",
+      "contexts": [],
+      "checks": []
+    }
+  },
+  "protection_url": "https://api.github.com/repos/phsb5321/pi/branches/main/protection"
+}

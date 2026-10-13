@@ -1,0 +1,42 @@
+[
+  {
+    "id": 5493023769,
+    "node_id": "PRR_kwDOUGWJDM8AAAABR2jkGQ",
+    "user": {
+      "login": "copilot-pull-request-reviewer[bot]",
+      "id": 175728472,
+      "node_id": "BOT_kgDOCnlnWA",
+      "avatar_url": "https://avatars.githubusercontent.com/in/946600?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D",
+      "html_url": "https://github.com/apps/copilot-pull-request-reviewer",
+      "followers_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/copilot-pull-request-reviewer%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "Copilot was unable to review this pull request because the user who requested the review has reached their quota limit.",
+    "state": "COMMENTED",
+    "html_url": "https://github.com/phsb5321/pi/pull/19#pullrequestreview-5493023769",
+    "pull_request_url": "https://api.github.com/repos/phsb5321/pi/pulls/19",
+    "author_association": "NONE",
+    "_links": {
+      "html": {
+        "href": "https://github.com/phsb5321/pi/pull/19#pullrequestreview-5493023769"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/phsb5321/pi/pulls/19"
+      }
+    },
+    "submitted_at": "2026-10-12T15:43:59Z",
+    "commit_id": "2b54de14eefff137cc409ffc6a23bb77a2c64556"
+  }
+]

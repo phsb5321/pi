@@ -1,0 +1,19 @@
+Command (from packages/coding-agent):
+node "$(git rev-parse --show-toplevel)/node_modules/vitest/dist/cli.js" --maxWorkers=1 --run test/session-manager/persistence-roundtrip.test.ts test/suite/regressions/2371-summary-context-boundary.test.ts test/branch-summarization.test.ts test/extension-source-install-load.test.ts
+
+Captured output from desktop-job-2846072-31552.service, 13/10/2026:
+
+ RUN  v4.1.9 /home/notroot/Documents/Code/pi-upstream-2371-commons-summary/packages/coding-agent
+
+·····················
+
+ Test Files  4 passed (4)
+      Tests  21 passed (21)
+   Start at  16:07:49
+   Duration  9.49s (transform 3.44s, setup 0ms, import 8.05s, tests 529ms, environment 1ms)
+
+Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+Service runtime: 10.227s
+CPU time consumed: 13.166s
+Memory peak: 634.9M (swap: 0B)

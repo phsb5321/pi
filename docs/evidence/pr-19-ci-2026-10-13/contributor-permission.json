@@ -1,0 +1,33 @@
+{
+  "permission": "admin",
+  "user": {
+    "login": "phsb5321",
+    "id": 30302237,
+    "node_id": "MDQ6VXNlcjMwMzAyMjM3",
+    "avatar_url": "https://avatars.githubusercontent.com/u/30302237?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/phsb5321",
+    "html_url": "https://github.com/phsb5321",
+    "followers_url": "https://api.github.com/users/phsb5321/followers",
+    "following_url": "https://api.github.com/users/phsb5321/following{/other_user}",
+    "gists_url": "https://api.github.com/users/phsb5321/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/phsb5321/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/phsb5321/subscriptions",
+    "organizations_url": "https://api.github.com/users/phsb5321/orgs",
+    "repos_url": "https://api.github.com/users/phsb5321/repos",
+    "events_url": "https://api.github.com/users/phsb5321/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/phsb5321/received_events",
+    "type": "User",
+    "user_view_type": "public",
+    "site_admin": false,
+    "permissions": {
+      "admin": true,
+      "maintain": true,
+      "push": true,
+      "triage": true,
+      "pull": true
+    },
+    "role_name": "admin"
+  },
+  "role_name": "admin"
+}
