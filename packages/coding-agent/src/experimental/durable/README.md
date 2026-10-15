@@ -64,3 +64,28 @@ A turn that ends without an answer shows a notice; one recovered after a restart
 made by this process are watched.
 
 Not here: sessions list and resume picker, forks and tree navigation, extensions, prompt templates, images, `/login`.
+
+## Shared-host daemon (EXPERIMENTAL)
+
+`shared-host-daemon.ts` hosts many durable session engines behind one REAL
+unix socket (default `$XDG_RUNTIME_DIR/pi-shared-host/pi-shared-host.sock`;
+the D3 unit passes `--socket %t/pi-shared-host/host.sock` — 0600, dir 0700
+via `RuntimeDirectory` — enforced post-bind; the transport exposes no
+SO_PEERCRED, so the filesystem boundary is the gate). Attach a seat TUI over
+that socket with `pi-attach.ts` (`--socket <path> --session <id|new>
+[--cwd <dir>]`); an absent daemon fails fast with exit 3.
+
+Session layout: `<root>/<session-id>/` (cwd binding) and
+`<root>/<session-id>.resident.json` under `--root`
+(default `~/.pi/agent/shared-host`); the DURABLE STORE ITSELF stays under
+`~/.pi/agent/experimental/durable-sessions/<hash>/<native-id>/` — session
+removal is manual and covers BOTH locations (the daemon never deletes).
+
+Install (systemd user unit, D3):
+
+```
+sed "s|__REPO__|<this-repo-checkout>|" \
+  specs/9990-worktree-consolidation/shared-host-prototype-20261014/fleet/pi-shared-host.service.in \
+  > ~/.config/systemd/user/pi-shared-host.service
+systemctl --user daemon-reload && systemctl --user start pi-shared-host.service
+```
