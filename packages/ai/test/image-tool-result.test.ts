@@ -11,6 +11,7 @@ type StreamOptionsWithExtras = StreamOptions & Record<string, unknown>;
 import { hasAzureOpenAICredentials, resolveAzureDeploymentName } from "./azure-utils.ts";
 import { hasBedrockCredentials } from "./bedrock-utils.ts";
 import { resolveApiKey } from "./oauth.ts";
+import { describeXiaomiMimoFamily } from "./xiaomi-family.ts";
 
 // Resolve OAuth tokens at module level (async, runs before tests)
 const oauthTokens = await Promise.all([
@@ -299,7 +300,7 @@ describe("Tool Results with Images", () => {
 	});
 
 	describe.skipIf(!process.env.TOGETHER_API_KEY)("Together AI Provider (Kimi-K2.6)", () => {
-		const llm = getModel("together", "moonshotai/Kimi-K2.6");
+		const llm = getModel("together", "moonshotai/Kimi-K3");
 		const options = { reasoningEffort: "high" } satisfies StreamOptionsWithExtras;
 
 		it("should handle tool result with only image", { retry: 3, timeout: 30000 }, async () => {
@@ -312,7 +313,7 @@ describe("Tool Results with Images", () => {
 	});
 
 	describe.skipIf(!process.env.BASETEN_API_KEY)("Baseten Provider (Kimi-K2.6)", () => {
-		const llm = getModel("baseten", "moonshotai/Kimi-K2.6");
+		const llm = getModel("baseten", "moonshotai/Kimi-K3");
 		const options = { reasoningEffort: "high" } satisfies StreamOptionsWithExtras;
 
 		it("should handle tool result with only image", { retry: 3, timeout: 30000 }, async () => {
@@ -324,75 +325,21 @@ describe("Tool Results with Images", () => {
 		});
 	});
 
-	describe.skipIf(!process.env.XIAOMI_API_KEY)("Xiaomi MiMo (API billing) Provider (mimo-v2.5-pro)", () => {
-		const llm = getModel("xiaomi", "mimo-v2.5-pro");
-
+	describeXiaomiMimoFamily("image tool results", (llm) => {
 		it("should handle tool result with only image", { retry: 3, timeout: 30000 }, async () => {
 			await handleToolWithImageResult(llm);
 		});
 
-		// FIXME(xiaomi): when a tool_result contains both a descriptive text block
-		// and an image block, MiMo locks onto the text and ignores the image (it
-		// reports the text-derived diameter but never mentions the image's color).
-		// The image-only case above proves the image reaches the model, and the
-		// text-only path obviously works, so this is a multimodal-fusion quality
-		// issue in the model, not a transport bug. Re-enable when upstream model
+		// Xiaomi multimodal-fusion limitation (kept from the original suite):
+		// when a tool_result contains both a descriptive text block and an image
+		// block, MiMo locks onto the text and ignores the image. The image-only
+		// case above proves the image reaches the model, so this is a model
+		// quality limitation, not a transport bug. Re-enable when upstream model
 		// quality improves.
 		it.skip("should handle tool result with text and image", { retry: 3, timeout: 30000 }, async () => {
 			await handleToolWithTextAndImageResult(llm);
 		});
 	});
-
-	describe.skipIf(!process.env.XIAOMI_TOKEN_PLAN_CN_API_KEY)(
-		"Xiaomi MiMo Token Plan (CN) Provider (mimo-v2.5-pro)",
-		() => {
-			const llm = getModel("xiaomi-token-plan-cn", "mimo-v2.5-pro");
-
-			it("should handle tool result with only image", { retry: 3, timeout: 30000 }, async () => {
-				await handleToolWithImageResult(llm);
-			});
-
-			// FIXME(xiaomi): see the API-billing block above — same multimodal-fusion
-			// limitation applies to Token Plan endpoints (same model behind both).
-			it.skip("should handle tool result with text and image", { retry: 3, timeout: 30000 }, async () => {
-				await handleToolWithTextAndImageResult(llm);
-			});
-		},
-	);
-
-	describe.skipIf(!process.env.XIAOMI_TOKEN_PLAN_AMS_API_KEY)(
-		"Xiaomi MiMo Token Plan (AMS) Provider (mimo-v2.5-pro)",
-		() => {
-			const llm = getModel("xiaomi-token-plan-ams", "mimo-v2.5-pro");
-
-			it("should handle tool result with only image", { retry: 3, timeout: 30000 }, async () => {
-				await handleToolWithImageResult(llm);
-			});
-
-			// FIXME(xiaomi): see the API-billing block above — same multimodal-fusion
-			// limitation applies to Token Plan endpoints (same model behind both).
-			it.skip("should handle tool result with text and image", { retry: 3, timeout: 30000 }, async () => {
-				await handleToolWithTextAndImageResult(llm);
-			});
-		},
-	);
-
-	describe.skipIf(!process.env.XIAOMI_TOKEN_PLAN_SGP_API_KEY)(
-		"Xiaomi MiMo Token Plan (SGP) Provider (mimo-v2.5-pro)",
-		() => {
-			const llm = getModel("xiaomi-token-plan-sgp", "mimo-v2.5-pro");
-
-			it("should handle tool result with only image", { retry: 3, timeout: 30000 }, async () => {
-				await handleToolWithImageResult(llm);
-			});
-
-			// FIXME(xiaomi): see the API-billing block above — same multimodal-fusion
-			// limitation applies to Token Plan endpoints (same model behind both).
-			it.skip("should handle tool result with text and image", { retry: 3, timeout: 30000 }, async () => {
-				await handleToolWithTextAndImageResult(llm);
-			});
-		},
-	);
 
 	describe.skipIf(!process.env.QWEN_TOKEN_PLAN_API_KEY)("Qwen Token Plan Provider (qwen3.7-max)", () => {
 		const llm = getModel("qwen-token-plan", "qwen3.7-max");
@@ -420,18 +367,6 @@ describe("Tool Results with Images", () => {
 
 	describe.skipIf(!process.env.QWEN_TOKEN_PLAN_CN_API_KEY)("Qwen Token Plan (CN) Provider (qwen3.7-max)", () => {
 		const llm = getModel("qwen-token-plan-cn", "qwen3.7-max");
-
-		it("should handle tool result with only image", { retry: 3, timeout: 30000 }, async () => {
-			await handleToolWithImageResult(llm);
-		});
-
-		it("should handle tool result with text and image", { retry: 3, timeout: 30000 }, async () => {
-			await handleToolWithTextAndImageResult(llm);
-		});
-	});
-
-	describe.skipIf(!process.env.KIMI_API_KEY)("Kimi For Coding Provider (kimi-for-coding)", () => {
-		const llm = getModel("kimi-coding", "kimi-for-coding");
 
 		it("should handle tool result with only image", { retry: 3, timeout: 30000 }, async () => {
 			await handleToolWithImageResult(llm);
