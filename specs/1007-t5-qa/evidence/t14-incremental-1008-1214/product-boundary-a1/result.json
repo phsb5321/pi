@@ -1,0 +1,37 @@
+{
+  "status": "BLOCKED",
+  "ACED": false,
+  "commandsLaunched": 0,
+  "stages": {
+    "compiled": {
+      "status": "NOT_EXECUTED"
+    },
+    "api-history": {
+      "status": "NOT_EXECUTED"
+    },
+    "biome": {
+      "status": "NOT_EXECUTED"
+    },
+    "types": {
+      "status": "NOT_EXECUTED"
+    },
+    "coverage": {
+      "status": "NOT_EXECUTED"
+    },
+    "aislop": {
+      "status": "NOT_EXECUTED"
+    },
+    "jscpd": {
+      "status": "NOT_EXECUTED"
+    },
+    "baseline": {
+      "status": "NOT_EXECUTED"
+    },
+    "sonar": {
+      "status": "NOT_EXECUTED"
+    }
+  },
+  "manifestSha256": "73f6f59f6aefaa6e50c5b52d09ee272d816e1071c5b9b1fdf8738010e86b0dd2",
+  "blocker": "Unbound source/artifact tuple",
+  "exit": 78
+}

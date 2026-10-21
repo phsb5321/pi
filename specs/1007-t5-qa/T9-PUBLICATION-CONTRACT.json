@@ -1,0 +1,60 @@
+{
+  "schema": "memory-sound-qa-publication-binding/1",
+  "tuple": "T9-standalone-native-api-8e3a3d9b738a",
+  "publication": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-standalone-native-api/acceptance.json",
+  "sourceRoot": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-standalone-native-api/execution-source",
+  "sourceManifest": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-standalone-native-api/evidence/pre-event-source-manifest.json",
+    "sha256": "8e3a3d9b738a5fedfc5eb8e47fbbb96f7247985c4ffe7ee1e3d35a526b972091"
+  },
+  "inputManifest": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-standalone-native-api/evidence/pre-event-input-manifest.json",
+    "sha256": "b9f966fed665762044bba33c8991d81c1cf1b1855542c1355689fc3d60a5ec0d"
+  },
+  "originalBindings": {
+    "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-standalone-native-api/compiler-handoff.pre-event.json": "f1bef86c4e93a6a8376cba4aca58a70e7c1c20c85bfd648f1ef964b51e53c0fe",
+    "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-standalone-native-api/compiler-controls-qualified.json": "75bbb91cc193ef16b7205cf3b7ff990a1607c53713dfa0786611373ab9279cc9"
+  },
+  "reusedControlHashes": {
+    "artifact-entry.py": "1e6dab4b961997246310531f893e2007007e380ea12478aae246e731790ff8f3",
+    "qa-loader.mjs": "c940dc4773f3f8e9e1ded06e3695865645b56b92accd0922736fc4263404a2c2",
+    "test-artifact-gate.py": "5d982575347ecd2833442f54e97fa075ff85237aaf458940129d4ec520b7a50d",
+    "normalize-t6-publication.py": "b05e5d229b599c1847440d63eaee5e6168830678a9d35aae0739972a6799717f",
+    "evidence/fast-feedback-1550/receipt.json": "e8bc54a0d4d8c110abcbe46be504949f89575081eb86f30bee4abbfd4c016504",
+    "evidence/fast-feedback-1550/sonar-authority-action.json": "75bebdf749722a5ab2bda56a83e9432edd187d17ebc4910eadad293e5ad3a0ba"
+  },
+  "requiredProducerClaims": ["full_root_check", "ordinary_offline_build", "optin_build", "packaged_compiled_host", "compiled_production_main", "native_bridge_assets"],
+  "requiredProducerPhases": ["check", "source_regressions", "build", "optin", "compiled_acceptance"],
+  "requiredCompiledExports": ["createSharedTtyHost", "main", "AuthStorage", "ModelRuntime", "openDurable", "runDurableTui"],
+  "scopedCallbacksAndControls": {
+    "declaredOnlyUntilExecuted": true,
+    "sameCompiledBundleRoles": ["msqa/host", "msqa/auth", "msqa/models"],
+    "factoryInputs": ["hydrate.modelRuntime", "model", "onSurface", "hydrate.onState"],
+    "standaloneInputs": ["openDurable options.modelRuntime", "runDurableTui real native view/controller/settings/Terminal"],
+    "existingBattery": "focused-rich-pty.py / rich-host.mjs / emitted native attachment",
+    "beforeMemory": ["six actual imported function exports", "canonical compiled ModelRuntime identity", "offline model injection A/B", "seed850 real SQLite close/clone/readback", "same actual request history A/B", "rich native PTY/termios", "normal teardown/no survivors", "actual loaded closure"],
+    "notSatisfiedByExportListAlone": true,
+    "loadedProductTypeScriptOrSourceResolverAllowed": false,
+    "fullExtensionParity": "NOT_ACCEPTED_BY_REFUSAL_OR_SCOPED_COMPILED_BATTERY"
+  },
+  "memoryHandoff": {
+    "owner": "ms-memory/pM",
+    "sameDeclaredBundle": "@earendil-works/pi-coding-agent/shared-tty-host",
+    "standaloneAEntry": ["openDurable", "runDurableTui"],
+    "sharedBEntry": "createSharedTtyHost",
+    "status": "source exports declared; actual emitted imports/injection/seed/history/PTY controls required",
+    "noPrivateSetupExportDemand": true,
+    "noDuplicateCompilerOrSourceFallback": true
+  },
+  "sonarAccess": {
+    "proof": "/home/notroot/Documents/Code/pi-upstream-1006-goal-unblock/specs/1007-unblock-1744/sonar-setup-scope-shape-repair.json",
+    "proofSha256": "0d4ad9021583a9155f32cbc2cb70c48177575d91dc7849752e3cac19320e2a23",
+    "projectTokenStatus": "CLOSED_VERIFIED_PRIVATE_PROJECT_EXACT_PROJECT_ANALYSIS_TOKEN",
+    "baselineAnalysisId": null
+  },
+  "normativeExtensionGate": "Ordinary command/custom-tool/tool_call guard execution required; containment refusal does not finish parity",
+  "routineAuthority": "Pedro17:44 solve-blocks; no per-step reapproval for normally admitted routine acceptance",
+  "originalWaveCompilerEventsUsed": 1,
+  "originalWaveCompilerEventLimit": 2,
+  "heavyOrder": ["producer", "compiled QA", "quality", "memory"]
+}

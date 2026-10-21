@@ -1,0 +1,43 @@
+{
+  "buildExit": 0,
+  "checkExit": 0,
+  "compiledCatalogues": 43,
+  "compilerInvocations": 0,
+  "distBytes": 29414213,
+  "distEntries": 2791,
+  "distManifestSha256": "494427dfd9cde2427d7e95ee9a2aabb9e5fbf22bcf1ccce95a6813d098a89577",
+  "distMerkleSha256": "7b7c37a576410c606aaa03790257ff5b81e16bb2624a68f04d9656a2bd328b88",
+  "identity": {
+    "codeEntriesUnchangedFromT4": 1980,
+    "declaredLinks": 273,
+    "inputSha256": "7e12e2b47b2fa1b562b9b18f0b76ce8599fdad7b1f74533a55845deca55cd319",
+    "negativeWrongCatalogueHashRejected": true,
+    "physicalCatalogueEntries": 43,
+    "result": "EXACT_T5_SOURCE_INPUT_PASS_NOT_COMPILED_ACCEPTANCE",
+    "root": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-catalog-materialize/execution-source",
+    "sourceCompilerInvocations": 0,
+    "sourceSha256": "4d9b25183675cbdee2f5da21501623a41a725c69b975a94c14688a041917316b",
+    "totalEntries": 2023
+  },
+  "invocationID": "79c441795caa49139dfd1eb579d8444b",
+  "logSha256": {
+    "build": "c4a2b4ed163d0f2eba4f6f3500dc0ce5fdd88afab7611160c776a3f245e4a2f2",
+    "check": "fc98276d246d30b91549611fcb52f09fc92b059a2247f7f099dd861698f6288a"
+  },
+  "missingCompiledModules": [
+    "packages/coding-agent/dist/experimental/durable/shared-tty-host.js"
+  ],
+  "missingDistRowRejected": true,
+  "productHostLaunched": false,
+  "publication": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-catalog-materialize/evidence/execution-2026-10-07-1021/acceptance.json",
+  "publicationSha256": "c91aacc23f05b73d1fad5e0c3815f313b65dca6d780393eb2f1de1cf9d519551",
+  "requiredCompiledModules": {
+    "msqa/ai": "packages/ai/dist/index.js",
+    "msqa/auth": "packages/coding-agent/dist/core/auth-storage.js",
+    "msqa/host": "packages/coding-agent/dist/experimental/durable/shared-tty-host.js",
+    "msqa/models": "packages/coding-agent/dist/core/model-runtime.js",
+    "msqa/theme": "packages/coding-agent/dist/modes/interactive/theme/theme.js",
+    "msqa/tui": "packages/tui/dist/index.js"
+  },
+  "status": "BLOCKED_COMPILED_RICH_HOST_NOT_EMITTED"
+}

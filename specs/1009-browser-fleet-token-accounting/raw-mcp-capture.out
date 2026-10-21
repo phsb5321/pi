@@ -1,0 +1,47 @@
+{
+  "server": "browser-fleet",
+  "initialize_result_bytes": 125,
+  "tools_list_count": 6,
+  "tools": [
+    {
+      "name": "browser_identities",
+      "description_bytes": 109,
+      "inputSchema_bytes": 36
+    },
+    {
+      "name": "browser_status",
+      "description_bytes": 92,
+      "inputSchema_bytes": 92
+    },
+    {
+      "name": "browser_ensure",
+      "description_bytes": 98,
+      "inputSchema_bytes": 328
+    },
+    {
+      "name": "browser_attach",
+      "description_bytes": 116,
+      "inputSchema_bytes": 92
+    },
+    {
+      "name": "browser_run",
+      "description_bytes": 149,
+      "inputSchema_bytes": 478
+    },
+    {
+      "name": "browser_stop",
+      "description_bytes": 86,
+      "inputSchema_bytes": 172
+    }
+  ],
+  "sum_inputSchema_bytes": 1198,
+  "sum_description_bytes": 650,
+  "browser_identities_result_bytes": 14481,
+  "browser_identities_keys": [
+    "content",
+    "isError"
+  ],
+  "raw_payload_file": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1009-browser-fleet-token-accounting/raw-payload.jsonl",
+  "raw_payload_bytes": 16956,
+  "raw_line_count": 3
+}

@@ -1,0 +1,1433 @@
+2e16fb145685aac615dcd129518277cf5e2515f3 blob 10147
+#!/usr/bin/env node
+
+import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { isBuiltin } from "node:module";
+import { dirname, join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { build } from "esbuild";
+
+const scriptDir = dirname(fileURLToPath(import.meta.url));
+const repoRoot = resolve(scriptDir, "..");
+const codingAgentDir = join(repoRoot, "packages", "coding-agent");
+const aiDistDir = join(repoRoot, "packages", "ai", "dist");
+const codingAgentDistDir = join(codingAgentDir, "dist");
+const bundleDir = join(codingAgentDistDir, "bundle");
+const banner = {
+	js: 'import { createRequire as __piCreateRequire } from "node:module"; const require = __piCreateRequire(import.meta.url);',
+};
+const allowedExternalPackages = new Set([
+	"@earendil-works/chord",
+	"@earendil-works/chord/bundler",
+	"@earendil-works/chord/context",
+	"@earendil-works/chord/delta",
+	"@earendil-works/chord/node",
+	"@silvia-odwyer/photon-node",
+	"jiti",
+	// Optional native accelerators. Their callers fall back to JavaScript when absent.
+	"bufferutil",
+	"utf-8-validate",
+	// Optional native proxy authentication. Its caller reports an install hint when absent.
+	"kerberos",
+	// Optional debug output coloring.
+	"supports-color",
+]);
+
+const lazyJitiPlugin = {
+	name: "lazy-jiti-transform",
+	setup(build) {
+		build.onResolve({ filter: /^jiti\/static$/ }, () => ({
+			namespace: "lazy-jiti",
+			path: "jiti/static",
+		}));
+		build.onLoad({ filter: /.*/, namespace: "lazy-jiti" }, () => ({
+			contents: `
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+let createJitiImpl;
+
+export function createJiti(...args) {
+	createJitiImpl ??= require("jiti").createJiti;
+	return createJitiImpl(...args);
+}
+`,
+			loader: "js",
+		}));
+	},
+};
+
+const httpsProxyAgentNamedExportPlugin = {
+	name: "https-proxy-agent-named-export",
+	setup(build) {
+		build.onResolve({ filter: /^https-proxy-agent$/ }, (args) => {
+			if (args.kind !== "dynamic-import") return undefined;
+			return {
+				namespace: "https-proxy-agent-named-export",
+				path: args.path,
+			};
+		});
+		build.onLoad(
+			{
+				filter: /^https-proxy-agent$/,
+				namespace: "https-proxy-agent-named-export",
+			},
+			() => ({
+				contents: 'export { HttpsProxyAgent } from "https-proxy-agent";',
+				loader: "js",
+				resolveDir: repoRoot,
+			}),
+		);
+	},
+};
+
+function commonBuildOptions() {
+	return {
+		absWorkingDir: repoRoot,
+		banner,
+		bundle: true,
+		define: { PI_BUNDLED_NODE: "true" },
+		external: ["@earendil-works/chord", "@silvia-odwyer/photon-node"],
+		format: "esm",
+		legalComments: "none",
+		logLevel: "warning",
+		metafile: true,
+		minifySyntax: true,
+		minifyWhitespace: true,
+		platform: "node",
+		// The source uses jiti/static so Bun embeds its Babel transform. The Node
+		// package replaces it with a synchronous lazy require so jiti loads only
+		// when importing an extension; Babel remains deferred until a cache miss
+		// needs transformation.
+		plugins: [lazyJitiPlugin, httpsProxyAgentNamedExportPlugin],
+		sourcemap: false,
+		target: "node22.19",
+		// Do not apply the monorepo's source-oriented path aliases while bundling
+		// compiled output. Release builds must resolve the same package entries as
+		// an installed npm package.
+		tsconfigRaw: { compilerOptions: {} },
+	};
+}
+
+function validateExternalImports(metafiles) {
+	const unexpected = new Set();
+	for (const metafile of metafiles) {
+		for (const input of Object.values(metafile.inputs)) {
+			for (const imported of input.imports) {
+				if (!imported.external || isBuiltin(imported.path) || allowedExternalPackages.has(imported.path)) {
+					continue;
+				}
+				unexpected.add(imported.path);
+			}
+		}
+	}
+	if (unexpected.size > 0) {
+		throw new Error(`Bundle left unexpected external imports: ${Array.from(unexpected).sort().join(", ")}`);
+	}
+}
+
+function findContainingOutput(metafile, inputSuffix) {
+	const normalizedSuffix = inputSuffix.replaceAll("\\", "/");
+	for (const [outputPath, output] of Object.entries(metafile.outputs)) {
+		if (Object.keys(output.inputs).some((inputPath) => inputPath.replaceAll("\\", "/").endsWith(normalizedSuffix))) {
+			return resolve(repoRoot, outputPath);
+		}
+	}
+	throw new Error(`Could not locate bundled output containing ${inputSuffix}`);
+}
+
+function outputBytes(metafiles) {
+	return metafiles.reduce(
+		(total, metafile) => total + Object.values(metafile.outputs).reduce((subtotal, output) => subtotal + output.bytes, 0),
+		0,
+	);
+}
+
+for (const entry of [
+	join(codingAgentDistDir, "cli.js"),
+	join(codingAgentDistDir, "index.js"),
+	join(codingAgentDistDir, "rpc-entry.js"),
+	join(codingAgentDistDir, "utils", "image-resize-worker.js"),
+	join(codingAgentDistDir, "extensions", "codemode", "worker.js"),
+	join(aiDistDir, "api", "bedrock-converse-stream.js"),
+	join(aiDistDir, "auth", "oauth", "anthropic.js"),
+]) {
+	if (!existsSync(entry)) {
+		throw new Error(`Bundle input is missing: ${relative(repoRoot, entry)}. Build the workspace packages first.`);
+	}
+}
+
+rmSync(bundleDir, { force: true, recursive: true });
+mkdirSync(bundleDir, { recursive: true });
+
+const mainResult = await build({
+	...commonBuildOptions(),
+	entryNames: "[name]",
+	entryPoints: {
+		"cli-runtime": join(codingAgentDistDir, "cli.js"),
+		index: join(codingAgentDistDir, "index.js"),
+		"rpc-entry": join(codingAgentDistDir, "rpc-entry.js"),
+	},
+	outdir: bundleDir,
+	chunkNames: "chunks/[name]-[hash]",
+	splitting: true,
+});
+
+const bedrockLoaderOutput = findContainingOutput(mainResult.metafile, "packages/ai/dist/api/bedrock-converse-stream.lazy.js");
+const oauthLoaderOutput = findContainingOutput(mainResult.metafile, "packages/ai/dist/auth/oauth/load.js");
+const imageResizeOutput = findContainingOutput(mainResult.metafile, "packages/coding-agent/dist/utils/image-resize.js");
+const configOutput = findContainingOutput(mainResult.metafile, "packages/coding-agent/dist/config.js");
+if (dirname(bedrockLoaderOutput) !== dirname(oauthLoaderOutput)) {
+	throw new Error("Bedrock and OAuth lazy loaders were emitted into different directories");
+}
+
+// These implementations are reached through variable-specifier imports or a
+// worker URL, so the main bundle cannot follow them. Emit one self-contained
+// file per implementation beside the code that resolves it.
+const lazyEntryPoints = {
+	anthropic: join(aiDistDir, "auth", "oauth", "anthropic.js"),
+	"bedrock-converse-stream": join(aiDistDir, "api", "bedrock-converse-stream.js"),
+	"github-copilot": join(aiDistDir, "auth", "oauth", "github-copilot.js"),
+	"image-resize-worker": join(codingAgentDistDir, "utils", "image-resize-worker.js"),
+	"kimi-coding": join(aiDistDir, "auth", "oauth", "kimi-coding.js"),
+	meta: join(aiDistDir, "auth", "oauth", "meta.js"),
+	"openai-chatgpt": join(aiDistDir, "auth", "oauth", "openai-chatgpt.js"),
+	"openai-codex": join(aiDistDir, "auth", "oauth", "openai-codex.js"),
+	openrouter: join(aiDistDir, "auth", "oauth", "openrouter.js"),
+	radius: join(aiDistDir, "auth", "oauth", "radius.js"),
+	xai: join(aiDistDir, "auth", "oauth", "xai.js"),
+};
+
+// Every OAuth flow loaded through importOAuthModule() must have a lazy entry,
+// otherwise the flow fails at runtime with a missing module error.
+const oauthLoadSource = readFileSync(join(repoRoot, "packages", "ai", "src", "auth", "oauth", "load.ts"), "utf8");
+for (const match of oauthLoadSource.matchAll(/importOAuthModule\("\.\/([^"]+)\.ts"\)/g)) {
+	if (!(match[1] in lazyEntryPoints)) {
+		throw new Error(`OAuth flow "${match[1]}" is lazily imported but has no lazy bundle entry`);
+	}
+}
+
+const lazyResult = await build({
+	...commonBuildOptions(),
+	entryNames: "[name]",
+	entryPoints: lazyEntryPoints,
+	outdir: dirname(bedrockLoaderOutput),
+	splitting: false,
+});
+
+// getCodemodeWorkerSpecifier() in config.ts spawns the codemode worker from an in-memory data: URL
+// so codemode survives an update that replaces or deletes the install (#10439). A data: URL module
+// has no file location, so the worker must not use the createRequire(import.meta.url) banner,
+// require(), or imports other than Node builtins.
+const codemodeWorkerResult = await build({
+	...commonBuildOptions(),
+	banner: undefined,
+	entryNames: "[name]",
+	entryPoints: { "codemode-worker": join(codingAgentDistDir, "extensions", "codemode", "worker.js") },
+	outdir: dirname(bedrockLoaderOutput),
+	splitting: false,
+});
+for (const [outputPath, output] of Object.entries(codemodeWorkerResult.metafile.outputs)) {
+	const invalid = output.imports.filter((imported) => imported.kind !== "import-statement" || !isBuiltin(imported.path));
+	if (invalid.length > 0) {
+		throw new Error(
+			`Codemode worker must only import Node builtins: ${invalid.map((imported) => imported.path).join(", ")}`,
+		);
+	}
+	if (readFileSync(resolve(repoRoot, outputPath), "utf8").includes("import.meta")) {
+		throw new Error("Codemode worker must not use import.meta");
+	}
+}
+
+const imageResizeWorkerOutput = resolve(dirname(bedrockLoaderOutput), "image-resize-worker.js");
+if (dirname(imageResizeOutput) !== dirname(imageResizeWorkerOutput)) {
+	throw new Error("Image resize implementation and worker were emitted into different directories");
+}
+// getCodemodeWorkerUrl() in config.ts resolves the worker next to its own chunk.
+if (dirname(configOutput) !== dirname(bedrockLoaderOutput)) {
+	throw new Error("config.ts and the codemode worker were emitted into different directories");
+}
+
+const metafiles = [mainResult.metafile, lazyResult.metafile, codemodeWorkerResult.metafile];
+validateExternalImports(metafiles);
+const cliLauncher = `#!/usr/bin/env node
+import { createRequire, enableCompileCache } from "node:module";
+
+enableCompileCache();
+createRequire(import.meta.url)("./cli-runtime.js");
+`;
+writeFileSync(join(bundleDir, "cli.js"), cliLauncher);
+chmodSync(join(bundleDir, "cli.js"), 0o755);
+chmodSync(join(bundleDir, "rpc-entry.js"), 0o755);
+
+const files = new Set(metafiles.flatMap((metafile) => Object.keys(metafile.outputs))).size + 1;
+const mib = (outputBytes(metafiles) + cliLauncher.length) / (1024 * 1024);
+console.log(`Built ${relative(repoRoot, bundleDir)} (${files} files, ${mib.toFixed(1)} MiB)`);
+
+4c84ff062564ddcf75e52c92376888746aaf780f blob 21484
+import { type Context, copyJson, type JsonValue } from "@earendil-works/chord";
+import { awaitWithContext } from "@earendil-works/chord/context";
+import { overlap } from "@earendil-works/chord/delta";
+import type { ImageContent, TextContent, ToolCall, ToolResultMessage } from "@earendil-works/pi-ai";
+import { validateToolArguments } from "@earendil-works/pi-ai/utils/validation";
+import { AssistantEntry, ToolResultEntry } from "../entries.ts";
+import { defineTask } from "../tasks.ts";
+import { DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES, utf8ByteLength } from "../truncate.ts";
+import type {
+	ConversationId,
+	EntryId,
+	JsonObject,
+	Task,
+	TaskId,
+	TaskOptions,
+	TaskRuntime,
+	Tx,
+	TypedEntry,
+} from "../types.ts";
+import { assignJson } from "./json.ts";
+import { clearProgress, finishSlot, LiveDoc, type ToolSlot, toolSlot } from "./live.ts";
+import { boundOutput, OutputBuffer, type OutputLimits, PROGRESS_BYTES_PER_SECOND, Progress } from "./output.ts";
+import type {
+	ToolControl,
+	ToolDiagnostic,
+	ToolExecutionApi,
+	ToolExecutionResult,
+	ToolHooks,
+	ToolRegistration,
+} from "./types.ts";
+import { recordUsage } from "./usage.ts";
+
+export type ToolTaskInput = { assistant: EntryId; callId: string };
+
+export type ToolTaskCheckpoint =
+	| { phase: "call" }
+	/** Durable intent: the final arguments and the replay policy recorded before execution. */
+	| { phase: "execute"; arguments: JsonObject; replay: "safe" | "unsafe" };
+
+export type ToolTaskResult = { entryId: EntryId; control?: ToolControl };
+
+type Runtime = TaskRuntime<ToolTaskInput, ToolTaskCheckpoint, ToolTaskResult, ToolHooks>;
+type Content = (TextContent | ImageContent)[];
+
+/**
+ * Built-in tool task: resolves the called tool among its phase agent's tools, validates, runs `beforeTool`, records intent,
+ * executes, runs `afterTool`, and appends the result, all in one `call` handler so nothing separates resolution from
+ * settlement. `execute` is reached only by recovery and applies the replay rule.
+ */
+export const ToolTask = defineTask<ToolTaskInput, ToolTaskCheckpoint, ToolTaskResult, ToolHooks>({
+	name: "pi.tool",
+	version: 1,
+	initial: () => ({ phase: "call" }),
+	phases: {
+		call: async (task, runtime, context) => {
+			const call = await readCall(runtime, task.input, context);
+			const tool = (await runtime.agent(context)).tools.find((each) => each.name === call.name);
+			if (tool === undefined) {
+				const error = harnessError("tool_unavailable", `Tool ${call.name} is not available`);
+				return settle(runtime, call, COMPLETED, () => error, context);
+			}
+			const prepared = prepare(tool, call.arguments as JsonObject);
+			const checked = "error" in prepared ? prepared : validate(tool, call, prepared.args);
+			if ("error" in checked) return settle(runtime, call, COMPLETED, () => invalid(checked.error), context);
+			let args = checked.args;
+			let block: string | undefined;
+			await runtime.hooks.each("beforeTool", async (hook) => {
+				if (block !== undefined) return;
+				try {
+					const decision = await hook({ ...call, arguments: args }, runtime, context);
+					if (decision?.block !== undefined) block = decision.block;
+					else if (decision?.arguments !== undefined) args = decision.arguments;
+				} catch (error) {
+					if (runtime.signal.aborted) throw error;
+					block = errorText(error);
+				}
+			});
+			if (block !== undefined) {
+				const blocked = harnessError("blocked", `Tool call blocked: ${block}`);
+				return settle(runtime, call, COMPLETED, () => blocked, context);
+			}
+			const validated = validate(tool, call, args);
+			if ("error" in validated) return settle(runtime, call, COMPLETED, () => invalid(validated.error), context);
+			const final = validated.args;
+			await runtime.commit(async (tx) => {
+				const slot = toolSlot(await tx.doc(LiveDoc, runtime.conversationId), runtime.taskId);
+				if (slot !== undefined) slot.status = "running";
+				const intent = { phase: "execute", arguments: final, replay: tool.replay ?? "unsafe" } as const;
+				return { status: "running", checkpoint: intent };
+			}, context);
+			await run(runtime, call, tool, final, context);
+		},
+		/** Recovery after intent: rerun only when the stored and the current policy both say `safe`. */
+		execute: async (task, runtime, context) => {
+			const { arguments: args, replay } = task.state.checkpoint;
+			const call = await readCall(runtime, task.input, context);
+			const tool = (await runtime.agent(context)).tools.find((each) => each.name === call.name);
+			if (replay === "safe" && tool?.replay === "safe") {
+				// The rerun reports from scratch; clear what the interrupted attempt published.
+				await runtime.commit(async (tx) => {
+					const slot = toolSlot(await tx.doc(LiveDoc, runtime.conversationId), runtime.taskId);
+					if (slot !== undefined) clearProgress(slot);
+					return undefined;
+				}, context);
+				return run(runtime, call, tool, args, context);
+			}
+			const message = `Tool ${call.name} was interrupted and may have partially run`;
+			// `failed` records cancellation intent, so the call's owned conversations, left unsupervised, are aborted.
+			const ending = { status: "failed", message } as const;
+			await settle(runtime, call, ending, (slot) => fromSlot(slot, "interrupted", message), context);
+		},
+	},
+	abort: async (task, runtime, context) => {
+		const call = await readCall(runtime, task.input, context);
+		const message = `Tool ${call.name} was aborted`;
+		await settle(runtime, call, { status: "aborted" }, (slot) => fromSlot(slot, "aborted", message), context);
+	},
+});
+
+/** The tool call `callId` of the assistant entry. */
+async function readCall(runtime: Runtime, input: ToolTaskInput, context: Context): Promise<ToolCall> {
+	const entry = await runtime.entry(AssistantEntry, input.assistant, context);
+	const message = entry?.model?.[0];
+	const call =
+		message?.role === "assistant"
+			? message.content.find(
+					(content): content is ToolCall => content.type === "toolCall" && content.id === input.callId,
+				)
+			: undefined;
+	if (call === undefined) throw new Error(`Entry ${input.assistant} has no tool call ${input.callId}`);
+	return call;
+}
+
+/** Arguments, or why they are invalid. */
+type Checked = { readonly args: JsonObject } | { readonly error: string };
+
+/** The call's arguments as repaired by the tool; a throwing repair makes them invalid. */
+function prepare(tool: ToolRegistration, args: JsonObject): Checked {
+	if (tool.prepareArguments === undefined) return { args };
+	try {
+		return { args: tool.prepareArguments(args) as JsonObject };
+	} catch (error) {
+		return { error: errorText(error) };
+	}
+}
+
+/** Arguments validated and coerced against the implementation's schema. */
+function validate(tool: ToolRegistration, call: ToolCall, args: JsonObject): Checked {
+	try {
+		return { args: validateToolArguments(tool, { ...call, arguments: args }) as JsonObject };
+	} catch (error) {
+		return { error: errorText(error) };
+	}
+}
+
+function invalid(message: string): ToolExecutionResult {
+	return harnessError("invalid_arguments", message);
+}
+
+/** What a running tool reported through its api: output, the last details, and diagnostics. */
+type Reported = {
+	readonly output: OutputBuffer;
+	readonly limits: OutputLimits;
+	readonly diagnostics: ToolDiagnostic[];
+	details: JsonValue | undefined;
+};
+
+/** Execute with the resolved implementation, then settle its result. */
+async function run(
+	runtime: Runtime,
+	call: ToolCall,
+	tool: ToolRegistration,
+	args: JsonObject,
+	context: Context,
+): Promise<void> {
+	const limits: OutputLimits = {
+		maxBytes: tool.outputLimits?.maxBytes ?? DEFAULT_MAX_BYTES,
+		maxLines: tool.outputLimits?.maxLines ?? DEFAULT_MAX_LINES,
+		retain: tool.outputLimits?.retain ?? "head",
+	};
+	const reported: Reported = { output: new OutputBuffer(limits), limits, diagnostics: [], details: undefined };
+	const progress = publishProgress(runtime, reported, context);
+	let ended = false;
+	const assertLive = (): void => {
+		if (ended) throw new Error(`Tool call ${call.id} has settled`);
+	};
+	const api: Omit<ToolExecutionApi, "env"> = {
+		taskId: runtime.taskId,
+		conversationId: runtime.conversationId,
+		callId: call.id,
+		registry: runtime.registry,
+		agent: runtime.agent,
+		output: (chunk, skipped) => {
+			assertLive();
+			if (reported.output.push(chunk, skipped)) progress.mark();
+		},
+		outputWindow:
+			limits.retain === "tail"
+				? {
+						maxBytes: limits.maxBytes,
+						maxLines: limits.maxLines,
+						minIntervalMs: runtime.settings.progress.outputIntervalMs,
+						bytesPerSecond: PROGRESS_BYTES_PER_SECOND,
+					}
+				: undefined,
+		diagnostic: (diagnostic) => {
+			assertLive();
+			reported.diagnostics.push(copyJson(diagnostic, { omitUndefinedProperties: true }) as ToolDiagnostic);
+			progress.mark();
+		},
+		details: async (value, detailsContext) => {
+			assertLive();
+			detailsContext.abortSignal?.throwIfAborted();
+			reported.details = copyJson(value, { omitUndefinedProperties: true });
+			const committed = progress.markAndWait();
+			// Cancelling the wait leaves the update in place; the commit's own outcome stays observed.
+			committed.catch(() => {});
+			return awaitWithContext(committed, detailsContext);
+		},
+		commit: async (change, commitContext) => {
+			let result: Awaited<ReturnType<typeof change>> | undefined;
+			await runtime.commit(async (tx) => {
+				result = await change(tx);
+				return undefined;
+			}, commitContext);
+			return result as Awaited<ReturnType<typeof change>>;
+		},
+		memo: runtime.memo,
+		createTask: async <I, S extends { phase: string }, R, H extends object>(
+			task: Task<I, S, R, H>,
+			input: I,
+			options: Omit<TaskOptions, "conversationId">,
+			taskContext: Context,
+		): Promise<TaskId<R>> => {
+			let id: TaskId<R> | undefined;
+			await runtime.commit(async (tx) => {
+				id = await tx.createTask(task, input, options);
+				return undefined;
+			}, taskContext);
+			return id!;
+		},
+		getTask: runtime.getTask,
+		waitForTask: runtime.waitForTask,
+		conversation: runtime.conversation,
+		snapshot: runtime.snapshot,
+		snapshotAsOf: runtime.snapshotAsOf,
+		watchDoc: runtime.watchDoc,
+	};
+
+	let result: ToolExecutionResult;
+	let ending = COMPLETED;
+	try {
+		// Built for this call, so a rerun after recovery gets the conversation's environment at that time.
+		const env = await runtime.env(context);
+		result = await tool.execute(args, { ...api, env }, context);
+	} catch (error) {
+		if (runtime.signal.aborted) {
+			ended = true;
+			for (const waiter of await progress.stop()) waiter.reject(error);
+			throw error;
+		}
+		result = { isError: true, diagnostics: [toolDiagnostic("tool_error", errorText(error))] };
+		// A throw, from `execute()` or from building the environment, ends the task `failed`, which cancels what the call owned; it no longer supervises it. The error text
+		// is already in the result entry.
+		ending = { status: "failed", message: `Tool ${call.name} threw` };
+	}
+	ended = true;
+	reported.output.end();
+	// Details still waiting for a progress commit settle with the terminal commit, the final flush.
+	const pending = await progress.stop();
+	try {
+		const settled = await finalResult(runtime, call, result, reported, context);
+		await settle(runtime, call, ending, () => settled, context);
+	} catch (error) {
+		for (const waiter of pending) waiter.reject(error);
+		throw error;
+	}
+	for (const waiter of pending) waiter.resolve();
+}
+
+/**
+ * Throttled commits of what the tool reported into its `pi.live.tools` slot, each writing only what changed since the
+ * last one.
+ */
+function publishProgress(runtime: Runtime, reported: Reported, context: Context): Progress {
+	let written = { text: "", details: undefined as JsonValue | undefined, diagnostics: 0 };
+	return new Progress(
+		async () => {
+			// Capture everything synchronously: the tool keeps reporting while the commit is in flight.
+			const snapshot = reported.output.snapshot();
+			const current = { text: snapshot.text, details: reported.details, diagnostics: reported.diagnostics.length };
+			const added = reported.diagnostics.slice(written.diagnostics, current.diagnostics);
+			const detailsChanged = current.details !== written.details;
+			// What the commit writes, as Chord diffs the string: an append, a trim plus an append of what follows the shared
+			// part, or the whole window when its bounded overlap search finds nothing.
+			let bytes = 0;
+			if (snapshot.text !== written.text) {
+				const shared = snapshot.text.startsWith(written.text)
+					? written.text.length
+					: overlap(written.text, snapshot.text, 65_536);
+				bytes += utf8ByteLength(snapshot.text.slice(shared));
+			}
+			if (detailsChanged) bytes += utf8ByteLength(JSON.stringify(current.details ?? null));
+			if (added.length > 0) bytes += utf8ByteLength(JSON.stringify(added));
+			await runtime.commit(async (tx) => {
+				const slot = toolSlot(await tx.doc(LiveDoc, runtime.conversationId), runtime.taskId);
+				if (slot === undefined) return undefined;
+				// REMINDER: assign `output` as one string field. Chord then diffs it into an append, or a trim plus an
+				// append for a sliding tail; replacing the slot object would record the whole window on every commit.
+				if ((slot.output ?? "") !== snapshot.text) slot.output = snapshot.text;
+				if (snapshot.droppedBytes > 0) slot.droppedBytes = snapshot.droppedBytes;
+				if (snapshot.droppedLines > 0) slot.droppedLines = snapshot.droppedLines;
+				// Diff details leaf by leaf and append new diagnostics, so each commit writes only what changed.
+				if (detailsChanged && current.details !== undefined) {
+					assignJson(slot as unknown as Record<string, JsonValue>, "details", current.details);
+				}
+				if (added.length > 0) {
+					if (slot.diagnostics === undefined) slot.diagnostics = [];
+					for (const diagnostic of added) slot.diagnostics.push(diagnostic);
+				}
+				return undefined;
+			}, context);
+			written = current;
+			return bytes;
+		},
+		(error) => {
+			// Rejections after an abort mark or close are expected; the committed state stays consistent.
+			if (!runtime.signal.aborted) runtime.report(error);
+		},
+		runtime.settings.progress.outputIntervalMs,
+	);
+}
+
+/**
+ * The settled result: the tool's result with the retained output and last details as fallbacks, its diagnostics after
+ * those reported through the api, `afterTool` applied, and explicit text bounded, with the Harness's truncation
+ * diagnostic last.
+ */
+async function finalResult(
+	runtime: Runtime,
+	call: ToolCall,
+	result: ToolExecutionResult,
+	reported: Reported,
+	context: Context,
+): Promise<ToolExecutionResult> {
+	const harness: ToolDiagnostic[] = [];
+	const retained = result.content === undefined ? reported.output.snapshot() : undefined;
+	const content: Content =
+		retained === undefined ? result.content! : retained.text === "" ? [] : [{ type: "text", text: retained.text }];
+	let final: ToolExecutionResult = {
+		...result,
+		content,
+		details: result.details === undefined ? reported.details : result.details,
+		diagnostics: [...reported.diagnostics, ...(result.diagnostics ?? [])],
+	};
+	await runtime.hooks.each("afterTool", async (hook) => {
+		final = (await hook(call, final, runtime, context)) ?? final;
+	});
+	// The retained output's truncation applies only while afterTool kept that content.
+	if (retained !== undefined && retained.droppedBytes > 0 && final.content === content) {
+		harness.push(truncated(retained, reported.limits.retain));
+	}
+	const bounded = boundContent(final.content ?? [], reported.limits);
+	if (bounded.droppedBytes > 0) harness.push(truncated(bounded, reported.limits.retain));
+	return { ...final, content: bounded.content, diagnostics: [...(final.diagnostics ?? []), ...harness] };
+}
+
+/**
+ * Commit the tool's terminal state: append its result entry, mark its slot done, and complete or end aborted with the
+ * entry ID. `build` receives the slot so interruption and abort can report the durable partial output.
+ */
+async function settle(
+	runtime: Runtime,
+	call: ToolCall,
+	ending: Ending,
+	build: (slot: Readonly<ToolSlot> | undefined) => ToolExecutionResult,
+	context: Context,
+): Promise<void> {
+	await runtime.commit(async (tx) => {
+		const slot = toolSlot(await tx.doc(LiveDoc, runtime.conversationId), runtime.taskId);
+		const result = build(slot);
+		const entry = await appendToolResult(tx, runtime.conversationId, call, result, runtime.now());
+		if (slot !== undefined) finishSlot(slot, entry.id);
+		const entryId = entry.id;
+		if (ending.status === "aborted")
+			return { status: "terminal", outcome: { status: "aborted", result: { entryId } } };
+		if (ending.status === "failed") {
+			const error = { message: ending.message };
+			return { status: "terminal", outcome: { status: "failed", error, result: { entryId } } };
+		}
+		// Tools build control objects freely; drop keys set to undefined so the task result is strict JSON.
+		const control =
+			result.control === undefined
+				? {}
+				: { control: copyJson(result.control as JsonValue, { omitUndefinedProperties: true }) as ToolControl };
+		return { status: "terminal", outcome: { status: "completed", result: { entryId, ...control } } };
+	}, context);
+}
+
+/**
+ * How a tool task ends; the result entry is appended either way. `failed` (execution threw or was interrupted)
+ * records cancellation intent for the conversations the call owns; a result with `isError` still completes.
+ */
+type Ending = { readonly status: "completed" | "aborted" } | { readonly status: "failed"; readonly message: string };
+
+const COMPLETED: Ending = { status: "completed" };
+
+/** An error result from the slot's durable partial output, details, and diagnostics. */
+function fromSlot(slot: Readonly<ToolSlot> | undefined, code: string, message: string): ToolExecutionResult {
+	const diagnostics = [...(slot?.diagnostics ?? [])];
+	const droppedBytes = slot?.droppedBytes ?? 0;
+	if (droppedBytes > 0) diagnostics.push(truncated({ droppedBytes, droppedLines: slot?.droppedLines ?? 0 }));
+	diagnostics.push(toolDiagnostic(code, message));
+	return {
+		content: slot?.output === undefined || slot.output === "" ? [] : [{ type: "text", text: slot.output }],
+		isError: true,
+		...(slot?.details === undefined ? {} : { details: slot.details }),
+		diagnostics,
+	};
+}
+
+/** An error result the Harness writes itself: no content and one `error` diagnostic with `code`. */
+export function harnessError(code: string, message: string): ToolExecutionResult {
+	return { content: [], isError: true, diagnostics: [toolDiagnostic(code, message)] };
+}
+
+function toolDiagnostic(code: string, message: string): ToolDiagnostic {
+	return { severity: "error", code, message };
+}
+
+/** The Harness's truncation diagnostic; `retain` is unknown when rebuilt from a slot after recovery. */
+function truncated(
+	dropped: { readonly droppedLines: number; readonly droppedBytes: number },
+	retain?: "head" | "tail",
+): ToolDiagnostic {
+	const kept = retain === undefined ? "" : ` to its ${retain === "head" ? "beginning" : "end"}`;
+	return {
+		severity: "warn",
+		code: "truncated",
+		message: `Output truncated${kept}: ${dropped.droppedLines} lines, ${dropped.droppedBytes} bytes dropped`,
+	};
+}
+
+/**
+ * Append a `pi.tool-result` entry. The content ends with the rendered diagnostics, so the stored message is exactly
+ * what the model sees; `data` keeps the structured list. A result's usage is added to `pi.usage` in the same commit.
+ */
+export async function appendToolResult(
+	tx: Tx,
+	conversationId: ConversationId,
+	call: ToolCall,
+	result: ToolExecutionResult,
+	timestamp: number,
+): Promise<TypedEntry<{ diagnostics: ToolDiagnostic[] }>> {
+	const diagnostics = [...(result.diagnostics ?? [])];
+	const content: Content = [...(result.content ?? [])];
+	if (diagnostics.length > 0) content.push({ type: "text", text: renderDiagnostics(diagnostics) });
+	const message = {
+		role: "toolResult",
+		toolCallId: call.id,
+		toolName: call.name,
+		content,
+		...(result.details === undefined ? {} : { details: result.details }),
+		...(result.usage === undefined ? {} : { usage: result.usage }),
+		isError: result.isError ?? false,
+		timestamp,
+	} as ToolResultMessage;
+	if (result.usage !== undefined) await recordUsage(tx, conversationId, "tools", call.name, result.usage);
+	return tx.appendEntry(ToolResultEntry, conversationId, { model: [message], data: { diagnostics } });
+}
+
+function renderDiagnostics(diagnostics: readonly ToolDiagnostic[]): string {
+	return `<harness>\n${diagnostics.map((diagnostic) => `[${diagnostic.severity}] ${diagnostic.message}`).join("\n")}\n</harness>`;
+}
+
+/**
+ * Bound the text of result content. When the joined text exceeds the limits, the text items are replaced by one bounded
+ * item at the position of the first (head) or last (tail) text item; other content is kept.
+ */
+function boundContent(
+	content: Content,
+	limits: OutputLimits,
+): { content: Content; droppedBytes: number; droppedLines: number } {
+	const texts = content.filter((item): item is TextContent => item.type === "text");
+	const bounded = boundOutput(texts.map((item) => item.text).join(""), limits);
+	if (bounded.droppedBytes === 0) return { content, droppedBytes: 0, droppedLines: 0 };
+	const keep = limits.retain === "head" ? texts[0] : texts.at(-1);
+	const result: Content = [];
+	for (const item of content) {
+		if (item.type !== "text") result.push(item);
+		else if (item === keep) result.push({ ...item, text: bounded.text });
+	}
+	return { content: result, droppedBytes: bounded.droppedBytes, droppedLines: bounded.droppedLines };
+}
+
+function errorText(error: unknown): string {
+	return error instanceof Error ? error.message : String(error);
+}
+
+941a3daa45929b5f9964807fcb877805a54ba772 blob 29134
+import type { AttachedReplicatedState, Context, JsonValue } from "@earendil-works/chord";
+import type {
+	AssistantMessage,
+	CacheRetention,
+	Message,
+	Models,
+	ModelThinkingLevel,
+	Static,
+	Tool,
+	ToolCall,
+	ToolResultMessage,
+	Transport,
+	TSchema,
+	Usage,
+	UserMessage,
+} from "@earendil-works/pi-ai";
+import type { ExecutionEnv, ShellOutputSkip, ShellOutputWindow } from "../env/index.ts";
+import type {
+	ConversationId,
+	ConversationOwnership,
+	ConversationRecord,
+	Cursor,
+	DocumentObserver,
+	DocumentReader,
+	EntryDraft,
+	EntryId,
+	EntryQuery,
+	EntryRecord,
+	JsonObject,
+	Page,
+	Session,
+	SubmissionId,
+	SubmissionRecord,
+	Task,
+	TaskId,
+	TaskOptions,
+	TaskRecord,
+	TaskState,
+	Tx,
+	WatchHandle,
+} from "../types.ts";
+import type { TaskGraph, TaskGraphWatch } from "./task-graph.ts";
+import type { UsageState } from "./usage.ts";
+import type { ConversationView } from "./view.ts";
+
+/** Provider and model ID resolved through pi-ai `Models`. */
+export type ModelRef = {
+	readonly provider: string;
+	readonly modelId: string;
+};
+
+export type UserInput = UserMessage["content"];
+
+/** Host submission: user input that may start a run, or a passive entry write. */
+export type SubmissionDraft = {
+	readonly requestId?: string;
+} & (
+	| {
+			readonly type: "input";
+			readonly content: UserInput;
+			readonly whenBusy?: "steer" | "followUp" | "reject";
+			readonly entry?: never;
+	  }
+	| {
+			readonly type: "write";
+			readonly entry: EntryDraft;
+			readonly content?: never;
+			readonly whenBusy?: never;
+	  }
+);
+
+export type InputSubmissionDraft = Extract<SubmissionDraft, { readonly type: "input" }>;
+
+export type SettledSubmissionRecord = SubmissionRecord & {
+	readonly status: "done" | "unanswered";
+};
+
+/** Awaitable host object for one durably admitted submission. */
+export interface Submission {
+	readonly id: SubmissionId;
+	status(context: Context): Promise<SubmissionRecord>;
+	wait(context: Context): Promise<SettledSubmissionRecord>;
+	abort(context: Context): Promise<"aborted" | "already_placed" | "settled">;
+}
+
+export type SettledTask<R> = TaskRecord<JsonValue, JsonValue, R> & {
+	readonly state: Extract<TaskState<JsonValue, R>, { readonly status: "terminal" }>;
+};
+
+/** Erased executable task definition stored in the registry. */
+export type AnyTask = {
+	readonly definition: {
+		readonly name: string;
+		readonly version: number;
+		readonly initial: unknown;
+		readonly phases: Readonly<Record<string, unknown>>;
+		readonly abort: unknown;
+		readonly migrate?: unknown;
+		readonly hooks?: object;
+	};
+};
+
+/** Options of `Conversation.abort()`. */
+export type ConversationAbortOptions = {
+	/**
+	 * Cross background boundaries: mark every live task reached ignoring the background flag when the abort is admitted,
+	 * withdraw the queued inputs of every conversation reached, and wait until those tasks are terminal and the
+	 * conversation is ordinarily idle. Background work created afterwards is neither marked nor awaited.
+	 */
+	readonly background?: boolean;
+};
+
+/** Hook handler map declared by a task definition. */
+export type HooksOf<K> = K extends Task<infer _I, infer _S, infer _R, infer H> ? H : never;
+
+/**
+ * Invocation-bound conversation operations for tasks and tools. Rejects after the invocation ends; passive entries are
+ * written with ordinary transaction writes instead.
+ */
+export interface ConversationHandle {
+	readonly id: ConversationId;
+	submit(submission: InputSubmissionDraft, context: Context): Promise<Submission>;
+	/** `Conversation.abort()`: withdraw queued inputs, abort the ordinary ownership scope, and wait until it is idle. */
+	abort(context: Context, options?: ConversationAbortOptions): Promise<void>;
+	/** Resolve when the conversation's ordinary ownership scope has no live non-background task. */
+	waitForIdle(context: Context): Promise<void>;
+}
+
+/** Post-tools controls requested by a tool result. */
+export type ToolControl = {
+	readonly addTools?: readonly string[];
+	readonly terminate?: true;
+	readonly handoff?: string;
+};
+
+/** Remark about a call for the model and the UI, such as truncation or a spill path; never part of the tool's data. */
+export type ToolDiagnostic = {
+	readonly severity: "info" | "warn" | "error";
+	readonly message: string;
+	readonly code?: string;
+};
+
+export type ToolExecutionResult<TDetails extends JsonValue = JsonValue> = {
+	/** Omitted: the retained `output()` text becomes the content. */
+	readonly content?: ToolResultMessage["content"];
+	readonly isError?: boolean;
+	/** Omitted: the last `details()` value becomes the details. */
+	readonly details?: TDetails;
+	/** Added after those recorded through `api.diagnostic()`. */
+	readonly diagnostics?: readonly ToolDiagnostic[];
+	/** Spend of the execution itself, such as a model call; stored on the result and in `pi.usage.tools`. */
+	readonly usage?: Usage;
+	readonly control?: ToolControl;
+};
+
+/** Whether the tools of one round run at once or one after another in call order. */
+export type ToolExecutionMode = "parallel" | "sequential";
+
+/** How many queued items of one mode a boundary places: the first, or all of them. */
+export type QueueMode = "all" | "one-at-a-time";
+
+/**
+ * Operations available to one tool invocation. A plain object, so a wrapper can spread it. Every operation rejects after
+ * the invocation ends.
+ */
+export interface ToolExecutionApi<TDetails extends JsonValue = JsonValue> extends DocumentObserver, DocumentReader {
+	readonly taskId: TaskId;
+	readonly conversationId: ConversationId;
+	readonly callId: string;
+	/** The tool task's phase snapshot. */
+	readonly registry: RegistrySnapshot;
+	/** The calling conversation's agent, as the tool task's phase resolved it. */
+	agent(context: Context): Promise<Agent>;
+	/** Built by `HarnessOptions.env` for this call; `undefined` without an environment. */
+	readonly env: ExecutionEnv | undefined;
+	/**
+	 * Append running output; it becomes the result content when the result omits `content`. `skipped` counts output
+	 * omitted before the chunk, as reported by an environment given `outputWindow` (`ShellOutputInfo.skipped`).
+	 */
+	output(chunk: string | Uint8Array, skipped?: ShellOutputSkip): void;
+	/**
+	 * The tail this call's output keeps and the pace of its progress commits, for `ShellExecOptions.window`; `undefined`
+	 * when the tool keeps the head of its output, which cannot accept skips. A wrapper that replaces `output` and
+	 * transforms text must also replace this with `undefined`, so skipped text cannot bypass its transform.
+	 */
+	readonly outputWindow: ShellOutputWindow | undefined;
+	/** Record a model-visible remark about this call. */
+	diagnostic(diagnostic: ToolDiagnostic): void;
+	/** Replace running details; the last value becomes the result details when the result omits `details`. */
+	details(value: TDetails, context: Context): Promise<void>;
+	commit<T>(change: (tx: Tx) => T | Promise<T>, context: Context): Promise<T>;
+	memo<T extends JsonValue>(name: string, context: Context): Promise<T | undefined>;
+	memo<T extends JsonValue>(name: string, candidate: T, context: Context): Promise<T>;
+	createTask<I, S extends { phase: string }, R, H extends object>(
+		task: Task<I, S, R, H>,
+		input: I,
+		options: Omit<TaskOptions, "conversationId">,
+		context: Context,
+	): Promise<TaskId<R>>;
+	getTask<R>(id: TaskId<R>, context: Context): Promise<TaskRecord<JsonValue, JsonValue, R> | undefined>;
+	waitForTask<R>(id: TaskId<R>, context: Context): Promise<SettledTask<R>>;
+	/** Invocation-bound handle of an existing conversation, such as one this tool created in `commit()`. */
+	conversation(id: ConversationId, context: Context): Promise<ConversationHandle | undefined>;
+}
+
+/**
+ * Executable tool registered in a registry. Only pi-ai `Tool` fields enter the transcript. `args` are typed by
+ * `parameters`, which the Harness validates them against before `execute()`; `defineTool()` infers both generics.
+ */
+export type ToolRegistration<
+	TParameters extends TSchema = TSchema,
+	TDetails extends JsonValue = JsonValue,
+> = Tool<TParameters> & {
+	/** Whether an interrupted execution may rerun on recovery. Default `unsafe`. */
+	readonly replay?: "safe" | "unsafe";
+	/** Default: the settings' `toolExecution`. One sequential call makes its whole round sequential. */
+	readonly executionMode?: ToolExecutionMode;
+	/**
+	 * Repair arguments models commonly get wrong before validation, such as a JSON string where an array belongs. Must be
+	 * pure and must not mutate `args`: it runs again when a call is retried before its intent is recorded. Its result is
+	 * still validated against `parameters`.
+	 */
+	prepareArguments?(args: unknown): Static<TParameters>;
+	readonly outputLimits?: {
+		readonly maxBytes?: number;
+		readonly maxLines?: number;
+		readonly retain?: "head" | "tail";
+	};
+	execute(
+		args: Static<TParameters>,
+		api: ToolExecutionApi<TDetails>,
+		context: Context,
+	): Promise<ToolExecutionResult<TDetails>>;
+};
+
+/** Input to system prompt section rendering for one request preparation. */
+export type PromptInput<Tool extends ToolRegistration = ToolRegistration> = {
+	readonly conversationId: ConversationId;
+	/** The request's resolution; `agent.tools` are the tools offered in this request. */
+	readonly agent: Agent<Tool>;
+	/** Built by `HarnessOptions.env` for this preparation; `undefined` without an environment. */
+	readonly env: ExecutionEnv | undefined;
+	/** Sections already in effect after replaying the active transcript. */
+	readonly shown: Readonly<Record<string, string>>;
+	/** Committed document reads. */
+	readonly read: DocumentReader;
+};
+
+/** One system prompt section; the agent's sections render in order before each request. */
+export type PromptSection<Tool extends ToolRegistration = ToolRegistration> = {
+	readonly key: string;
+	render(input: PromptInput<Tool>, context: Context): string | undefined | Promise<string | undefined>;
+	/** Default true: wrap the text as `<key>\n...\n</key>`. */
+	readonly tag?: boolean;
+};
+
+/** Built by `hook()`; matches tasks by name. */
+export type HookRegistration = { readonly task: string; readonly handlers: object };
+
+/** Built by `wrapTool()` and `wrapSection()`; targets a tool name or a section key. Wrappers are pure. */
+export type Wrap<Tool extends ToolRegistration = ToolRegistration> =
+	| { readonly tool: string; wrap(tool: Tool): Tool }
+	| { readonly section: string; wrap(section: PromptSection<Tool>): PromptSection<Tool> };
+
+/** Named bundle of code; installed in a registry and selected by conversations by name. */
+export interface Extension<Tool extends ToolRegistration = ToolRegistration> {
+	readonly name: string;
+	readonly tools?: readonly Tool[];
+	readonly sections?: readonly PromptSection<Tool>[];
+	readonly hooks?: readonly HookRegistration[];
+	/** Apply where this extension is selected, in order. */
+	readonly wraps?: readonly Wrap<Tool>[];
+	/** Resolved by name for every task, whichever conversations select this extension. */
+	readonly tasks?: readonly AnyTask[];
+}
+
+/** Immutable view of one published registry state. */
+export interface RegistrySnapshot<Tool extends ToolRegistration = ToolRegistration> {
+	installed(): readonly Extension<Tool>[];
+	extension(name: string): Extension<Tool> | undefined;
+	/** Every installed tool with its extension, in install order. Names may repeat across extensions. */
+	tools(): readonly { readonly extension: Extension<Tool>; readonly tool: Tool }[];
+	sections(): readonly { readonly extension: Extension<Tool>; readonly section: PromptSection<Tool> }[];
+	/** Built-in and installed task definitions. */
+	tasks(): readonly AnyTask[];
+	task(name: string): AnyTask | undefined;
+}
+
+/** Read side of a registry consumed by a Harness. */
+export interface RegistryReader<Tool extends ToolRegistration = ToolRegistration> {
+	/** Immutable view of the whole current registry. */
+	snapshot(): RegistrySnapshot<Tool>;
+	/** Called synchronously after every publication; wakes the scheduler to reconsider blocked tasks. */
+	subscribe(listener: () => void): () => void;
+}
+
+/** Application-owned registry of extensions. */
+export interface Registry<Tool extends ToolRegistration = ToolRegistration> extends RegistryReader<Tool> {
+	/** Install `extension`, or replace the installed extension with its name in place. Publishes at once. */
+	install(extension: Extension<Tool>): void;
+	/** Remove the installed extension with `extension.name`, whichever object it is. A later install appends. */
+	uninstall(extension: Extension): void;
+}
+
+/** Stored choices of one conversation; names, not objects. Unset fields follow the host. */
+export type AgentState = {
+	model?: ModelRef;
+	thinkingLevel?: ModelThinkingLevel;
+	/** An array selects exactly these extensions, in order. An object edits the host default selection. */
+	extensions?: string[] | { add?: string[]; remove?: string[] };
+	/** Filters the selected extensions' tools. An array offers exactly these, in order. */
+	tools?: string[] | { remove: string[] };
+	/** Rendered after every extension section, as the section `instructions`. */
+	instructions?: string;
+	/** Directory within the environment's file system, passed to `HarnessOptions.env`. */
+	cwd?: string;
+};
+
+/** A change to `pi.agent`: a given field replaces the stored one, `null` clears it, `undefined` changes nothing. */
+export type AgentChange = {
+	readonly model?: ModelRef | null;
+	readonly thinkingLevel?: ModelThinkingLevel | null;
+	readonly extensions?:
+		| readonly Extension[]
+		| { readonly add?: readonly Extension[]; readonly remove?: readonly Extension[] }
+		| null;
+	readonly tools?: readonly ToolRegistration[] | { readonly remove: readonly ToolRegistration[] } | null;
+	readonly instructions?: string | null;
+	readonly cwd?: string | null;
+};
+
+/** A conversation's agent resolved against a registry snapshot and the settings. */
+export type Agent<Tool extends ToolRegistration = ToolRegistration> = {
+	readonly model?: ModelRef;
+	readonly thinkingLevel: ModelThinkingLevel;
+	readonly extensions: readonly Extension<Tool>[];
+	/** The tools a request offers, in order. */
+	readonly tools: readonly Tool[];
+	/** Extension sections, then `instructions` when set. */
+	readonly sections: readonly PromptSection<Tool>[];
+	readonly instructions?: string;
+	readonly cwd?: string;
+};
+
+/**
+ * Runs inside the creating commit, after the creation hook and the `agent` change. The conversation creation is already
+ * a table write, so table reads here throw `ReadAfterWrite`; document access remains available.
+ */
+export type ConversationInit = (tx: Tx, conversationId: ConversationId) => void | Promise<void>;
+
+export type ConversationCreateOptions = {
+	readonly ownership: ConversationOwnership;
+	/** Applied in the creating commit after the creation hook's copy, before `init`. */
+	readonly agent?: AgentChange;
+	readonly init?: ConversationInit;
+};
+
+/** Curated pi-ai request options; absent fields use pi-ai defaults. */
+export type ConversationStreamOptions = {
+	transport?: Transport;
+	timeoutMs?: number;
+	/** Provider/SDK retries inside one request attempt. */
+	maxRetries?: number;
+	maxRetryDelayMs?: number;
+	headers?: Record<string, string>;
+	metadata?: JsonObject;
+	cacheRetention?: CacheRetention;
+	deferred?: boolean | { window?: "15m" | "1h" | "24h" };
+};
+
+/** Durable generation attempt retries; the JSON shape of pi-ai `RetryPolicy`. */
+export type ConversationRetryPolicy = {
+	enabled: boolean;
+	maxRetries: number;
+	baseDelayMs: number;
+	maxAgentDelayMs?: number;
+};
+
+/** Automatic compaction thresholds (spec §8.7); manual compaction ignores `enabled`. */
+export type CompactionPolicy = {
+	/** Threshold and overflow compaction. */
+	enabled: boolean;
+	/** Room kept free for the answer: generation blocks to compact above `contextWindow - reserveTokens`. */
+	reserveTokens: number;
+	/** Approximate size of the recent context a summary keeps verbatim. */
+	keepRecentTokens: number;
+	/** Background compaction starts `backgroundTokens` below the blocking threshold; `0` disables it. */
+	backgroundTokens: number;
+};
+
+/**
+ * How often running progress is committed. Each progress commit is a storage write; a host whose storage is remote can
+ * commit less often, so live answers and tool output appear in larger steps.
+ */
+export type ProgressPolicy = {
+	/** Minimum pause between commits of the answer being generated. */
+	partialIntervalMs: number;
+	/** Minimum pause between commits of running tool output; large commits also pause in proportion to their size. */
+	outputIntervalMs: number;
+};
+
+/** Why a compaction runs: `compact()`, a threshold in generation preparation, or a context overflow. */
+export type CompactionReason = "manual" | "threshold" | "overflow";
+
+/**
+ * `entryId` of a blocking compaction's summary, or the `submissionId` of a conversation-owned compaction's summary
+ * write; both absent when nothing was compacted.
+ */
+export type CompactionResult = { entryId?: EntryId; submissionId?: SubmissionId };
+
+/** Harness-wide run policy. Read at every resolution and never copied; getters are fine. Synchronous: some readers run on the Session line. */
+export type HarnessSettings = {
+	/** Default extension selection; absent: every installed extension, in install order. */
+	readonly extensions?: readonly Extension[];
+	readonly stream?: ConversationStreamOptions;
+	readonly retry?: Partial<ConversationRetryPolicy>;
+	readonly compaction?: Partial<CompactionPolicy>;
+	readonly progress?: Partial<ProgressPolicy>;
+	readonly toolExecution?: ToolExecutionMode;
+	readonly steeringMode?: QueueMode;
+	readonly followUpMode?: QueueMode;
+};
+
+/** Resolved settings: every field over its built-in default, object fields merged. */
+export type Settings = {
+	/** Absent: every installed extension, in install order. */
+	readonly extensions?: readonly Extension[];
+	readonly stream: ConversationStreamOptions;
+	readonly retry: ConversationRetryPolicy;
+	readonly compaction: CompactionPolicy;
+	readonly progress: ProgressPolicy;
+	readonly toolExecution: ToolExecutionMode;
+	readonly steeringMode: QueueMode;
+	readonly followUpMode: QueueMode;
+};
+
+/** What `HarnessOptions.env` builds an environment for. */
+export type EnvTarget = {
+	readonly conversationId: ConversationId;
+	/** The conversation's agent `cwd`. */
+	readonly cwd?: string;
+	readonly read: DocumentReader;
+};
+
+export type HarnessOptions<Tool extends ToolRegistration = ToolRegistration> = {
+	/** pi-ai model access used by generation. */
+	readonly models: Models;
+	readonly registry: RegistryReader<Tool>;
+	readonly settings?: HarnessSettings;
+	/** Builds a conversation's environment at each use. Never called on the Session line; may be async. */
+	readonly env?: (target: EnvTarget, context: Context) => ExecutionEnv | undefined | Promise<ExecutionEnv | undefined>;
+	/**
+	 * Runs in every commit that creates or forks a conversation, raw `tx.createConversation()` included, after the
+	 * built-in `pi.*` documents and before the conveniences apply `agent` and run `init`. A fork already has its copies.
+	 * Table reads throw `ReadAfterWrite`, as in `init`; a throw fails the creating commit.
+	 */
+	readonly conversationCreated?: (tx: Tx, conversation: ConversationRecord) => void | Promise<void>;
+	readonly now?: () => number;
+	/** Receives extension failures that do not fail the calling operation. Must not throw. */
+	readonly onReport?: (error: unknown) => void;
+};
+
+/** Live task and what the scheduler would do with it under the current registry. */
+export type TaskInspection = {
+	readonly record: TaskRecord<JsonValue, JsonValue, JsonValue>;
+	readonly state: /** An invocation is active. */
+		| { readonly kind: "running" }
+		/** The next scheduling pass reserves it; `migrates` when its definition is newer and has `migrate`. */
+		| { readonly kind: "ready"; readonly migrates: boolean }
+		/**
+		 * Waits for these live tasks: the live part of its `on`, or, when abort-marked, its live ordinary owned work, which
+		 * must end before its abort handler starts.
+		 */
+		| { readonly kind: "waiting"; readonly on: readonly TaskId[] }
+		/** Outcome held until its ordinary owned work drains. */
+		| { readonly kind: "completing" }
+		/** No registered definition can take it; aborting it settles it as `orphaned`. */
+		| {
+				readonly kind: "blocked";
+				readonly reason: "missing_task" | "task_too_old" | "migration_failed";
+				readonly error?: unknown;
+		  };
+};
+
+/** Point-in-time view of live work: unfinished tasks and submissions, read on the Session line. */
+export type HarnessInspection = {
+	readonly scheduling: "paused" | "running" | "closing";
+	readonly tasks: readonly TaskInspection[];
+	/** Queued and placed submissions, in ID order. */
+	readonly submissions: readonly SubmissionRecord[];
+};
+
+/** Raw active transcript and derived model context. */
+export type ContextView = {
+	/** Newest applicable head marker, if any. */
+	readonly head: EntryRecord | undefined;
+	/** Raw active entries: the head marker followed by non-head entries from its head through the tail. */
+	readonly entries: readonly EntryRecord[];
+	/** Per entry of `entries`, its model messages after edits and excluded stop reasons, before tool result ordering. */
+	readonly contributions: readonly (readonly Message[])[];
+	/** Model context for the next provider request. */
+	readonly messages: readonly Message[];
+};
+
+/** Stateless handle for one conversation, bound to the Harness that returned it. Compare handles by `id`. */
+export interface Conversation {
+	readonly id: ConversationId;
+
+	/** Resolved with the current registry snapshot and settings. */
+	agent(context: Context): Promise<Agent>;
+	/** `configure()` in its own commit. */
+	configure(change: AgentChange, context: Context): Promise<void>;
+
+	/**
+	 * Durably admit user input or a passive entry write. A busy conversation, or one with queued items, queues it in
+	 * `pi.inbox`; `whenBusy: "reject"` rejects with `ConversationBusy` instead and writes nothing.
+	 */
+	submit(submission: SubmissionDraft, context: Context): Promise<Submission>;
+	/**
+	 * Admit a write of a `pi.reset` entry that starts a new context, carrying `handoff` as a user message when given.
+	 * Resolves after admission; while busy, it is placed at the next boundary.
+	 */
+	reset(handoff: string | undefined, context: Context): Promise<void>;
+	/**
+	 * Admit a manual compaction task and return its ID. It summarizes while the conversation keeps working and places its
+	 * summary through a write submission: at once when idle, otherwise at the next boundary (spec §8.7).
+	 */
+	compact(instructions: string | undefined, context: Context): Promise<TaskId<CompactionResult>>;
+
+	/** Session commit whose `tx.createTask()` defaults to this conversation. */
+	commit<T>(change: (tx: Tx) => T | Promise<T>, context: Context): Promise<T>;
+	context(context: Context): Promise<ContextView>;
+	/** Newest-first fork-aware history of this conversation. */
+	entries(
+		query: Omit<EntryQuery, "conversationId">,
+		limit: number,
+		cursor: Cursor | undefined,
+		context: Context,
+	): Promise<Page<EntryRecord, Cursor>>;
+	fork(at: EntryId, options: ConversationCreateOptions, context: Context): Promise<Conversation>;
+	/**
+	 * Withdraw queued inputs (queued writes stay), mark every live non-background task of the ordinary ownership scope,
+	 * signal them, and resolve once the scope is idle. Background subtrees survive unless `background` is set.
+	 */
+	abort(context: Context, options?: ConversationAbortOptions): Promise<void>;
+	/**
+	 * Resolve when the ordinary ownership scope has no live non-background task: this conversation and the conversations
+	 * owned, transitively, by its non-background tasks.
+	 */
+	waitForIdle(context: Context): Promise<void>;
+	/** The structural view (spec §9.3) as a disposable read-only Chord state. */
+	viewState(context: Context): Promise<AttachedReplicatedState<ConversationView>>;
+	/** The structural view as a serialized exact-frame watch with bounded pending frames. */
+	watch(context: Context): Promise<ConversationWatch>;
+}
+
+export type ConversationWatch = WatchHandle<ConversationView>;
+
+/** Durable agent harness over one Session. */
+export interface Harness extends Session {
+	/**
+	 * Enable task scheduling. Idempotent; throws after close. Calls that ask for progress enable it too:
+	 * `Conversation.submit()`, `Conversation.compact()`, `Conversation.abort()`, `Submission.wait()`, `waitForTask()`,
+	 * `Harness.waitForIdle()`, and `Conversation.waitForIdle()`. Read-only viewers never do.
+	 */
+	resume(): void;
+
+	/** Return the reserved root conversation, creating it with `agent` and `init` in one commit when absent. */
+	root(
+		context: Context,
+		options?: { readonly agent?: AgentChange; readonly init?: ConversationInit },
+	): Promise<Conversation>;
+	conversation(id: ConversationId, context: Context): Promise<Conversation | undefined>;
+	createConversation(options: ConversationCreateOptions, context: Context): Promise<Conversation>;
+
+	getTask<R>(id: TaskId<R>, context: Context): Promise<TaskRecord<JsonValue, JsonValue, R> | undefined>;
+	/** Live tasks and unsettled submissions. Writes nothing and runs no task code. */
+	inspect(context: Context): Promise<HarnessInspection>;
+	/** Reacquire a submission, for example after reopen. */
+	submission(id: SubmissionId, context: Context): Promise<Submission | undefined>;
+	/** `not_found` for an unknown submission or one of another conversation than `conversationId`. */
+	abortSubmission(
+		id: SubmissionId,
+		context: Context,
+		conversationId?: ConversationId,
+	): Promise<"aborted" | "already_placed" | "settled" | "not_found">;
+	/**
+	 * Commit the abort mark, signal and join an active run invocation, and schedule the abort invocation. A task whose
+	 * definition cannot take it settles as `orphaned` instead.
+	 */
+	abortTask(id: TaskId, context: Context): Promise<"marked" | "terminal">;
+	/** Resolve with the terminal receipt; cancelling `context` cancels only this wait. */
+	waitForTask<R>(id: TaskId<R>, context: Context): Promise<SettledTask<R>>;
+	/** Resolve when the ordinary ownership scope of every ownerless conversation has no live non-background task. */
+	waitForIdle(context: Context): Promise<void>;
+	/** Session total: every conversation's `pi.usage` summed. */
+	usage(context: Context): Promise<UsageState>;
+	/** Every live task with its owner edge, status, and owned conversations (spec §9.5), as a disposable Chord state. */
+	taskGraph(context: Context): Promise<AttachedReplicatedState<TaskGraph>>;
+	/** The task graph as a serialized exact-frame watch with bounded pending frames. */
+	watchTaskGraph(context: Context): Promise<TaskGraphWatch>;
+}
+
+/** What a hook may use: committed reads and the asking task's memos, which hooks and the task share. */
+export interface HookApi extends DocumentReader {
+	readonly taskId: TaskId;
+	readonly conversationId: ConversationId;
+	memo<T extends JsonValue>(name: string, context: Context): Promise<T | undefined>;
+	memo<T extends JsonValue>(name: string, candidate: T, context: Context): Promise<T>;
+}
+
+export type HookResult<T> = T | undefined | Promise<T | undefined>;
+
+/** Hooks of the built-in generation task. */
+export interface GenerationHooks {
+	/** Before every request attempt, including recovery; the result is used for that request only. */
+	beforeRequest(
+		request: { readonly messages: readonly Message[] },
+		api: HookApi,
+		context: Context,
+	): HookResult<{ readonly messages: readonly Message[] }>;
+	/** Every terminal provider message, before classification. */
+	afterResponse(message: AssistantMessage, api: HookApi, context: Context): void | Promise<void>;
+	/** A final answer; the first `continue` appends a user message and continues the run. */
+	onYield(answer: AssistantMessage, api: HookApi, context: Context): HookResult<{ readonly continue: UserInput }>;
+	/** After every tool of the round is terminal; `results` are the round's result entries in call order. */
+	afterTools(assistant: EntryId, results: readonly EntryId[], api: HookApi, context: Context): void | Promise<void>;
+}
+
+/** Hooks of the built-in tool task. */
+export interface ToolHooks {
+	/** Before intent; the first `block` wins, otherwise `arguments` replace the call's arguments. A throw blocks. */
+	beforeTool(
+		call: ToolCall,
+		api: HookApi,
+		context: Context,
+	): HookResult<{ readonly arguments?: JsonObject; readonly block?: string }>;
+	/** After execution, before the result entry; replaces the result. */
+	afterTool(
+		call: ToolCall,
+		result: ToolExecutionResult,
+		api: HookApi,
+		context: Context,
+	): HookResult<ToolExecutionResult>;
+}
+
+/** Hooks of the built-in compaction task. */
+export interface CompactionHooks {
+	/**
+	 * After range selection, before summarizing; the first decision wins. `entries` are the active entries the summary
+	 * replaces, the head marker first, and `messages` their model context, the summarizer's source; `firstKept` is the
+	 * first entry kept verbatim.
+	 */
+	beforeCompact(
+		compaction: {
+			readonly reason: CompactionReason;
+			readonly entries: readonly EntryRecord[];
+			readonly messages: readonly Message[];
+			readonly firstKept: EntryId;
+			readonly instructions?: string;
+		},
+		api: HookApi,
+		context: Context,
+	): HookResult<{ readonly decline: true } | { readonly summary: string }>;
+}
+

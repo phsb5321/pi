@@ -1,0 +1,99 @@
+{
+  "checks": [
+    {
+      "control": "positive-identity-fixture-not-product",
+      "passed": true
+    },
+    {
+      "control": "wrong-sourceManifest-hash",
+      "passed": true,
+      "rejection": "Bound manifest/hash mismatch"
+    },
+    {
+      "control": "wrong-inputManifest-hash",
+      "passed": true,
+      "rejection": "Bound manifest/hash mismatch"
+    },
+    {
+      "control": "wrong-check-log-hash",
+      "passed": true,
+      "rejection": "Check/build log mismatch"
+    },
+    {
+      "control": "red-check",
+      "passed": true,
+      "rejection": "Incomplete/red producer stage"
+    },
+    {
+      "control": "wrong-build-log-hash",
+      "passed": true,
+      "rejection": "Check/build log mismatch"
+    },
+    {
+      "control": "red-build",
+      "passed": true,
+      "rejection": "Incomplete/red producer stage"
+    },
+    {
+      "control": "wrong-dist-hash",
+      "passed": true,
+      "rejection": "Bound manifest/hash mismatch"
+    },
+    {
+      "control": "wrong-dist-merkle",
+      "passed": true,
+      "rejection": "Dist Merkle mismatch"
+    },
+    {
+      "control": "wrong-additional-compiled-output-hash",
+      "passed": true,
+      "rejection": "Bound manifest/hash mismatch"
+    },
+    {
+      "control": "omitted-additional-compiled-output-inventory",
+      "passed": true,
+      "rejection": "Module omitted from output/closure"
+    },
+    {
+      "control": "wrong-runtime-hash",
+      "passed": true,
+      "rejection": "Runtime closure manifest mismatch"
+    },
+    {
+      "control": "absent-host-layout",
+      "passed": true,
+      "rejection": "Missing/nonphysical compiled host/module"
+    },
+    {
+      "control": "omitted-writer-dependency",
+      "passed": true,
+      "rejection": "Runtime closure manifest mismatch"
+    },
+    {
+      "control": "unbound-native-pty-attachment",
+      "passed": true,
+      "rejection": "Runtime closure manifest mismatch"
+    },
+    {
+      "actualRuntimeGuard": true,
+      "control": "omitted-transitive-loaded-dependency",
+      "exit": 1,
+      "passed": true
+    },
+    {
+      "actualRuntimeGuard": true,
+      "control": "loaded-product-typescript",
+      "exit": 1,
+      "passed": true
+    },
+    {
+      "actualRuntimeGuard": true,
+      "control": "loaded-source-resolver",
+      "exit": 1,
+      "passed": true
+    }
+  ],
+  "compilerInvocations": 0,
+  "productHostsLaunched": 0,
+  "result": "GATE_REJECTING_CONTROLS_PASS_NOT_PRODUCT_ACCEPTANCE"
+}

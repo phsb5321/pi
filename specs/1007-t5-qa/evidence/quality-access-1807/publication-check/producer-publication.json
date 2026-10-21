@@ -1,0 +1,33 @@
+{
+  "InvocationID": null,
+  "build": null,
+  "check": null,
+  "claims": {
+    "CI_LIVE_QA_RAM100x": false,
+    "compiled_production_main": false,
+    "full_Pi_parity": false,
+    "full_root_check": false,
+    "native_bridge_assets": false,
+    "native_extension_support": false,
+    "optin_build": false,
+    "ordinary_offline_build": false,
+    "packaged_compiled_host": false
+  },
+  "compiled_outputs": null,
+  "compiler_events_this_wave": 1,
+  "controls_attestation": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-standalone-native-api/compiler-controls-qualified.json",
+  "event": null,
+  "goal_authorization_persists": true,
+  "input_sha256": "b9f966fed665762044bba33c8991d81c1cf1b1855542c1355689fc3d60a5ec0d",
+  "next_action": "ms-build continues real native extension history/lifecycle projection in a new owned derivative; future compiler reconsideration only after naturally advanced boundary and fresh live readiness, through normal admission. No retry/poll or third event.",
+  "optin": null,
+  "output_merkle": null,
+  "package_native": null,
+  "qualification": null,
+  "raw_refusal": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-standalone-native-api/evidence/compiler-admission-refusal-1.log",
+  "runtime_closure": null,
+  "source_sha256": "8e3a3d9b738a5fedfc5eb8e47fbbb96f7247985c4ffe7ee1e3d35a526b972091",
+  "status": "T9-source-frozen-controls-qualified-heavy-io-pressure-refused-before-payload",
+  "tuple": "T9-standalone-native-api-8e3a3d9b738a",
+  "verified_brt": "07/10/2026 17:56:16 -0300"
+}

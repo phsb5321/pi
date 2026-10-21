@@ -1,0 +1,30 @@
+{
+  "status": "T14_INCREMENTAL_SOURCE_BINDING_CHECK_PASS",
+  "count": 4,
+  "checks": [
+    "actual frozen T14 full source/retained zero-condition scope accepts",
+    "stale T12 source/input identity rejects",
+    "physical mutated source bytes reject without editing producer source",
+    "dropped inherited unexecuted condition rejects"
+  ],
+  "graphSha256": "0a145e6ee1e923154480ef0d77e61ef80d5aad6e110436dd7e2fad61961bcbd1",
+  "identity": {
+    "tuple": "T14-native-nested-policy-7c2021ac9f3c",
+    "sourceSha256": "7c2021ac9f3c1465767f868f2c391d3e21a83544902b6882e339ae3187743517",
+    "inputSha256": "7833c614065c0aa6966d751453e7dd445b040db44bb6f5a495851678c73b6976"
+  },
+  "accepted": {
+    "status": "EXACT_CURRENT_INCREMENTAL_SOURCE_SCOPE_BOUND",
+    "eligible": 929,
+    "recensused": 5,
+    "retained": 924,
+    "observedCoverage": false,
+    "ACED": false
+  },
+  "fixtureControlsOnly": true,
+  "observedV8Coverage": false,
+  "ACED": false,
+  "productCompilerRuns": 0,
+  "oldMatrixReruns": 0,
+  "sourceRuntimeImports": 0
+}

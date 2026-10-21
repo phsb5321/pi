@@ -1,0 +1,20 @@
+6059cc72c9991ccdceaacadb274e427dfc6f7a83529fa2c86c8fb5aef487ad5f  specs/1007-t5-qa/build-t15-delta.mjs
+276defe6fb62e44e244e0670437d9c60c212a77f9ac04964f1385c0fde0beee2  specs/1007-t5-qa/prepare-t15-gate.py
+7692ff4f53022ca65490dcf1755f0ee7a3c2884bb5b08e79450afc5b5c2a333d  specs/1007-t5-qa/PROJECT-GATE.T15.json
+3a39abc1649001aedd3433016ecc355355f252e7ae37a91c6604c9540f6f1014  specs/1007-t5-qa/SOURCE-DENOMINATOR.md
+16b5204353a40b9e78536a702ff526f7d211f234495377fd05917c6a6fd4e6ba  specs/1007-t5-qa/PROJECT-GATE.md
+b3fbb7b995040a2f0b6218127fc80314f83de49f8d5e217edadede63412c09f7  specs/1007-t5-qa/README.md
+26bac3ef3c20044b7a069e85f948e9bc7ee2cc270e844765d59eef715c1196db  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t15-delta-1008-1253/RECEIPT.md
+ed0b9e263f70582086d0b4a75a53334f1cefaf7f1e3ea0e28ca1b56083ef73d2  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t15-delta-1008-1253/checkpoint.json
+8ae56d891a3d5316b6923686b2c4874cb3f7b6e29a28c59986762635c4b2c95c  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t15-delta-1008-1253/source-a1/result.json
+764f493b709b2da8a3b88938f5770c32f2d0f8b4d22b2825b98b80b33ef92fe8  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t15-delta-1008-1253/preparation-result.json
+134e4a5a1bd62e7aee42e3fde3188b3f0dd99a31d2209775f54c6a50cc4d9145  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t15-delta-1008-1253/source-only-gate-a1/result.json
+2a98ca1d18be106a7770358f33bfc6dee4e9df315e9188f33e99f30f4f005742  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t15-delta-1008-1253/T14-failed-compiler-result.json
+9adcc060b292b55c63f302e360a69a5326f903a10c0e3437409876a3ee0c2243  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t15-delta-1008-1253/T14-failed-root-check.log
+1a500f26083c69e9d57a5e0e63aac9151951c119e5e81cc337643cda376cdf8c  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t15-delta-1008-1253/T14-failed-producer-receipt.md
+75ee474390d8dafc3165406e8bc7fcc369b66cf90148645bd83bbc91c512e8c9  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t15-delta-1008-1253/T15-source-only-handoff.md
+a602bc3ecba415602d0012585d961e769677be2dd836e855c25203e3fda54cd4  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t15-delta-1008-1253/release-relative-partition.json
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t15-delta-1008-1253/release-target-ls-tree.stdout
+92515c11195605fa6bb0c514b8216658044ef3432fa6d29a493517604bfaceeb  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t15-delta-1008-1253/release-tree.stdout
+7e6a870106d757631eeaf1c138df1e7137d0611bb59999a5eef6a9cfe3d9927a  /home/notroot/Documents/Notes-1007-memory-sound-resume/1. Projects/Memory-Sound Program/PROJECT-EXECUTION-STANDARD.md
+fa40dde18fc2d750fc9928918bc68707063512134a764b02b96c3701b4c526c5  /home/notroot/Documents/Notes/1. Projects/Memory-Sound Program/evidence/execution-wave-2026-10-06/qa/RECEIPT.md

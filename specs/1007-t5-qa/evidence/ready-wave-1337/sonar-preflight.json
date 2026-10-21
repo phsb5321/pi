@@ -1,0 +1,21 @@
+{
+  "status": "BLOCKED",
+  "host": "https://sonarqube.home301server.com.br",
+  "readOnly": true,
+  "scans": 0,
+  "credentialsPrinted": false,
+  "existingSonarEntryNames": [
+    "sonar-cocbot",
+    "sonar-cornix-zmk-ci",
+    "sonar-job-prospection",
+    "sonar-li-radar-camoufox",
+    "sonar-local",
+    "sonar-piorchestrator"
+  ],
+  "errorType": "HTTPError",
+  "error": "HTTP Error 403: Forbidden",
+  "missingGrants": [
+    "Existing Sonar admin browse/gate-read credential did not verify; see exact HTTP/error evidence",
+    "Approved Pi projectKey/isolated analysis-view, matching PROJECT_ANALYSIS_TOKEN and unchanged new-code/clone baseline mapping remain unverifiable; no scan allowed"
+  ]
+}

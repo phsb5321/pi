@@ -1,0 +1,33 @@
+{
+  "status": "T12_COMPLETE_SOURCE_ZERO_CONDITION_CENSUS_BOUND",
+  "eligible": 929,
+  "changed": 60,
+  "statementSpans": 89868,
+  "conditions": 58001,
+  "graphSha256": "aafc156d3500f6dbe745e5c37cc089182d6160f655af6566d76c99619eaed1f2",
+  "identity": {
+    "tuple": "T12-optin-source-maps-59d93fa891b2",
+    "sourceSha256": "59d93fa891b2def373cef7436555545a63e122c216b0a487e7cb9e57fddd0355",
+    "inputSha256": "ac15f1c8c03e9ee362f109804262326a6de1b49d5128877e869122fc02c236b1"
+  },
+  "baseline": {
+    "revision": "7c10bd4337495ee613f2224843ecdf349b80d1df",
+    "tree": "de4e0ad2e4ca4d3bf80a6e89d1bec453edbc85a0",
+    "command": [
+      "git",
+      "-C",
+      "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation",
+      "ls-tree",
+      "-r",
+      "-z",
+      "7c10bd4337495ee613f2224843ecdf349b80d1df"
+    ],
+    "exit": 0,
+    "stdoutSha256": "8ac75a512b855d05db7c4dc134dff107b53e19a27fc1607bae2555c719ea5387"
+  },
+  "observedCoverage": false,
+  "actualMapBinding": false,
+  "ACED": false,
+  "productCompilerRuns": 0,
+  "sourceRuntimeImports": 0
+}

@@ -1,0 +1,72 @@
+{
+  "schema": "memory-sound-qa-readiness/1",
+  "status": "BLOCKED_NO_CONSUMABLE_T6_COMPILED_BOUNDARY",
+  "dateVerifiedBrt": "07/10/2026 14:28:46 -03",
+  "ownedWorktree": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation",
+  "producerPublication": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-compiled-shared-tty/evidence/readiness-2026-10-07-1421/acceptance.json",
+  "producerPublicationStatus": "blocked-before-payload-heavy-pressure-high-io",
+  "producerSourceSha256": "d0a2691d02ed7786d4059758bbacd0d72a8c98a66a8c0c74ab8471899279677e",
+  "producerInputSha256": "f6d2f302559cc40c114d818e6a1ad55aa5c0f4d358879bc4ffcb28fb69dfc3b5",
+  "producerCompilerEvents": 0,
+  "producerDistSha256": null,
+  "producerRuntimeClosureSha256": null,
+  "actualCompiledBatteryInvocations": 0,
+  "compiledQA": "NOT_EXECUTED_NO_ARTIFACT",
+  "gateRejectingControls": {
+    "actuallyPassed": 16,
+    "latestPassingEvidence": "gate-controls-a3-multi-output/result.json",
+    "scope": "owned-identity-and-loaded-runtime-fixtures-not-product",
+    "actualLoadedRejections": ["omitted-transitive-loaded-dependency", "loaded-product-typescript", "loaded-source-resolver"],
+    "finalAdditionalOutputControls": "PREPARED_NOT_EXECUTED_SMALL_ADMISSION_REFUSED_74",
+    "refusalEvidence": "final-small-admission-refusal.txt"
+  },
+  "wireOracle": {
+    "checksPassed": 3,
+    "evidence": "wire-controls.json",
+    "scope": "preserved-actual-source-PTY-captures-and-two-rejecting-controls-not-compiled-proof"
+  },
+  "qualityPreconditions": {
+    "coverageTestActualRejectExit": 1,
+    "coverageTestEvidence": "coverage-negative-a1.log",
+    "qualityEntryRejectsNoCompiledPass": true,
+    "qualityEntryEvidence": "quality-negative-a1/result.json",
+    "coverageInvocations": 0,
+    "aislopInvocations": 0,
+    "jscpdInvocations": 0,
+    "sonarScansSubmitted": 0
+  },
+  "ACED": {
+    "status": "BLOCKED_EXACT_PI_PROJECT_TOKEN_BASELINE_GRANTS_AND_COMPILED_BEHAVIOR_UNAVAILABLE",
+    "rbwUnlocked": true,
+    "credentialPrinted": false,
+    "webCredentialPrivatelyRetrieved": true,
+    "canonicalTrailingColonAuthentication": false,
+    "standardBasicAuthentication": true,
+    "canonicalPiProjectCandidates": [],
+    "projectTokenBorrowed": false,
+    "USER_TOKENUsedForScan": false,
+    "missingGrants": [
+      "Approved isolated Pi projectKey/analysis view (canonical Pi keys absent in live enumeration; undocumented alternate mapping not verified)",
+      "Matching existing/provisioned PROJECT_ANALYSIS_TOKEN stored in rbw and scoped to that exact Pi project",
+      "Approved unchanged Pi new-code period/baseline mapping; unrelated Community main must not be overwritten"
+    ],
+    "gitCloneBaselinePreparation": "origin/main 4e494929998d6bc4fccf75e0a233f727db4b70ee; candidate frozen manifest, not QA HEAD",
+    "noBaselineOrThresholdRelaxation": true,
+    "metrics": null,
+    "evidence": ["sonar-preflight.json", "sonar-diagnostic.json", "sonar-preflight-standard.json"]
+  },
+  "historicalT5Preserved": {
+    "sourceChecksPassed": 33,
+    "compiledOutputEntriesIndependentlyVerified": 2791,
+    "compiledRichHostEligibilityExit": 78,
+    "isT6CompiledProof": false
+  },
+  "custody": {
+    "builderEdits": 0,
+    "duplicateCompilerEvents": 0,
+    "newAgents": 0,
+    "commitsPushesHumanSendsDeploys": 0,
+    "sharedCleanup": 0,
+    "durableEvidenceRoot": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337"
+  }
+}

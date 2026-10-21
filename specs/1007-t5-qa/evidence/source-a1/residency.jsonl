@@ -1,0 +1,4 @@
+{"id":"pane-two","released":0,"resumed":0,"live":true,"openedRetained":true}
+{"id":"pane-one","released":0,"resumed":0,"live":true,"openedRetained":true}
+{"id":"pane-one","released":1,"resumed":0,"live":false,"openedRetained":false}
+{"id":"pane-one","released":1,"resumed":1,"live":true,"openedRetained":true}

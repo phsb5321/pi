@@ -1,0 +1,50 @@
+{
+  "status": "QUALITY_EXECUTION_BOUNDARY_CHECK_PASS_NOT_PRODUCT",
+  "checks": [
+    {
+      "name": "missing-artifact",
+      "argv": [
+        "/run/current-system/sw/bin/python3",
+        "-B",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/quality-entry.py",
+        "--manifest",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/PROJECT-GATE.T15.QUALITY.json",
+        "--evidence",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/quality-execution-boundary-1009-1530/missing-artifact",
+        "--execute"
+      ],
+      "exit": 78,
+      "reason": "Missing qualified compiled artifact",
+      "logSha256": "f1a4e6509eca4b7bea456035738634ad822191fdcc45bb591c4a5fb3b3d69504",
+      "rawResultSha256": "f1a4e6509eca4b7bea456035738634ad822191fdcc45bb591c4a5fb3b3d69504"
+    },
+    {
+      "name": "stale-tuple",
+      "argv": [
+        "/run/current-system/sw/bin/python3",
+        "-B",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/quality-entry.py",
+        "--manifest",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/quality-execution-boundary-1009-1530/stale-negative-manifest.json",
+        "--evidence",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/quality-execution-boundary-1009-1530/stale-tuple",
+        "--execute"
+      ],
+      "exit": 3,
+      "reason": "Stale source identity: tuple",
+      "logSha256": "962318902efb2bc3d8094d3694f9c1a6dbfe4feb88681dbbca03a06622fdce6f",
+      "rawResultSha256": "962318902efb2bc3d8094d3694f9c1a6dbfe4feb88681dbbca03a06622fdce6f"
+    }
+  ],
+  "scansSubmitted": 0,
+  "credentialFetches": 0,
+  "httpRequests": 0,
+  "compilerInvocations": 0,
+  "commandsLaunched": 0,
+  "productLaunched": false,
+  "ACED": false,
+  "behaviorExecuted": false,
+  "fixturePositive": false,
+  "manifestSha256": "c62c76358317e0e6c8e3545bff2c097884e9b41ddbab666bea0378e7c6304f3a",
+  "clock_brt": "09/10/2026 15:36:37 -0300"
+}

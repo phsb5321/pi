@@ -1,0 +1,27 @@
+{
+  "task": {
+    "id": 22,
+    "conversationId": 1,
+    "kind": "pi.generation",
+    "version": 1,
+    "input": {},
+    "background": false,
+    "abortRequested": true,
+    "state": {
+      "status": "terminal",
+      "outcome": {
+        "status": "aborted"
+      }
+    }
+  },
+  "submissions": [
+    {
+      "conversationId": 1,
+      "type": "input",
+      "status": "unanswered",
+      "entry": 20,
+      "id": 21,
+      "reason": "aborted"
+    }
+  ]
+}

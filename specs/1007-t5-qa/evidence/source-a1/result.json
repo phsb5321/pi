@@ -1,0 +1,148 @@
+{
+  "result": "FAIL",
+  "mode": "source-only",
+  "identity": {
+    "result": "EXACT_T5_SOURCE_INPUT_PASS_NOT_COMPILED_ACCEPTANCE",
+    "root": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-catalog-materialize/execution-source",
+    "sourceSha256": "4d9b25183675cbdee2f5da21501623a41a725c69b975a94c14688a041917316b",
+    "inputSha256": "7e12e2b47b2fa1b562b9b18f0b76ce8599fdad7b1f74533a55845deca55cd319",
+    "codeEntriesUnchangedFromT4": 1980,
+    "physicalCatalogueEntries": 43,
+    "totalEntries": 2023,
+    "declaredLinks": 273,
+    "sourceCompilerInvocations": 0,
+    "negativeWrongCatalogueHashRejected": true
+  },
+  "checks": [
+    {
+      "check": "two actual distinct native rich PTYs",
+      "passed": true
+    },
+    {
+      "check": "raw mode applied to both owned PTYs",
+      "passed": true
+    },
+    {
+      "check": "rich alt-screen startup, not thin text surface",
+      "passed": true
+    },
+    {
+      "check": "writer held and second writer actually refused",
+      "passed": true
+    },
+    {
+      "check": "attached park refused",
+      "passed": true
+    },
+    {
+      "check": "one actual JS host, native bash/nc attachment legs",
+      "passed": true
+    },
+    {
+      "check": "actual duplicate terminal renderer refused",
+      "passed": true
+    },
+    {
+      "check": "bracketed paste is not prematurely submitted",
+      "passed": true
+    },
+    {
+      "check": "intermediate rich frame precedes STREAM_END",
+      "passed": false
+    },
+    {
+      "check": "native actual request retains >4096-char multiline paste",
+      "passed": true
+    },
+    {
+      "check": "no cross-session rich frames",
+      "passed": true
+    },
+    {
+      "check": "one real tool effect in A cwd only",
+      "passed": true
+    },
+    {
+      "check": "model selector command not sent to faux model",
+      "passed": true
+    },
+    {
+      "check": "actual cancelled state/receipt, not only a UI flag",
+      "passed": false
+    },
+    {
+      "check": "peer was not aborted",
+      "passed": true
+    },
+    {
+      "check": "B unaffected by A resize",
+      "passed": true
+    },
+    {
+      "check": "exact termios restored pane-one",
+      "passed": true
+    },
+    {
+      "check": "paste/cursor/alt-screen restoration bytes pane-one",
+      "passed": true
+    },
+    {
+      "check": "quiescent native A actually parks",
+      "passed": true
+    },
+    {
+      "check": "native A residency dropped",
+      "passed": true
+    },
+    {
+      "check": "reattach same native id/store/cwd",
+      "passed": true
+    },
+    {
+      "check": "actual model context recalls full persisted history/tools",
+      "passed": true
+    },
+    {
+      "check": "host-loss exact termios restore pane-one",
+      "passed": true
+    },
+    {
+      "check": "host-loss protocol restoration pane-one",
+      "passed": true
+    },
+    {
+      "check": "host-loss exact termios restore pane-two",
+      "passed": true
+    },
+    {
+      "check": "host-loss protocol restoration pane-two",
+      "passed": true
+    },
+    {
+      "check": "actual SQLite integrity after host loss pane-two",
+      "passed": true
+    },
+    {
+      "check": "actual SQLite integrity after host loss pane-one",
+      "passed": true
+    },
+    {
+      "check": "preserved failing host-count control rejects 2 instead of1",
+      "passed": true
+    }
+  ],
+  "failures": [
+    "intermediate rich frame precedes STREAM_END",
+    "actual cancelled state/receipt, not only a UI flag"
+  ],
+  "hostExit": -9,
+  "notProven": [
+    "compiled acceptance",
+    "full-fleet/RAM100x",
+    "all rich commands/images/accessibility parity",
+    "ACED"
+  ],
+  "realProviderRequests": 0,
+  "rootCheckBuildRuns": 0,
+  "workerCount": 1
+}

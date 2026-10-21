@@ -1,0 +1,264 @@
+{
+  "schema": "memory-sound-source-condition-graph/1",
+  "root": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-optin-source-maps/evidence/map-package-fixture-a1/fixture",
+  "files": {
+    "packages/coding-agent/src/core/logic.ts": {
+      "sha256": "3b02f677aee4afb1466cb65a649399c6231f7650cf6a846351678f58fbac882d",
+      "blob": "eca58df179a3f8aa8490a94f202830df9e3a4464",
+      "baselineBlob": "eca58df179a3f8aa8490a94f202830df9e3a4464",
+      "changed": false,
+      "statementMap": {
+        "0": {
+          "start": {
+            "line": 2,
+            "column": 1
+          },
+          "end": {
+            "line": 2,
+            "column": null
+          }
+        },
+        "1": {
+          "start": {
+            "line": 2,
+            "column": 12
+          },
+          "end": {
+            "line": 2,
+            "column": null
+          }
+        },
+        "2": {
+          "start": {
+            "line": 3,
+            "column": 1
+          },
+          "end": {
+            "line": 3,
+            "column": null
+          }
+        }
+      },
+      "functionMap": {
+        "0": {
+          "name": "choose",
+          "decl": {
+            "start": {
+              "line": 1,
+              "column": 16
+            },
+            "end": {
+              "line": 1,
+              "column": 22
+            }
+          },
+          "loc": {
+            "start": {
+              "line": 1,
+              "column": 42
+            },
+            "end": {
+              "line": 4,
+              "column": null
+            }
+          },
+          "line": 1
+        }
+      },
+      "branchMap": {
+        "0": {
+          "loc": {
+            "start": {
+              "line": 2,
+              "column": 1
+            },
+            "end": {
+              "line": 2,
+              "column": null
+            }
+          },
+          "type": "if",
+          "locations": [
+            {
+              "start": {
+                "line": 2,
+                "column": 1
+              },
+              "end": {
+                "line": 2,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "line": 2
+        }
+      },
+      "zeroStatements": {
+        "0": 0,
+        "1": 0,
+        "2": 0
+      },
+      "zeroFunctions": {
+        "0": 0
+      },
+      "zeroConditions": {
+        "0": [
+          0,
+          0
+        ]
+      }
+    },
+    "packages/coding-agent/src/experimental/durable/never.ts": {
+      "sha256": "8e467d8f64fe1824500c16bc9e3fe598759c04e9dda94468eb45dfac50d1c485",
+      "blob": "994f784294ac9f3abaece9b5d9770773c64ce623",
+      "baselineBlob": null,
+      "changed": true,
+      "statementMap": {
+        "0": {
+          "start": {
+            "line": 3,
+            "column": 1
+          },
+          "end": {
+            "line": 3,
+            "column": null
+          }
+        },
+        "1": {
+          "start": {
+            "line": 3,
+            "column": 11
+          },
+          "end": {
+            "line": 3,
+            "column": null
+          }
+        },
+        "2": {
+          "start": {
+            "line": 4,
+            "column": 1
+          },
+          "end": {
+            "line": 4,
+            "column": null
+          }
+        }
+      },
+      "functionMap": {
+        "0": {
+          "name": "absent",
+          "decl": {
+            "start": {
+              "line": 2,
+              "column": 16
+            },
+            "end": {
+              "line": 2,
+              "column": 22
+            }
+          },
+          "loc": {
+            "start": {
+              "line": 2,
+              "column": 46
+            },
+            "end": {
+              "line": 5,
+              "column": null
+            }
+          },
+          "line": 2
+        }
+      },
+      "branchMap": {
+        "0": {
+          "loc": {
+            "start": {
+              "line": 3,
+              "column": 1
+            },
+            "end": {
+              "line": 3,
+              "column": null
+            }
+          },
+          "type": "if",
+          "locations": [
+            {
+              "start": {
+                "line": 3,
+                "column": 1
+              },
+              "end": {
+                "line": 3,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "line": 3
+        }
+      },
+      "zeroStatements": {
+        "0": 0,
+        "1": 0,
+        "2": 0
+      },
+      "zeroFunctions": {
+        "0": 0
+      },
+      "zeroConditions": {
+        "0": [
+          0,
+          0
+        ]
+      }
+    },
+    "packages/coding-agent/src/experimental/durable/shared-tty-host.ts": {
+      "sha256": "5e5283298ca352eda3f12572421ddf988a4943f270161e910c9c63958584ddd3",
+      "blob": "7d24477843fad48bf6cac829257e2e68c877369c",
+      "baselineBlob": null,
+      "changed": true,
+      "statementMap": {
+        "0": {
+          "start": {
+            "line": 2,
+            "column": 22
+          },
+          "end": {
+            "line": 2,
+            "column": 31
+          }
+        }
+      },
+      "functionMap": {},
+      "branchMap": {},
+      "zeroStatements": {
+        "0": 0
+      },
+      "zeroFunctions": {},
+      "zeroConditions": {}
+    }
+  },
+  "eligiblePaths": [
+    "packages/coding-agent/src/core/logic.ts",
+    "packages/coding-agent/src/experimental/durable/never.ts",
+    "packages/coding-agent/src/experimental/durable/shared-tty-host.ts"
+  ],
+  "changedPaths": [
+    "packages/coding-agent/src/experimental/durable/never.ts",
+    "packages/coding-agent/src/experimental/durable/shared-tty-host.ts"
+  ],
+  "classification": "STATIC_SOURCE_ZERO_CENSUS_NOT_OBSERVED_V8_OR_NEW_CODE_COVERAGE",
+  "completeSourceDenominator": true,
+  "actualMapBinding": false,
+  "observedCoverage": false
+}

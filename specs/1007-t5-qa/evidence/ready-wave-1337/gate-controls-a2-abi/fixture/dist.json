@@ -1,0 +1,44 @@
+[
+  {
+    "bytes": 41,
+    "kind": "file",
+    "mode": "0o644",
+    "path": "emitted/ai.mjs",
+    "sha256": "f3c7c52994eadacf6598d2a2484e5870048f34b25d750cde69bed56034214b0e"
+  },
+  {
+    "bytes": 41,
+    "kind": "file",
+    "mode": "0o644",
+    "path": "emitted/auth.mjs",
+    "sha256": "f3c7c52994eadacf6598d2a2484e5870048f34b25d750cde69bed56034214b0e"
+  },
+  {
+    "bytes": 32,
+    "kind": "file",
+    "mode": "0o644",
+    "path": "emitted/dep.mjs",
+    "sha256": "0bbb9f7c891371d4f0cf8acda3135898a775209dcce29313145dcf8eb5a876cb"
+  },
+  {
+    "bytes": 31,
+    "kind": "file",
+    "mode": "0o644",
+    "path": "emitted/host.mjs",
+    "sha256": "adb0f0a110331b34ff49da8fe464aad8c61d5b0e5f5e0db598e6f151e895764f"
+  },
+  {
+    "bytes": 41,
+    "kind": "file",
+    "mode": "0o644",
+    "path": "emitted/models.mjs",
+    "sha256": "f3c7c52994eadacf6598d2a2484e5870048f34b25d750cde69bed56034214b0e"
+  },
+  {
+    "bytes": 30,
+    "kind": "file",
+    "mode": "0o644",
+    "path": "emitted/source-resolver.mjs",
+    "sha256": "43ac6ae0246f83a1341085a8b239baddc7b8bd71019ef59e132005c2034629c6"
+  }
+]

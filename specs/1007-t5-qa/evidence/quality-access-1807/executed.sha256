@@ -1,0 +1,7 @@
+08aa74f9d8064550c9e2077b1e9e85fd1cfd996bf94eedd377b3afb10e1f163c  specs/1007-t5-qa/normalize-bound-publication.py
+1475ae851c59a4923885eb5bb5a3d5f51a7147686870a1ff22168965f5000305  specs/1007-t5-qa/T9-PUBLICATION-CONTRACT.json
+ebacc8cd10847031e32a1deb5c320830861fba0fe4164780b7d8324a145032a6  specs/1007-t5-qa/QUALITY-CONTRACT.json
+cdfaca813603adf976bb168fd2396bc9433089d2e465dbf4c86275623fd95e20  specs/1007-t5-qa/quality-entry.py
+9061d775aeee8d7cbecfbd38cd518fe34bf1f04a67fc03fd331b25ddd8efffae  specs/1007-t5-qa/sonar-analysis.properties.template
+1e6dab4b961997246310531f893e2007007e380ea12478aae246e731790ff8f3  specs/1007-t5-qa/artifact-entry.py
+c940dc4773f3f8e9e1ded06e3695865645b56b92accd0922736fc4263404a2c2  specs/1007-t5-qa/qa-loader.mjs

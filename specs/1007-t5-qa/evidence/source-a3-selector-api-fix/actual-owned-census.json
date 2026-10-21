@@ -1,0 +1,44 @@
+[
+  {
+    "pid": 3,
+    "ppid": 2,
+    "startTicks": "33782759",
+    "argv": "/run/current-system/sw/bin/python specs/1007-t5-qa/focused-rich-pty.py --evidence /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/source-a3-selector-api-fix ",
+    "exe": "/nix/store/b5bpi6zfajzzrwwpgba2q6li3nnya4bs-python3-3.14.7/bin/python3.14"
+  },
+  {
+    "pid": 5,
+    "ppid": 3,
+    "startTicks": "33782832",
+    "argv": "node --v8-pool-size=1 --max-old-space-size=192 --experimental-strip-types --import /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/qa-loader.mjs --import /home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-catalog-materialize/execution-source/packages/coding-agent/src/experimental/source-resolver.ts /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/rich-host.mjs ",
+    "exe": "/nix/store/2gd4h12irmnanhg33md2rpjygrsj5ypb-nodejs-slim-22.23.2/bin/node"
+  },
+  {
+    "pid": 10,
+    "ppid": 3,
+    "startTicks": "33783123",
+    "argv": "bash /home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-catalog-materialize/execution-source/scripts/shared-tty-attach.sh /run/user/1000/qa-t5-60edd029d2/tty.sock pane-one ",
+    "exe": "/nix/store/7a60q5dgnv6z96c279rc1nalyiw4mgqn-bash-interactive-5.3p15/bin/bash"
+  },
+  {
+    "pid": 11,
+    "ppid": 3,
+    "startTicks": "33783123",
+    "argv": "bash /home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-catalog-materialize/execution-source/scripts/shared-tty-attach.sh /run/user/1000/qa-t5-60edd029d2/tty.sock pane-two ",
+    "exe": "/nix/store/7a60q5dgnv6z96c279rc1nalyiw4mgqn-bash-interactive-5.3p15/bin/bash"
+  },
+  {
+    "pid": 20,
+    "ppid": 11,
+    "startTicks": "33783124",
+    "argv": "nc -N -U /run/user/1000/qa-t5-60edd029d2/tty.sock ",
+    "exe": "/nix/store/gvqq470zhp6xavfxswqdzsbwjxyna3zv-libressl-4.3.2-nc/bin/nc"
+  },
+  {
+    "pid": 21,
+    "ppid": 10,
+    "startTicks": "33783124",
+    "argv": "nc -N -U /run/user/1000/qa-t5-60edd029d2/tty.sock ",
+    "exe": "/nix/store/gvqq470zhp6xavfxswqdzsbwjxyna3zv-libressl-4.3.2-nc/bin/nc"
+  }
+]

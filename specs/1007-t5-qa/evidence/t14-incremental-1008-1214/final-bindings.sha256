@@ -1,0 +1,20 @@
+a7138378b82027e4ffcebe9df63e3b0b47335513a8dd45093acd0c29afebe76d  specs/1007-t5-qa/incremental-source-binding.mjs
+692a9fbd34d3a281c6fa66faaaf255097c81376ace7c862f64ad7a36fb4fcfc1  specs/1007-t5-qa/build-t14-incremental.mjs
+95a647fa18ba3233b4706f6b53f6affce5e3559b294e6c97c5ca42efa5628d4e  specs/1007-t5-qa/test-t14-incremental-binding.mjs
+37bdf780f9d616b556588f8df60abdc66c48d3a3abcf2c1a18a32c78c4279630  specs/1007-t5-qa/prepare-t14-gate.py
+73f6f59f6aefaa6e50c5b52d09ee272d816e1071c5b9b1fdf8738010e86b0dd2  specs/1007-t5-qa/PROJECT-GATE.T14.json
+4ecc2e75704dea033c55ab784e400b650a8db11173a6a73150323a29ec4cd291  specs/1007-t5-qa/SOURCE-DENOMINATOR.md
+bd617ff81ac284dcef99a4b774f24249813220f2acd6b18d9256fa4df23a3f21  specs/1007-t5-qa/PROJECT-GATE.md
+79271de4e55dce074e74ac283438bd15c60d12816dbcdac74212fd7f6f771c2b  specs/1007-t5-qa/README.md
+5ddd02888ad47ab9ead61546fc59e883dd854867df0a5ccdb39c3be9ca7a4ee0  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t14-incremental-1008-1214/RECEIPT.md
+dc146dfc79617ded9f2bf120206e4aec4f6b54f94c44b24b1329dafccc4f8cc8  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t14-incremental-1008-1214/checkpoint.json
+eab8ebbabd60348f7b0464dd10dd33092f371ca301d837eb12b29675bac08636  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t14-incremental-1008-1214/tool-metadata.log
+19155fdd240f6707e4fced98c6e80d2425292697b7a5b6d7c867eb0b29271863  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t14-incremental-1008-1214/source-a1/result.json
+cc9077840974aafa5b96505d8a0d45d1b04c08081255becd0629dac2534395a8  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t14-incremental-1008-1214/binding-a1/result.json
+77875523dd7c70397170737e7b2145f7e40f7aae8abade1d3d0483375cedc50c  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t14-incremental-1008-1214/preparation-result.json
+8334b71fbfa2bc1e92386857b72baee1c5996a8feff35b888f9cb146dcf7f67b  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t14-incremental-1008-1214/delta-release-a1/release-blobs.batch
+df5c83ec3479b86a4590afc00fbcf2cae54be75737f7c52efabde1c2fad90043  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t14-incremental-1008-1214/release-relative-partition.json
+77c9dcd1dc3b6f5f76bf5ddb0d31c8c075b502269f674f9678d6b47a91cd0443  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t14-incremental-1008-1214/producer-publication.json
+a0a90798ab10aced2ccee9a219152a20176cf92e698568e235004394cba6a0e7  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t14-incremental-1008-1214/product-boundary-a1/result.json
+71ee1957aa4da8e07a46e1558e8a59e3532b122e3e1a4ba70f0a6849477cea77  /home/notroot/Documents/Notes-1007-memory-sound-resume/1. Projects/Memory-Sound Program/PROJECT-EXECUTION-STANDARD.md
+243ea810d1e5b92452c1e27c9f496304c599d9023ffae95964a96caf8ad08751  /home/notroot/Documents/Notes/1. Projects/Memory-Sound Program/evidence/execution-wave-2026-10-06/qa/RECEIPT.md

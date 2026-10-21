@@ -1,0 +1,13 @@
+{
+  "SonarAccess": {
+    "baselineAnalysisIdAtSetup": null,
+    "projectKey": "phsb5321_pi-memory-sound-qa",
+    "proofSha256": "0d4ad9021583a9155f32cbc2cb70c48177575d91dc7849752e3cac19320e2a23",
+    "status": "VERIFIED_PROJECT_TOKEN_ACCESS_CLOSED"
+  },
+  "baselineUpdated": false,
+  "compilerInvocations": 0,
+  "error": "Compiled behavior must pass first",
+  "scansSubmitted": 0,
+  "status": "BLOCKED"
+}

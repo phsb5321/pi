@@ -1,0 +1,140 @@
+{
+  "ABI_metadata": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/compiler-handoff.pre-event.json",
+  "InvocationID": null,
+  "actual_this_submission": {
+    "InvocationID": null,
+    "elapsed_seconds": null,
+    "native_runtime_closure": null,
+    "offline_build": null,
+    "optin_build": null,
+    "output_inventory": null,
+    "output_merkle": null,
+    "package_native_acceptance": null,
+    "payload": false,
+    "qualification": null,
+    "root_check": null,
+    "source_regressions": null
+  },
+  "authorization": "MS-PROGRESS-20261007-1608:ms-build",
+  "catalogues": 43,
+  "claims": {
+    "PSS_SwapPss_100x": false,
+    "compiled_production_main": false,
+    "full_Pi_parity": false,
+    "full_root_check": false,
+    "independent_QA_CI_LIVE": false,
+    "native_bridge_assets": false,
+    "native_extensions_supported": false,
+    "optin_build": false,
+    "ordinary_offline_build": false,
+    "packaged_compiled_host": false,
+    "source_containment_regressions": true
+  },
+  "compiled_package_runtime": null,
+  "compiler_event_limit": 2,
+  "compiler_events_this_wave": 1,
+  "consumer_ABI_requirements": "/home/notroot/Documents/Code/pi-upstream-1006-memory-proof/specs/1006-memory-proof/fast-feedback-20261007-1549/ABI-REQUIREMENTS.json",
+  "consumer_adaptation_owner": "ms-memory/pM consumes actual producer-declared compiled seams; if absent, minimal OWN adapter adjustment and changed-byte qualification, no source fallback",
+  "custody": "Reuse frozen T1-T8 manifests/custody receipts. No product edits since T8 integration freeze; original source/input/negative/refusal boundaries retained. Raw logs already durable in owned repo; not recopied.",
+  "declared_candidate_exports": [
+    "createSharedTtyHost",
+    "main",
+    "AuthStorage",
+    "ModelRuntime"
+  ],
+  "dist_manifest_sha256": null,
+  "dist_merkle_sha256": null,
+  "event": null,
+  "extension_integration": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/extension-integration.md",
+  "feedback_standard": "/home/notroot/Documents/Notes-1007-memory-sound-resume/1. Projects/Memory-Sound Program/FASTER-FEEDBACK-2026-10-07.md",
+  "input_sha256": "483c208446905b50039247fb98cadd0c6b2663a791388d3a2a2fa27ebdeb3a1f",
+  "links": 273,
+  "native_initialCodingTools": "ToolRegistration objects passed to AgentChange; existing native configure persists names; loadout, not ACL",
+  "native_runtime_assets": null,
+  "next_action": "ms-build retains the remaining repair-qualified event, but this authorization is consumed by the one denied submission. Stop here; no retry/poll/unit/cap/launcher action or manufactured T9. Next compiler submission requires renewed explicit authorization through ordinary admission. ms-memory owns minimal adapter changes to declared compiled exports/CLI only when actual outputs exist.",
+  "optin_build": null,
+  "ordinary_build": null,
+  "owner": "ms-build / side-projects:w28:pJ",
+  "preflight": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/evidence/authorized-event-preflight.json",
+  "previous_check_seconds": 65.58284602902131,
+  "previous_compiler_result": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantics/evidence/attempt-1/result.json",
+  "prior_refusal": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/evidence/repair-compiler-start-refusal-1.log",
+  "raw_refusal": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/evidence/repair-compiler-start-refusal-2.log",
+  "refusal": "Failed to start transient service unit: Unit desktop-job-slot.service was already loaded or has a fragment file.",
+  "refused_compiler_argv": [
+    "python3",
+    "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/run-event.py",
+    "--attempt",
+    "attempt-2"
+  ],
+  "refused_submission_exit": 1,
+  "root_check": null,
+  "source": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/execution-source",
+  "source_assertions": {
+    "counter_failed": 7,
+    "counter_passed": 1,
+    "positive_passed": 8
+  },
+  "source_entries": 2025,
+  "source_sha256": "2e0a7baa85d9e9d6d331301e4713636734915e2358f937c482cb129903d2f6d2",
+  "source_tests": [
+    {
+      "actual_exit": 1,
+      "argv": [
+        "unshare",
+        "--user",
+        "--map-root-user",
+        "--net",
+        "node",
+        "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/counter-source-source-tests-a2/node_modules/vitest/dist/cli.js",
+        "--run",
+        "test/native-semantics.test.ts",
+        "--config",
+        "test/native-semantics.vitest.ts",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "cwd": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/counter-source-source-tests-a2/packages/coding-agent",
+      "label": "T6-negative",
+      "seconds": 11.696151938987896
+    },
+    {
+      "actual_exit": 0,
+      "argv": [
+        "unshare",
+        "--user",
+        "--map-root-user",
+        "--net",
+        "node",
+        "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/execution-source/node_modules/vitest/dist/cli.js",
+        "--run",
+        "test/native-semantics.test.ts",
+        "--config",
+        "test/native-semantics.vitest.ts",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "cwd": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/execution-source/packages/coding-agent",
+      "label": "T8-positive",
+      "seconds": 8.915176935959607
+    }
+  ],
+  "status": "blocked-before-payload-heavy-unit-start-refusal-2-T8-source-green",
+  "timing": {
+    "authorized_preflight_seconds": 2.153341673023533,
+    "copy_hash_seconds": null,
+    "note": "Reuse actual once-recorded phase timings; preparation was not separately timed. Do not invent retrospective timings.",
+    "previous_check_seconds": 65.58284602902131,
+    "source_negative_seconds": 11.696151938987896,
+    "source_positive_seconds": 8.915176935959607
+  },
+  "tuple": "T8-native-semantic-repair-2e0a7baa85d9",
+  "undeclared_consumer_seams": [
+    "settings",
+    "setup",
+    "runtime",
+    "tui",
+    "complete native SDK/storage/context/AI compiled closure"
+  ],
+  "verified_at_brt": "07/10/2026 16:24:22 -0300"
+}

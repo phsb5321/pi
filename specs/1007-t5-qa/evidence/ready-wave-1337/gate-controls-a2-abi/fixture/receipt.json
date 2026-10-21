@@ -1,0 +1,58 @@
+{
+  "build": {
+    "complete": true,
+    "exit": 0,
+    "log": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture/build.log",
+    "logSha256": "9aa8b8dec1fb70d84ace14a69d4226d332cb6f53c7524c544cdcf4164d2b8f12"
+  },
+  "check": {
+    "complete": true,
+    "exit": 0,
+    "log": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture/check.log",
+    "logSha256": "9aa8b8dec1fb70d84ace14a69d4226d332cb6f53c7524c544cdcf4164d2b8f12"
+  },
+  "dependencyModules": {
+    "proper-lockfile": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture/deps/lock.mjs"
+  },
+  "distManifest": {
+    "merkleSha256": "52c8ff65fceddea8253633a95138164123b3c0b495b4707e5094649f8f5618a0",
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture/dist.json",
+    "sha256": "15b1fce38e25c6438f35c82e6ef2b856ba1869a86a2540e406763ba5466838e3"
+  },
+  "distRoots": [
+    "emitted"
+  ],
+  "inputManifest": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture/input-manifest.json",
+    "sha256": "37f6578b701806ae060fbce2723f7113ae49b3f3111825bf2dcaf90a9ee416ce"
+  },
+  "modules": {
+    "msqa/ai": "emitted/ai.mjs",
+    "msqa/auth": "emitted/auth.mjs",
+    "msqa/host": "emitted/host.mjs",
+    "msqa/models": "emitted/models.mjs"
+  },
+  "nativeAttachment": "native-attach.sh",
+  "qaFixture": true,
+  "root": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture",
+  "runtimeFiles": {
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture/deps/lock.mjs": "450f0af4f4c1ecc4c7180f2e364c8a59bfed69dd350fb6b47bce8641c2a37786",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture/emitted/ai.mjs": "f3c7c52994eadacf6598d2a2484e5870048f34b25d750cde69bed56034214b0e",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture/emitted/auth.mjs": "f3c7c52994eadacf6598d2a2484e5870048f34b25d750cde69bed56034214b0e",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture/emitted/dep.mjs": "0bbb9f7c891371d4f0cf8acda3135898a775209dcce29313145dcf8eb5a876cb",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture/emitted/host.mjs": "adb0f0a110331b34ff49da8fe464aad8c61d5b0e5f5e0db598e6f151e895764f",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture/emitted/models.mjs": "f3c7c52994eadacf6598d2a2484e5870048f34b25d750cde69bed56034214b0e",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture/emitted/source-resolver.mjs": "43ac6ae0246f83a1341085a8b239baddc7b8bd71019ef59e132005c2034629c6",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture/native-attach.sh": "306c6ca7407560340797866e077e053627ad409277d1b9da58106fce4cf717cb"
+  },
+  "runtimeManifest": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture/runtime.json",
+    "sha256": "91a7464665a80fea3dadf4e5bff9bb8528e383989a97af78fcadb0f20a4a2015"
+  },
+  "schema": "memory-sound-qa-artifact/1",
+  "sourceManifest": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture/source-manifest.json",
+    "sha256": "e66cd135b178dc6815e2fef64c7ab222e10c655206101d992b94700c59bdc34d"
+  },
+  "sourceRoot": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/ready-wave-1337/gate-controls-a2-abi/fixture/source"
+}

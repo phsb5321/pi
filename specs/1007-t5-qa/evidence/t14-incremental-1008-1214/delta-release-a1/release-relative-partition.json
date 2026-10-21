@@ -1,0 +1,5732 @@
+{
+  "schema": "memory-sound-release-relative-source-partition/1",
+  "status": "RELEASE_BLOBS_SOURCE_PARTITION_BOUND_NOT_OBSERVED_COVERAGE",
+  "sourceGraphSha256": "46d3ac73e8667b6c92e4295a5d57f4f5cc456a418696714d874f1c0e65a6f598",
+  "identity": {
+    "tuple": "T14-native-nested-policy-7c2021ac9f3c",
+    "sourceSha256": "7c2021ac9f3c1465767f868f2c391d3e21a83544902b6882e339ae3187743517",
+    "inputSha256": "7833c614065c0aa6966d751453e7dd445b040db44bb6f5a495851678c73b6976"
+  },
+  "baseline": {
+    "revision": "7c10bd4337495ee613f2224843ecdf349b80d1df",
+    "tree": "de4e0ad2e4ca4d3bf80a6e89d1bec453edbc85a0",
+    "blobCount": 3,
+    "command": [
+      "git",
+      "-C",
+      "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation",
+      "cat-file",
+      "--batch"
+    ],
+    "exit": 0,
+    "batchSha256": "8334b71fbfa2bc1e92386857b72baee1c5996a8feff35b888f9cb146dcf7f67b"
+  },
+  "files": {
+    "packages/coding-agent/src/experimental/durable/extension-composition.ts": {
+      "sourceSha256": "b500a9cd1539e1f3002c9665f31ab4486c33ff14389999e8f76d9b785c3d516f",
+      "baselineBlob": null,
+      "baselineContentSha256": null,
+      "changedLines": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207,
+        208,
+        209,
+        210,
+        211,
+        212,
+        213,
+        214,
+        215,
+        216,
+        217,
+        218,
+        219,
+        220,
+        221,
+        222,
+        223,
+        224,
+        225,
+        226,
+        227,
+        228,
+        229,
+        230,
+        231,
+        232,
+        233,
+        234,
+        235,
+        236,
+        237,
+        238,
+        239,
+        240,
+        241,
+        242,
+        243,
+        244,
+        245,
+        246,
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        253,
+        254,
+        255,
+        256,
+        257,
+        258,
+        259,
+        260,
+        261,
+        262,
+        263,
+        264,
+        265,
+        266,
+        267,
+        268,
+        269,
+        270,
+        271,
+        272,
+        273,
+        274,
+        275,
+        276,
+        277,
+        278,
+        279,
+        280,
+        281,
+        282,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        289,
+        290,
+        291,
+        292,
+        293,
+        294,
+        295,
+        296,
+        297,
+        298,
+        299,
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        307,
+        308,
+        309,
+        310,
+        311,
+        312,
+        313,
+        314,
+        315,
+        316,
+        317,
+        318,
+        319,
+        320,
+        321,
+        322,
+        323,
+        324,
+        325,
+        326,
+        327,
+        328,
+        329,
+        330,
+        331,
+        332,
+        333,
+        334,
+        335,
+        336,
+        337,
+        338,
+        339,
+        340,
+        341,
+        342,
+        343,
+        344,
+        345,
+        346,
+        347,
+        348,
+        349,
+        350,
+        351,
+        352,
+        353,
+        354,
+        355,
+        356,
+        357,
+        358,
+        359,
+        360,
+        361,
+        362,
+        363,
+        364,
+        365,
+        366,
+        367,
+        368,
+        369,
+        370,
+        371,
+        372,
+        373,
+        374,
+        375,
+        376,
+        377,
+        378,
+        379,
+        380,
+        381,
+        382,
+        383,
+        384,
+        385,
+        386,
+        387,
+        388,
+        389,
+        390,
+        391,
+        392,
+        393,
+        394,
+        395,
+        396,
+        397,
+        398,
+        399,
+        400,
+        401,
+        402,
+        403,
+        404,
+        405,
+        406,
+        407,
+        408,
+        409,
+        410,
+        411,
+        412,
+        413,
+        414,
+        415,
+        416,
+        417,
+        418,
+        419,
+        420,
+        421,
+        422,
+        423,
+        424,
+        425,
+        426,
+        427,
+        428,
+        429,
+        430,
+        431,
+        432,
+        433,
+        434,
+        435,
+        436,
+        437,
+        438,
+        439,
+        440,
+        441,
+        442,
+        443,
+        444,
+        445,
+        446,
+        447,
+        448,
+        449,
+        450,
+        451,
+        452,
+        453,
+        454,
+        455,
+        456,
+        457,
+        458,
+        459,
+        460,
+        461,
+        462,
+        463,
+        464,
+        465,
+        466,
+        467,
+        468,
+        469,
+        470,
+        471,
+        472,
+        473,
+        474,
+        475,
+        476,
+        477
+      ],
+      "conditions": {
+        "0": {
+          "locations": [
+            {
+              "start": {
+                "line": 50,
+                "column": 1
+              },
+              "end": {
+                "line": 50,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "1": {
+          "locations": [
+            {
+              "start": {
+                "line": 53,
+                "column": 3
+              },
+              "end": {
+                "line": 55,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "2": {
+          "locations": [
+            {
+              "start": {
+                "line": 57,
+                "column": 2
+              },
+              "end": {
+                "line": 65,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "3": {
+          "locations": [
+            {
+              "start": {
+                "line": 58,
+                "column": 3
+              },
+              "end": {
+                "line": 58,
+                "column": 27
+              }
+            },
+            {
+              "start": {
+                "line": 59,
+                "column": 3
+              },
+              "end": {
+                "line": 59,
+                "column": 34
+              }
+            },
+            {
+              "start": {
+                "line": 60,
+                "column": 3
+              },
+              "end": {
+                "line": 60,
+                "column": 33
+              }
+            },
+            {
+              "start": {
+                "line": 61,
+                "column": 3
+              },
+              "end": {
+                "line": 61,
+                "column": 32
+              }
+            },
+            {
+              "start": {
+                "line": 62,
+                "column": 3
+              },
+              "end": {
+                "line": 62,
+                "column": null
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "4": {
+          "locations": [
+            {
+              "start": {
+                "line": 67,
+                "column": 3
+              },
+              "end": {
+                "line": 68,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "5": {
+          "locations": [
+            {
+              "start": {
+                "line": 69,
+                "column": 3
+              },
+              "end": {
+                "line": 70,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "6": {
+          "locations": [
+            {
+              "start": {
+                "line": 69,
+                "column": 7
+              },
+              "end": {
+                "line": 69,
+                "column": 26
+              }
+            },
+            {
+              "start": {
+                "line": 69,
+                "column": 30
+              },
+              "end": {
+                "line": 69,
+                "column": 62
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "7": {
+          "locations": [
+            {
+              "start": {
+                "line": 73,
+                "column": 1
+              },
+              "end": {
+                "line": 73,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "8": {
+          "locations": [
+            {
+              "start": {
+                "line": 74,
+                "column": 1
+              },
+              "end": {
+                "line": 80,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "9": {
+          "locations": [
+            {
+              "start": {
+                "line": 75,
+                "column": 2
+              },
+              "end": {
+                "line": 75,
+                "column": 52
+              }
+            },
+            {
+              "start": {
+                "line": 76,
+                "column": 2
+              },
+              "end": {
+                "line": 76,
+                "column": 58
+              }
+            },
+            {
+              "start": {
+                "line": 77,
+                "column": 2
+              },
+              "end": {
+                "line": 77,
+                "column": null
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1,
+            2
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0,
+            0
+          ]
+        },
+        "10": {
+          "locations": [
+            {
+              "start": {
+                "line": 154,
+                "column": 7
+              },
+              "end": {
+                "line": 154,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "11": {
+          "locations": [
+            {
+              "start": {
+                "line": 156,
+                "column": 7
+              },
+              "end": {
+                "line": 156,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "12": {
+          "locations": [
+            {
+              "start": {
+                "line": 167,
+                "column": 67
+              },
+              "end": {
+                "line": 167,
+                "column": 80
+              }
+            },
+            {
+              "start": {
+                "line": 167,
+                "column": 83
+              },
+              "end": {
+                "line": 167,
+                "column": 96
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "13": {
+          "locations": [
+            {
+              "start": {
+                "line": 172,
+                "column": 31
+              },
+              "end": {
+                "line": 172,
+                "column": 66
+              }
+            },
+            {
+              "start": {
+                "line": 172,
+                "column": 69
+              },
+              "end": {
+                "line": 172,
+                "column": 78
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "14": {
+          "locations": [
+            {
+              "start": {
+                "line": 173,
+                "column": 8
+              },
+              "end": {
+                "line": 174,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "15": {
+          "locations": [
+            {
+              "start": {
+                "line": 179,
+                "column": 12
+              },
+              "end": {
+                "line": 181,
+                "column": null
+              }
+            },
+            {
+              "start": {
+                "line": 182,
+                "column": 12
+              },
+              "end": {
+                "line": 182,
+                "column": 24
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "16": {
+          "locations": [
+            {
+              "start": {
+                "line": 180,
+                "column": 13
+              },
+              "end": {
+                "line": 180,
+                "column": null
+              }
+            },
+            {
+              "start": {
+                "line": 181,
+                "column": 13
+              },
+              "end": {
+                "line": 181,
+                "column": null
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "17": {
+          "locations": [
+            {
+              "start": {
+                "line": 183,
+                "column": 23
+              },
+              "end": {
+                "line": 183,
+                "column": 53
+              }
+            },
+            {
+              "start": {
+                "line": 183,
+                "column": 56
+              },
+              "end": {
+                "line": 183,
+                "column": 58
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "18": {
+          "locations": [
+            {
+              "start": {
+                "line": 184,
+                "column": 44
+              },
+              "end": {
+                "line": 184,
+                "column": 46
+              }
+            },
+            {
+              "start": {
+                "line": 184,
+                "column": 49
+              },
+              "end": {
+                "line": 184,
+                "column": 86
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "19": {
+          "locations": [
+            {
+              "start": {
+                "line": 187,
+                "column": 8
+              },
+              "end": {
+                "line": 190,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "20": {
+          "locations": [
+            {
+              "start": {
+                "line": 202,
+                "column": 24
+              },
+              "end": {
+                "line": 202,
+                "column": 100
+              }
+            },
+            {
+              "start": {
+                "line": 202,
+                "column": 103
+              },
+              "end": {
+                "line": 202,
+                "column": 112
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "21": {
+          "locations": [
+            {
+              "start": {
+                "line": 221,
+                "column": 34
+              },
+              "end": {
+                "line": 221,
+                "column": 66
+              }
+            },
+            {
+              "start": {
+                "line": 221,
+                "column": 69
+              },
+              "end": {
+                "line": 221,
+                "column": 76
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "22": {
+          "locations": [
+            {
+              "start": {
+                "line": 223,
+                "column": 15
+              },
+              "end": {
+                "line": 223,
+                "column": 42
+              }
+            },
+            {
+              "start": {
+                "line": 223,
+                "column": 46
+              },
+              "end": {
+                "line": 223,
+                "column": 63
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "23": {
+          "locations": [
+            {
+              "start": {
+                "line": 224,
+                "column": 15
+              },
+              "end": {
+                "line": 224,
+                "column": 42
+              }
+            },
+            {
+              "start": {
+                "line": 224,
+                "column": 46
+              },
+              "end": {
+                "line": 224,
+                "column": 63
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "24": {
+          "locations": [
+            {
+              "start": {
+                "line": 225,
+                "column": 13
+              },
+              "end": {
+                "line": 225,
+                "column": 38
+              }
+            },
+            {
+              "start": {
+                "line": 225,
+                "column": 42
+              },
+              "end": {
+                "line": 225,
+                "column": 48
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "25": {
+          "locations": [
+            {
+              "start": {
+                "line": 235,
+                "column": 32
+              },
+              "end": {
+                "line": 235,
+                "column": 58
+              }
+            },
+            {
+              "start": {
+                "line": 235,
+                "column": 61
+              },
+              "end": {
+                "line": 235,
+                "column": 96
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "26": {
+          "locations": [
+            {
+              "start": {
+                "line": 254,
+                "column": 4
+              },
+              "end": {
+                "line": 254,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "27": {
+          "locations": [
+            {
+              "start": {
+                "line": 260,
+                "column": 15
+              },
+              "end": {
+                "line": 260,
+                "column": 29
+              }
+            },
+            {
+              "start": {
+                "line": 260,
+                "column": 33
+              },
+              "end": {
+                "line": 260,
+                "column": 81
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "28": {
+          "locations": [
+            {
+              "start": {
+                "line": 261,
+                "column": 15
+              },
+              "end": {
+                "line": 261,
+                "column": 29
+              }
+            },
+            {
+              "start": {
+                "line": 261,
+                "column": 33
+              },
+              "end": {
+                "line": 261,
+                "column": 40
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "29": {
+          "locations": [
+            {
+              "start": {
+                "line": 262,
+                "column": 40
+              },
+              "end": {
+                "line": 262,
+                "column": 58
+              }
+            },
+            {
+              "start": {
+                "line": 262,
+                "column": 62
+              },
+              "end": {
+                "line": 262,
+                "column": 64
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "30": {
+          "locations": [
+            {
+              "start": {
+                "line": 272,
+                "column": 2
+              },
+              "end": {
+                "line": 273,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "31": {
+          "locations": [
+            {
+              "start": {
+                "line": 272,
+                "column": 6
+              },
+              "end": {
+                "line": 272,
+                "column": 17
+              }
+            },
+            {
+              "start": {
+                "line": 272,
+                "column": 21
+              },
+              "end": {
+                "line": 272,
+                "column": 34
+              }
+            },
+            {
+              "start": {
+                "line": 272,
+                "column": 38
+              },
+              "end": {
+                "line": 272,
+                "column": 51
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1,
+            2
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0,
+            0
+          ]
+        },
+        "32": {
+          "locations": [
+            {
+              "start": {
+                "line": 275,
+                "column": 2
+              },
+              "end": {
+                "line": 275,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "33": {
+          "locations": [
+            {
+              "start": {
+                "line": 280,
+                "column": 2
+              },
+              "end": {
+                "line": 425,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "34": {
+          "locations": [
+            {
+              "start": {
+                "line": 284,
+                "column": 8
+              },
+              "end": {
+                "line": 284,
+                "column": null
+              }
+            },
+            {
+              "start": {
+                "line": 285,
+                "column": 8
+              },
+              "end": {
+                "line": 285,
+                "column": 78
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "35": {
+          "locations": [
+            {
+              "start": {
+                "line": 285,
+                "column": 47
+              },
+              "end": {
+                "line": 285,
+                "column": 56
+              }
+            },
+            {
+              "start": {
+                "line": 285,
+                "column": 60
+              },
+              "end": {
+                "line": 285,
+                "column": 77
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "36": {
+          "locations": [
+            {
+              "start": {
+                "line": 286,
+                "column": 4
+              },
+              "end": {
+                "line": 286,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "37": {
+          "locations": [
+            {
+              "start": {
+                "line": 288,
+                "column": 30
+              },
+              "end": {
+                "line": 288,
+                "column": 39
+              }
+            },
+            {
+              "start": {
+                "line": 288,
+                "column": 43
+              },
+              "end": {
+                "line": 288,
+                "column": 60
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "38": {
+          "locations": [
+            {
+              "start": {
+                "line": 290,
+                "column": 14
+              },
+              "end": {
+                "line": 290,
+                "column": 25
+              }
+            },
+            {
+              "start": {
+                "line": 290,
+                "column": 29
+              },
+              "end": {
+                "line": 290,
+                "column": 33
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "39": {
+          "locations": [
+            {
+              "start": {
+                "line": 307,
+                "column": 6
+              },
+              "end": {
+                "line": 307,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "40": {
+          "locations": [
+            {
+              "start": {
+                "line": 312,
+                "column": 9
+              },
+              "end": {
+                "line": 312,
+                "column": 37
+              }
+            },
+            {
+              "start": {
+                "line": 313,
+                "column": 9
+              },
+              "end": {
+                "line": 313,
+                "column": 99
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "41": {
+          "locations": [
+            {
+              "start": {
+                "line": 313,
+                "column": 40
+              },
+              "end": {
+                "line": 313,
+                "column": 64
+              }
+            },
+            {
+              "start": {
+                "line": 313,
+                "column": 68
+              },
+              "end": {
+                "line": 313,
+                "column": 98
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "42": {
+          "locations": [
+            {
+              "start": {
+                "line": 315,
+                "column": 6
+              },
+              "end": {
+                "line": 315,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "43": {
+          "locations": [
+            {
+              "start": {
+                "line": 327,
+                "column": 26
+              },
+              "end": {
+                "line": 327,
+                "column": 65
+              }
+            },
+            {
+              "start": {
+                "line": 327,
+                "column": 68
+              },
+              "end": {
+                "line": 327,
+                "column": 77
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "44": {
+          "locations": [
+            {
+              "start": {
+                "line": 335,
+                "column": 50
+              },
+              "end": {
+                "line": 335,
+                "column": 59
+              }
+            },
+            {
+              "start": {
+                "line": 335,
+                "column": 62
+              },
+              "end": {
+                "line": 335,
+                "column": 86
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "45": {
+          "locations": [
+            {
+              "start": {
+                "line": 344,
+                "column": 18
+              },
+              "end": {
+                "line": 344,
+                "column": 33
+              }
+            },
+            {
+              "start": {
+                "line": 344,
+                "column": 37
+              },
+              "end": {
+                "line": 344,
+                "column": 39
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "46": {
+          "locations": [
+            {
+              "start": {
+                "line": 346,
+                "column": 18
+              },
+              "end": {
+                "line": 346,
+                "column": 33
+              }
+            },
+            {
+              "start": {
+                "line": 346,
+                "column": 37
+              },
+              "end": {
+                "line": 346,
+                "column": 44
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "47": {
+          "locations": [
+            {
+              "start": {
+                "line": 395,
+                "column": 10
+              },
+              "end": {
+                "line": 395,
+                "column": null
+              }
+            },
+            {
+              "start": {
+                "line": 396,
+                "column": 10
+              },
+              "end": {
+                "line": 396,
+                "column": 19
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "48": {
+          "locations": [
+            {
+              "start": {
+                "line": 408,
+                "column": 7
+              },
+              "end": {
+                "line": 408,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "49": {
+          "locations": [
+            {
+              "start": {
+                "line": 427,
+                "column": 2
+              },
+              "end": {
+                "line": 431,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "50": {
+          "locations": [
+            {
+              "start": {
+                "line": 432,
+                "column": 40
+              },
+              "end": {
+                "line": 432,
+                "column": 51
+              }
+            },
+            {
+              "start": {
+                "line": 432,
+                "column": 55
+              },
+              "end": {
+                "line": 432,
+                "column": 59
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "51": {
+          "locations": [
+            {
+              "start": {
+                "line": 438,
+                "column": 19
+              },
+              "end": {
+                "line": 438,
+                "column": 51
+              }
+            },
+            {
+              "start": {
+                "line": 438,
+                "column": 55
+              },
+              "end": {
+                "line": 438,
+                "column": 85
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "52": {
+          "locations": [
+            {
+              "start": {
+                "line": 442,
+                "column": 5
+              },
+              "end": {
+                "line": 444,
+                "column": null
+              }
+            },
+            {
+              "start": {
+                "line": 445,
+                "column": 5
+              },
+              "end": {
+                "line": 445,
+                "column": 7
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "53": {
+          "locations": [
+            {
+              "start": {
+                "line": 443,
+                "column": 6
+              },
+              "end": {
+                "line": 443,
+                "column": null
+              }
+            },
+            {
+              "start": {
+                "line": 444,
+                "column": 6
+              },
+              "end": {
+                "line": 444,
+                "column": null
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "54": {
+          "locations": [
+            {
+              "start": {
+                "line": 455,
+                "column": 2
+              },
+              "end": {
+                "line": 455,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "55": {
+          "locations": [
+            {
+              "start": {
+                "line": 460,
+                "column": 2
+              },
+              "end": {
+                "line": 460,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        }
+      },
+      "observedCoverage": false
+    },
+    "packages/coding-agent/src/experimental/durable/extension-tool-policy.ts": {
+      "sourceSha256": "339221c6b7b1e70a95f831626e6588c5a689441d72db847c24314a3af8b19505",
+      "baselineBlob": null,
+      "baselineContentSha256": null,
+      "changedLines": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91
+      ],
+      "conditions": {
+        "0": {
+          "locations": [
+            {
+              "start": {
+                "line": 16,
+                "column": 1
+              },
+              "end": {
+                "line": 17,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "1": {
+          "locations": [
+            {
+              "start": {
+                "line": 16,
+                "column": 5
+              },
+              "end": {
+                "line": 16,
+                "column": 19
+              }
+            },
+            {
+              "start": {
+                "line": 16,
+                "column": 23
+              },
+              "end": {
+                "line": 16,
+                "column": 48
+              }
+            },
+            {
+              "start": {
+                "line": 16,
+                "column": 52
+              },
+              "end": {
+                "line": 16,
+                "column": 72
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1,
+            2
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0,
+            0
+          ]
+        },
+        "2": {
+          "locations": [
+            {
+              "start": {
+                "line": 26,
+                "column": 17
+              },
+              "end": {
+                "line": 26,
+                "column": 31
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0
+          ]
+        },
+        "3": {
+          "locations": [
+            {
+              "start": {
+                "line": 28,
+                "column": 1
+              },
+              "end": {
+                "line": 28,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "4": {
+          "locations": [
+            {
+              "start": {
+                "line": 34,
+                "column": 39
+              },
+              "end": {
+                "line": 34,
+                "column": 41
+              }
+            },
+            {
+              "start": {
+                "line": 34,
+                "column": 44
+              },
+              "end": {
+                "line": 34,
+                "column": 64
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "5": {
+          "locations": [
+            {
+              "start": {
+                "line": 36,
+                "column": 24
+              },
+              "end": {
+                "line": 36,
+                "column": 81
+              }
+            },
+            {
+              "start": {
+                "line": 36,
+                "column": 84
+              },
+              "end": {
+                "line": 36,
+                "column": 93
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "6": {
+          "locations": [
+            {
+              "start": {
+                "line": 36,
+                "column": 33
+              },
+              "end": {
+                "line": 36,
+                "column": 46
+              }
+            },
+            {
+              "start": {
+                "line": 36,
+                "column": 50
+              },
+              "end": {
+                "line": 36,
+                "column": 79
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "7": {
+          "locations": [
+            {
+              "start": {
+                "line": 45,
+                "column": 17
+              },
+              "end": {
+                "line": 45,
+                "column": 31
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0
+          ]
+        },
+        "8": {
+          "locations": [
+            {
+              "start": {
+                "line": 52,
+                "column": 11
+              },
+              "end": {
+                "line": 52,
+                "column": 25
+              }
+            },
+            {
+              "start": {
+                "line": 52,
+                "column": 29
+              },
+              "end": {
+                "line": 52,
+                "column": 31
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "9": {
+          "locations": [
+            {
+              "start": {
+                "line": 54,
+                "column": 11
+              },
+              "end": {
+                "line": 54,
+                "column": 25
+              }
+            },
+            {
+              "start": {
+                "line": 54,
+                "column": 29
+              },
+              "end": {
+                "line": 54,
+                "column": 34
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "10": {
+          "locations": [
+            {
+              "start": {
+                "line": 55,
+                "column": 39
+              },
+              "end": {
+                "line": 55,
+                "column": 41
+              }
+            },
+            {
+              "start": {
+                "line": 55,
+                "column": 44
+              },
+              "end": {
+                "line": 55,
+                "column": 64
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "11": {
+          "locations": [
+            {
+              "start": {
+                "line": 57,
+                "column": 1
+              },
+              "end": {
+                "line": 58,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "12": {
+          "locations": [
+            {
+              "start": {
+                "line": 61,
+                "column": 43
+              },
+              "end": {
+                "line": 61,
+                "column": 59
+              }
+            },
+            {
+              "start": {
+                "line": 61,
+                "column": 63
+              },
+              "end": {
+                "line": 61,
+                "column": 77
+              }
+            },
+            {
+              "start": {
+                "line": 61,
+                "column": 81
+              },
+              "end": {
+                "line": 61,
+                "column": 83
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1,
+            2
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0,
+            0
+          ]
+        },
+        "13": {
+          "locations": [
+            {
+              "start": {
+                "line": 62,
+                "column": 39
+              },
+              "end": {
+                "line": 62,
+                "column": 41
+              }
+            },
+            {
+              "start": {
+                "line": 62,
+                "column": 44
+              },
+              "end": {
+                "line": 62,
+                "column": 82
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "14": {
+          "locations": [
+            {
+              "start": {
+                "line": 63,
+                "column": 11
+              },
+              "end": {
+                "line": 63,
+                "column": 27
+              }
+            },
+            {
+              "start": {
+                "line": 63,
+                "column": 31
+              },
+              "end": {
+                "line": 63,
+                "column": 45
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        }
+      },
+      "observedCoverage": false
+    },
+    "packages/durable/src/harness/tool.ts": {
+      "sourceSha256": "50bef799917bd2372d8dfa8014227d1450fe50461e841034afc9e68ee8887c7c",
+      "baselineBlob": "4c84ff062564ddcf75e52c92376888746aaf780f",
+      "baselineContentSha256": "8027ca9ef3e6feb2a803b9c57f34a903b3f8a706864360c6a50f2aa2dbc34bb8",
+      "changedLines": [
+        465
+      ],
+      "conditions": {
+        "0": {
+          "locations": [
+            {
+              "start": {
+                "line": 58,
+                "column": 3
+              },
+              "end": {
+                "line": 61,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "1": {
+          "locations": [
+            {
+              "start": {
+                "line": 63,
+                "column": 41
+              },
+              "end": {
+                "line": 63,
+                "column": 49
+              }
+            },
+            {
+              "start": {
+                "line": 63,
+                "column": 52
+              },
+              "end": {
+                "line": 63,
+                "column": 87
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "2": {
+          "locations": [
+            {
+              "start": {
+                "line": 64,
+                "column": 3
+              },
+              "end": {
+                "line": 64,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "3": {
+          "locations": [
+            {
+              "start": {
+                "line": 68,
+                "column": 4
+              },
+              "end": {
+                "line": 68,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "4": {
+          "locations": [
+            {
+              "start": {
+                "line": 71,
+                "column": 5
+              },
+              "end": {
+                "line": 72,
+                "column": null
+              }
+            },
+            {
+              "start": {
+                "line": 72,
+                "column": 10
+              },
+              "end": {
+                "line": 72,
+                "column": null
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "5": {
+          "locations": [
+            {
+              "start": {
+                "line": 72,
+                "column": 10
+              },
+              "end": {
+                "line": 72,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "6": {
+          "locations": [
+            {
+              "start": {
+                "line": 74,
+                "column": 5
+              },
+              "end": {
+                "line": 74,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "7": {
+          "locations": [
+            {
+              "start": {
+                "line": 78,
+                "column": 3
+              },
+              "end": {
+                "line": 81,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "8": {
+          "locations": [
+            {
+              "start": {
+                "line": 83,
+                "column": 3
+              },
+              "end": {
+                "line": 83,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "9": {
+          "locations": [
+            {
+              "start": {
+                "line": 87,
+                "column": 4
+              },
+              "end": {
+                "line": 87,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "10": {
+          "locations": [
+            {
+              "start": {
+                "line": 88,
+                "column": 65
+              },
+              "end": {
+                "line": 88,
+                "column": 76
+              }
+            },
+            {
+              "start": {
+                "line": 88,
+                "column": 80
+              },
+              "end": {
+                "line": 88,
+                "column": 88
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "11": {
+          "locations": [
+            {
+              "start": {
+                "line": 98,
+                "column": 3
+              },
+              "end": {
+                "line": 106,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "12": {
+          "locations": [
+            {
+              "start": {
+                "line": 98,
+                "column": 7
+              },
+              "end": {
+                "line": 98,
+                "column": 24
+              }
+            },
+            {
+              "start": {
+                "line": 98,
+                "column": 28
+              },
+              "end": {
+                "line": 98,
+                "column": 51
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "13": {
+          "locations": [
+            {
+              "start": {
+                "line": 102,
+                "column": 5
+              },
+              "end": {
+                "line": 102,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "14": {
+          "locations": [
+            {
+              "start": {
+                "line": 126,
+                "column": 5
+              },
+              "end": {
+                "line": 128,
+                "column": null
+              }
+            },
+            {
+              "start": {
+                "line": 129,
+                "column": 5
+              },
+              "end": {
+                "line": 129,
+                "column": 14
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "15": {
+          "locations": [
+            {
+              "start": {
+                "line": 127,
+                "column": 39
+              },
+              "end": {
+                "line": 127,
+                "column": 66
+              }
+            },
+            {
+              "start": {
+                "line": 127,
+                "column": 70
+              },
+              "end": {
+                "line": 127,
+                "column": 97
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "16": {
+          "locations": [
+            {
+              "start": {
+                "line": 130,
+                "column": 1
+              },
+              "end": {
+                "line": 130,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "17": {
+          "locations": [
+            {
+              "start": {
+                "line": 139,
+                "column": 1
+              },
+              "end": {
+                "line": 139,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "18": {
+          "locations": [
+            {
+              "start": {
+                "line": 177,
+                "column": 12
+              },
+              "end": {
+                "line": 177,
+                "column": 39
+              }
+            },
+            {
+              "start": {
+                "line": 177,
+                "column": 43
+              },
+              "end": {
+                "line": 177,
+                "column": 60
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "19": {
+          "locations": [
+            {
+              "start": {
+                "line": 178,
+                "column": 12
+              },
+              "end": {
+                "line": 178,
+                "column": 39
+              }
+            },
+            {
+              "start": {
+                "line": 178,
+                "column": 43
+              },
+              "end": {
+                "line": 178,
+                "column": 60
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "20": {
+          "locations": [
+            {
+              "start": {
+                "line": 179,
+                "column": 10
+              },
+              "end": {
+                "line": 179,
+                "column": 35
+              }
+            },
+            {
+              "start": {
+                "line": 179,
+                "column": 39
+              },
+              "end": {
+                "line": 179,
+                "column": 45
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "21": {
+          "locations": [
+            {
+              "start": {
+                "line": 185,
+                "column": 2
+              },
+              "end": {
+                "line": 185,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "22": {
+          "locations": [
+            {
+              "start": {
+                "line": 195,
+                "column": 3
+              },
+              "end": {
+                "line": 195,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "23": {
+          "locations": [
+            {
+              "start": {
+                "line": 199,
+                "column": 6
+              },
+              "end": {
+                "line": 204,
+                "column": null
+              }
+            },
+            {
+              "start": {
+                "line": 205,
+                "column": 6
+              },
+              "end": {
+                "line": 205,
+                "column": 15
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "24": {
+          "locations": [
+            {
+              "start": {
+                "line": 257,
+                "column": 2
+              },
+              "end": {
+                "line": 261,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "25": {
+          "locations": [
+            {
+              "start": {
+                "line": 297,
+                "column": 3
+              },
+              "end": {
+                "line": 302,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "26": {
+          "locations": [
+            {
+              "start": {
+                "line": 299,
+                "column": 7
+              },
+              "end": {
+                "line": 299,
+                "column": null
+              }
+            },
+            {
+              "start": {
+                "line": 300,
+                "column": 7
+              },
+              "end": {
+                "line": 300,
+                "column": 51
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "27": {
+          "locations": [
+            {
+              "start": {
+                "line": 303,
+                "column": 3
+              },
+              "end": {
+                "line": 303,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "28": {
+          "locations": [
+            {
+              "start": {
+                "line": 303,
+                "column": 62
+              },
+              "end": {
+                "line": 303,
+                "column": 77
+              }
+            },
+            {
+              "start": {
+                "line": 303,
+                "column": 81
+              },
+              "end": {
+                "line": 303,
+                "column": 85
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "29": {
+          "locations": [
+            {
+              "start": {
+                "line": 304,
+                "column": 3
+              },
+              "end": {
+                "line": 304,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "30": {
+          "locations": [
+            {
+              "start": {
+                "line": 307,
+                "column": 4
+              },
+              "end": {
+                "line": 307,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "31": {
+          "locations": [
+            {
+              "start": {
+                "line": 310,
+                "column": 4
+              },
+              "end": {
+                "line": 310,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "32": {
+          "locations": [
+            {
+              "start": {
+                "line": 310,
+                "column": 9
+              },
+              "end": {
+                "line": 310,
+                "column": 20
+              }
+            },
+            {
+              "start": {
+                "line": 310,
+                "column": 24
+              },
+              "end": {
+                "line": 310,
+                "column": 26
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "33": {
+          "locations": [
+            {
+              "start": {
+                "line": 311,
+                "column": 4
+              },
+              "end": {
+                "line": 311,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "34": {
+          "locations": [
+            {
+              "start": {
+                "line": 312,
+                "column": 4
+              },
+              "end": {
+                "line": 312,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "35": {
+          "locations": [
+            {
+              "start": {
+                "line": 314,
+                "column": 4
+              },
+              "end": {
+                "line": 316,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "36": {
+          "locations": [
+            {
+              "start": {
+                "line": 314,
+                "column": 8
+              },
+              "end": {
+                "line": 314,
+                "column": 22
+              }
+            },
+            {
+              "start": {
+                "line": 314,
+                "column": 26
+              },
+              "end": {
+                "line": 314,
+                "column": 55
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "37": {
+          "locations": [
+            {
+              "start": {
+                "line": 317,
+                "column": 4
+              },
+              "end": {
+                "line": 320,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "38": {
+          "locations": [
+            {
+              "start": {
+                "line": 318,
+                "column": 5
+              },
+              "end": {
+                "line": 318,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "39": {
+          "locations": [
+            {
+              "start": {
+                "line": 328,
+                "column": 3
+              },
+              "end": {
+                "line": 328,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "40": {
+          "locations": [
+            {
+              "start": {
+                "line": 347,
+                "column": 49
+              },
+              "end": {
+                "line": 347,
+                "column": 75
+              }
+            },
+            {
+              "start": {
+                "line": 347,
+                "column": 78
+              },
+              "end": {
+                "line": 347,
+                "column": 87
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "41": {
+          "locations": [
+            {
+              "start": {
+                "line": 349,
+                "column": 27
+              },
+              "end": {
+                "line": 349,
+                "column": 42
+              }
+            },
+            {
+              "start": {
+                "line": 349,
+                "column": 45
+              },
+              "end": {
+                "line": 349,
+                "column": 112
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "42": {
+          "locations": [
+            {
+              "start": {
+                "line": 349,
+                "column": 68
+              },
+              "end": {
+                "line": 349,
+                "column": 70
+              }
+            },
+            {
+              "start": {
+                "line": 349,
+                "column": 73
+              },
+              "end": {
+                "line": 349,
+                "column": 112
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "43": {
+          "locations": [
+            {
+              "start": {
+                "line": 353,
+                "column": 42
+              },
+              "end": {
+                "line": 353,
+                "column": 58
+              }
+            },
+            {
+              "start": {
+                "line": 353,
+                "column": 61
+              },
+              "end": {
+                "line": 353,
+                "column": 75
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "44": {
+          "locations": [
+            {
+              "start": {
+                "line": 354,
+                "column": 45
+              },
+              "end": {
+                "line": 354,
+                "column": 63
+              }
+            },
+            {
+              "start": {
+                "line": 354,
+                "column": 67
+              },
+              "end": {
+                "line": 354,
+                "column": 69
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "45": {
+          "locations": [
+            {
+              "start": {
+                "line": 357,
+                "column": 11
+              },
+              "end": {
+                "line": 357,
+                "column": 52
+              }
+            },
+            {
+              "start": {
+                "line": 357,
+                "column": 57
+              },
+              "end": {
+                "line": 357,
+                "column": 62
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "46": {
+          "locations": [
+            {
+              "start": {
+                "line": 360,
+                "column": 1
+              },
+              "end": {
+                "line": 362,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "47": {
+          "locations": [
+            {
+              "start": {
+                "line": 360,
+                "column": 5
+              },
+              "end": {
+                "line": 360,
+                "column": 27
+              }
+            },
+            {
+              "start": {
+                "line": 360,
+                "column": 31
+              },
+              "end": {
+                "line": 360,
+                "column": 56
+              }
+            },
+            {
+              "start": {
+                "line": 360,
+                "column": 60
+              },
+              "end": {
+                "line": 360,
+                "column": 85
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0,
+            0
+          ]
+        },
+        "48": {
+          "locations": [
+            {
+              "start": {
+                "line": 363,
+                "column": 30
+              },
+              "end": {
+                "line": 363,
+                "column": 43
+              }
+            },
+            {
+              "start": {
+                "line": 363,
+                "column": 47
+              },
+              "end": {
+                "line": 363,
+                "column": 49
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "49": {
+          "locations": [
+            {
+              "start": {
+                "line": 364,
+                "column": 1
+              },
+              "end": {
+                "line": 364,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "50": {
+          "locations": [
+            {
+              "start": {
+                "line": 365,
+                "column": 64
+              },
+              "end": {
+                "line": 365,
+                "column": 81
+              }
+            },
+            {
+              "start": {
+                "line": 365,
+                "column": 85
+              },
+              "end": {
+                "line": 365,
+                "column": 87
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "51": {
+          "locations": [
+            {
+              "start": {
+                "line": 383,
+                "column": 2
+              },
+              "end": {
+                "line": 383,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "52": {
+          "locations": [
+            {
+              "start": {
+                "line": 385,
+                "column": 2
+              },
+              "end": {
+                "line": 386,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "53": {
+          "locations": [
+            {
+              "start": {
+                "line": 387,
+                "column": 2
+              },
+              "end": {
+                "line": 390,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "54": {
+          "locations": [
+            {
+              "start": {
+                "line": 394,
+                "column": 6
+              },
+              "end": {
+                "line": 394,
+                "column": null
+              }
+            },
+            {
+              "start": {
+                "line": 395,
+                "column": 6
+              },
+              "end": {
+                "line": 395,
+                "column": 106
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "55": {
+          "locations": [
+            {
+              "start": {
+                "line": 410,
+                "column": 26
+              },
+              "end": {
+                "line": 410,
+                "column": 43
+              }
+            },
+            {
+              "start": {
+                "line": 410,
+                "column": 47
+              },
+              "end": {
+                "line": 410,
+                "column": 49
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "56": {
+          "locations": [
+            {
+              "start": {
+                "line": 411,
+                "column": 22
+              },
+              "end": {
+                "line": 411,
+                "column": 40
+              }
+            },
+            {
+              "start": {
+                "line": 411,
+                "column": 44
+              },
+              "end": {
+                "line": 411,
+                "column": 45
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "57": {
+          "locations": [
+            {
+              "start": {
+                "line": 412,
+                "column": 1
+              },
+              "end": {
+                "line": 412,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "58": {
+          "locations": [
+            {
+              "start": {
+                "line": 412,
+                "column": 80
+              },
+              "end": {
+                "line": 412,
+                "column": 98
+              }
+            },
+            {
+              "start": {
+                "line": 412,
+                "column": 102
+              },
+              "end": {
+                "line": 412,
+                "column": 103
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "59": {
+          "locations": [
+            {
+              "start": {
+                "line": 415,
+                "column": 62
+              },
+              "end": {
+                "line": 415,
+                "column": 64
+              }
+            },
+            {
+              "start": {
+                "line": 415,
+                "column": 67
+              },
+              "end": {
+                "line": 415,
+                "column": 104
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "60": {
+          "locations": [
+            {
+              "start": {
+                "line": 415,
+                "column": 11
+              },
+              "end": {
+                "line": 415,
+                "column": 37
+              }
+            },
+            {
+              "start": {
+                "line": 415,
+                "column": 41
+              },
+              "end": {
+                "line": 415,
+                "column": 59
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "61": {
+          "locations": [
+            {
+              "start": {
+                "line": 417,
+                "column": 36
+              },
+              "end": {
+                "line": 417,
+                "column": 38
+              }
+            },
+            {
+              "start": {
+                "line": 417,
+                "column": 41
+              },
+              "end": {
+                "line": 417,
+                "column": 66
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "62": {
+          "locations": [
+            {
+              "start": {
+                "line": 436,
+                "column": 37
+              },
+              "end": {
+                "line": 436,
+                "column": 39
+              }
+            },
+            {
+              "start": {
+                "line": 436,
+                "column": 42
+              },
+              "end": {
+                "line": 436,
+                "column": 94
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "63": {
+          "locations": [
+            {
+              "start": {
+                "line": 436,
+                "column": 73
+              },
+              "end": {
+                "line": 436,
+                "column": 84
+              }
+            },
+            {
+              "start": {
+                "line": 436,
+                "column": 87
+              },
+              "end": {
+                "line": 436,
+                "column": 92
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "64": {
+          "locations": [
+            {
+              "start": {
+                "line": 455,
+                "column": 26
+              },
+              "end": {
+                "line": 455,
+                "column": 44
+              }
+            },
+            {
+              "start": {
+                "line": 455,
+                "column": 48
+              },
+              "end": {
+                "line": 455,
+                "column": 50
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "65": {
+          "locations": [
+            {
+              "start": {
+                "line": 456,
+                "column": 31
+              },
+              "end": {
+                "line": 456,
+                "column": 45
+              }
+            },
+            {
+              "start": {
+                "line": 456,
+                "column": 49
+              },
+              "end": {
+                "line": 456,
+                "column": 51
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "66": {
+          "locations": [
+            {
+              "start": {
+                "line": 457,
+                "column": 1
+              },
+              "end": {
+                "line": 457,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "67": {
+          "locations": [
+            {
+              "start": {
+                "line": 463,
+                "column": 37
+              },
+              "end": {
+                "line": 463,
+                "column": 39
+              }
+            },
+            {
+              "start": {
+                "line": 463,
+                "column": 42
+              },
+              "end": {
+                "line": 463,
+                "column": 69
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "68": {
+          "locations": [
+            {
+              "start": {
+                "line": 464,
+                "column": 35
+              },
+              "end": {
+                "line": 464,
+                "column": 37
+              }
+            },
+            {
+              "start": {
+                "line": 464,
+                "column": 40
+              },
+              "end": {
+                "line": 464,
+                "column": 63
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "69": {
+          "locations": [
+            {
+              "start": {
+                "line": 465,
+                "column": 41
+              },
+              "end": {
+                "line": 465,
+                "column": 43
+              }
+            },
+            {
+              "start": {
+                "line": 465,
+                "column": 46
+              },
+              "end": {
+                "line": 465,
+                "column": 91
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "70": {
+          "locations": [
+            {
+              "start": {
+                "line": 466,
+                "column": 11
+              },
+              "end": {
+                "line": 466,
+                "column": 25
+              }
+            },
+            {
+              "start": {
+                "line": 466,
+                "column": 29
+              },
+              "end": {
+                "line": 466,
+                "column": 34
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "71": {
+          "locations": [
+            {
+              "start": {
+                "line": 469,
+                "column": 1
+              },
+              "end": {
+                "line": 469,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "72": {
+          "locations": [
+            {
+              "start": {
+                "line": 487,
+                "column": 1
+              },
+              "end": {
+                "line": 487,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "73": {
+          "locations": [
+            {
+              "start": {
+                "line": 488,
+                "column": 41
+              },
+              "end": {
+                "line": 488,
+                "column": 49
+              }
+            },
+            {
+              "start": {
+                "line": 488,
+                "column": 52
+              },
+              "end": {
+                "line": 488,
+                "column": 64
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "74": {
+          "locations": [
+            {
+              "start": {
+                "line": 491,
+                "column": 2
+              },
+              "end": {
+                "line": 492,
+                "column": null
+              }
+            },
+            {
+              "start": {
+                "line": 492,
+                "column": 7
+              },
+              "end": {
+                "line": 492,
+                "column": null
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "75": {
+          "locations": [
+            {
+              "start": {
+                "line": 492,
+                "column": 7
+              },
+              "end": {
+                "line": 492,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "76": {
+          "locations": [
+            {
+              "start": {
+                "line": 498,
+                "column": 33
+              },
+              "end": {
+                "line": 498,
+                "column": 46
+              }
+            },
+            {
+              "start": {
+                "line": 498,
+                "column": 49
+              },
+              "end": {
+                "line": 498,
+                "column": 62
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        }
+      },
+      "observedCoverage": false
+    },
+    "packages/durable/src/harness/types.ts": {
+      "sourceSha256": "4ba7d844c450aa2843fd8ed7d9d28c8492161b3e25ec1a2b35d38e6ed7528c37",
+      "baselineBlob": "941a3daa45929b5f9964807fcb877805a54ba772",
+      "baselineContentSha256": "f9607787182a674c2d31302db3b2490af6e0370b4a4d429dcf5f843af89bda83",
+      "changedLines": [
+        153,
+        154
+      ],
+      "conditions": {},
+      "observedCoverage": false
+    },
+    "scripts/build-coding-agent-bundle.mjs": {
+      "sourceSha256": "437b2ff6c2a9e92a0bfb2e8ce20d8d2216775d622ebb3c320eade75dac19f0f7",
+      "baselineBlob": "2e16fb145685aac615dcd129518277cf5e2515f3",
+      "baselineContentSha256": "fcfcb2c82f1e3f08c11d4dc5e82385df662f60e7036b4ac35d9aa0247f847ff4",
+      "changedLines": [
+        3,
+        8,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        118,
+        119,
+        120,
+        171,
+        188,
+        272,
+        273,
+        274,
+        275,
+        276,
+        277,
+        278,
+        279,
+        280,
+        281,
+        282,
+        283,
+        284,
+        285,
+        286
+      ],
+      "conditions": {
+        "0": {
+          "locations": [
+            {
+              "start": {
+                "line": 24,
+                "column": 3
+              },
+              "end": {
+                "line": 24,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "1": {
+          "locations": [
+            {
+              "start": {
+                "line": 24,
+                "column": 7
+              },
+              "end": {
+                "line": 24,
+                "column": 44
+              }
+            },
+            {
+              "start": {
+                "line": 24,
+                "column": 48
+              },
+              "end": {
+                "line": 24,
+                "column": 106
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "2": {
+          "locations": [
+            {
+              "start": {
+                "line": 27,
+                "column": 3
+              },
+              "end": {
+                "line": 27,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "3": {
+          "locations": [
+            {
+              "start": {
+                "line": 80,
+                "column": 3
+              },
+              "end": {
+                "line": 80,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "4": {
+          "locations": [
+            {
+              "start": {
+                "line": 118,
+                "column": 78
+              },
+              "end": {
+                "line": 118,
+                "column": 104
+              }
+            },
+            {
+              "start": {
+                "line": 118,
+                "column": 107
+              },
+              "end": {
+                "line": 118,
+                "column": 109
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "5": {
+          "locations": [
+            {
+              "start": {
+                "line": 120,
+                "column": 25
+              },
+              "end": {
+                "line": 120,
+                "column": 35
+              }
+            },
+            {
+              "start": {
+                "line": 120,
+                "column": 38
+              },
+              "end": {
+                "line": 120,
+                "column": 43
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "6": {
+          "locations": [
+            {
+              "start": {
+                "line": 134,
+                "column": 4
+              },
+              "end": {
+                "line": 136,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "7": {
+          "locations": [
+            {
+              "start": {
+                "line": 134,
+                "column": 8
+              },
+              "end": {
+                "line": 134,
+                "column": 26
+              }
+            },
+            {
+              "start": {
+                "line": 134,
+                "column": 30
+              },
+              "end": {
+                "line": 134,
+                "column": 54
+              }
+            },
+            {
+              "start": {
+                "line": 134,
+                "column": 58
+              },
+              "end": {
+                "line": 134,
+                "column": 100
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0,
+            0
+          ]
+        },
+        "8": {
+          "locations": [
+            {
+              "start": {
+                "line": 141,
+                "column": 1
+              },
+              "end": {
+                "line": 143,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "9": {
+          "locations": [
+            {
+              "start": {
+                "line": 149,
+                "column": 2
+              },
+              "end": {
+                "line": 151,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "10": {
+          "locations": [
+            {
+              "start": {
+                "line": 171,
+                "column": 17
+              },
+              "end": {
+                "line": 171,
+                "column": 33
+              }
+            },
+            {
+              "start": {
+                "line": 171,
+                "column": 36
+              },
+              "end": {
+                "line": 171,
+                "column": 38
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "11": {
+          "locations": [
+            {
+              "start": {
+                "line": 173,
+                "column": 1
+              },
+              "end": {
+                "line": 175,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "12": {
+          "locations": [
+            {
+              "start": {
+                "line": 188,
+                "column": 18
+              },
+              "end": {
+                "line": 188,
+                "column": 55
+              }
+            },
+            {
+              "start": {
+                "line": 188,
+                "column": 58
+              },
+              "end": {
+                "line": 188,
+                "column": 60
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "13": {
+          "locations": [
+            {
+              "start": {
+                "line": 199,
+                "column": 0
+              },
+              "end": {
+                "line": 201,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "14": {
+          "locations": [
+            {
+              "start": {
+                "line": 224,
+                "column": 1
+              },
+              "end": {
+                "line": 226,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "15": {
+          "locations": [
+            {
+              "start": {
+                "line": 250,
+                "column": 53
+              },
+              "end": {
+                "line": 250,
+                "column": 89
+              }
+            },
+            {
+              "start": {
+                "line": 250,
+                "column": 93
+              },
+              "end": {
+                "line": 250,
+                "column": 118
+              }
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "16": {
+          "locations": [
+            {
+              "start": {
+                "line": 251,
+                "column": 1
+              },
+              "end": {
+                "line": 255,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "17": {
+          "locations": [
+            {
+              "start": {
+                "line": 256,
+                "column": 1
+              },
+              "end": {
+                "line": 258,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "18": {
+          "locations": [
+            {
+              "start": {
+                "line": 262,
+                "column": 0
+              },
+              "end": {
+                "line": 264,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "19": {
+          "locations": [
+            {
+              "start": {
+                "line": 266,
+                "column": 0
+              },
+              "end": {
+                "line": 268,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "20": {
+          "locations": [
+            {
+              "start": {
+                "line": 272,
+                "column": 0
+              },
+              "end": {
+                "line": 286,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "21": {
+          "locations": [
+            {
+              "start": {
+                "line": 275,
+                "column": 21
+              },
+              "end": {
+                "line": 275,
+                "column": 50
+              }
+            },
+            {
+              "start": {
+                "line": 275,
+                "column": 54
+              },
+              "end": {
+                "line": 275,
+                "column": 77
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "22": {
+          "locations": [
+            {
+              "start": {
+                "line": 276,
+                "column": 1
+              },
+              "end": {
+                "line": 282,
+                "column": null
+              }
+            },
+            {
+              "start": {},
+              "end": {}
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        },
+        "23": {
+          "locations": [
+            {
+              "start": {
+                "line": 278,
+                "column": 14
+              },
+              "end": {
+                "line": 278,
+                "column": 74
+              }
+            },
+            {
+              "start": {
+                "line": 278,
+                "column": 78
+              },
+              "end": {
+                "line": 278,
+                "column": 111
+              }
+            }
+          ],
+          "potentialNewArmIndices": [
+            0,
+            1
+          ],
+          "observedCounts": null,
+          "staticZeroCounts": [
+            0,
+            0
+          ]
+        }
+      },
+      "observedCoverage": false
+    }
+  },
+  "eligiblePaths": [
+    "packages/coding-agent/src/experimental/durable/extension-composition.ts",
+    "packages/coding-agent/src/experimental/durable/extension-tool-policy.ts",
+    "packages/durable/src/harness/tool.ts",
+    "packages/durable/src/harness/types.ts",
+    "scripts/build-coding-agent-bundle.mjs"
+  ],
+  "changedSourceCount": 5,
+  "changedLines": 609,
+  "potentialNewConditionSlots": 171,
+  "conditionAttribution": "STATIC_LOCATION_CANDIDATES_REQUIRES_ACTUAL_EMITTED_MAP_AND_SONAR_RECONCILIATION",
+  "ACED": false,
+  "observedCoverage": false
+}

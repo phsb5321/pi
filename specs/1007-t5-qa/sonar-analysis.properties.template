@@ -1,0 +1,17 @@
+# Token-free template for the exact isolated Community analysis view.
+# Runtime launcher supplies exact projectVersion/scm.revision and, for candidate,
+# verified source-mapped LCOV. No literal token or env/argv token transport.
+sonar.projectKey=phsb5321_pi-memory-sound-qa
+sonar.projectName=Pi Memory-Sound isolated QA
+sonar.host.url=https://sonarqube.home301server.com.br
+sonar.sources=.
+sonar.tests=.
+# These partition test files, not coverage or first-party source carveouts.
+sonar.test.inclusions=**/test/**,**/tests/**,**/*.test.*,**/*.spec.*
+sonar.test.exclusions=**/node_modules/**,**/dist/**,**/.git/**
+sonar.exclusions=**/node_modules/**,**/dist/**,**/.git/**,**/test/**,**/tests/**,**/*.test.*,**/*.spec.*
+sonar.qualitygate.wait=true
+sonar.qualitygate.timeout=300
+# Baseline uses projectVersion1.0.4/scm.revision7c10bd...; actual analysisId is
+# read from CE SUCCESS then pinned as SPECIFIC_ANALYSIS ONLY for this project.
+# Candidate must preserve exact frozen-source provenance; not unrelated QA HEAD.

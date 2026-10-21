@@ -1,0 +1,49 @@
+{
+  "status": "QUALITY_EXECUTION_BOUNDARY_CHECK_PASS_NOT_PRODUCT",
+  "checks": [
+    {
+      "name": "missing-artifact",
+      "argv": [
+        "/run/current-system/sw/bin/python3",
+        "-B",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/quality-entry.py",
+        "--manifest",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/PROJECT-GATE.T15.QUALITY.json",
+        "--evidence",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/quality-execution-boundary-1008-1940/missing-artifact",
+        "--execute"
+      ],
+      "exit": 78,
+      "reason": "Missing qualified compiled artifact",
+      "logSha256": "e9caa1fbc91cd15fabbe092da7b22a33a04df5cc919935690cb8cc8ce28aee3c",
+      "rawResultSha256": "e9caa1fbc91cd15fabbe092da7b22a33a04df5cc919935690cb8cc8ce28aee3c"
+    },
+    {
+      "name": "stale-tuple",
+      "argv": [
+        "/run/current-system/sw/bin/python3",
+        "-B",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/quality-entry.py",
+        "--manifest",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/quality-execution-boundary-1008-1940/stale-negative-manifest.json",
+        "--evidence",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/quality-execution-boundary-1008-1940/stale-tuple",
+        "--execute"
+      ],
+      "exit": 3,
+      "reason": "Stale source identity: tuple",
+      "logSha256": "9a9fd5621c4dc15ccb1aeccfcb56a10f74fc630e53f939455ff6531c8d9f31d4",
+      "rawResultSha256": "9a9fd5621c4dc15ccb1aeccfcb56a10f74fc630e53f939455ff6531c8d9f31d4"
+    }
+  ],
+  "scansSubmitted": 0,
+  "credentialFetches": 0,
+  "httpRequests": 0,
+  "compilerInvocations": 0,
+  "productLaunched": false,
+  "ACED": false,
+  "behaviorExecuted": false,
+  "fixturePositive": false,
+  "manifestSha256": "e9ab4f139ba8d7708a5226fd7da52e45601bde5e77ba238ddcb7a13c2da849f7",
+  "clock_brt": "08/10/2026 19:41:04 -0300"
+}

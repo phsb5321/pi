@@ -1,0 +1,35 @@
+{
+  "ok": true,
+  "terminals": [
+    {
+      "tty": "/dev/pts/82",
+      "sessionId": "pane-two",
+      "kitty": false,
+      "capabilities": {
+        "images": null,
+        "trueColor": false,
+        "hyperlinks": false
+      },
+      "cell": {
+        "widthPx": 9,
+        "heightPx": 18
+      },
+      "theme": "system"
+    },
+    {
+      "tty": "/dev/pts/81",
+      "sessionId": "pane-one",
+      "kitty": true,
+      "capabilities": {
+        "images": null,
+        "trueColor": true,
+        "hyperlinks": false
+      },
+      "cell": {
+        "widthPx": 9,
+        "heightPx": 18
+      },
+      "theme": "system"
+    }
+  ]
+}

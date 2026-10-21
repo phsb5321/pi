@@ -1,0 +1,3 @@
+Actual normal SMALL custody-copy request refused before payload, exit75:
+admission refused [budget-exceeded]: fleet-working-set=60641MiB exceeds 59GiB cap
+No copy, date, code check, product, credential fetch or HTTP was executed by this request. No retry, alternate launcher, cap change or foreign cleanup. Implementation continues through owned file tools; the ONE final prerequisite check is a separate completed-code boundary, not a retry of this copy request.

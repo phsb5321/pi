@@ -1,0 +1,3 @@
+{"check":"actual-terminal-context-async-isolation","passed":true}
+{"check":"actual-native-second-writer-refused","passed":true,"directory":"/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/source-a1/agent/experimental/durable-sessions/d9d9d7318e7094c16c533385/1791379804675-75b52ee0-adde-4721-af82-69bb737053da"}
+{"check":"native-provider-abort-signal","passed":true,"id":"pane-one"}

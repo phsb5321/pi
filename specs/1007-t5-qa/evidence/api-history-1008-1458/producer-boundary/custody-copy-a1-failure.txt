@@ -1,0 +1,4 @@
+Actual owned custody command returned exit1 before the trailing snapshot-clock/hash commands.
+cp: cannot stat '/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/evidence/attempt-1/optin.log': No such file or directory
+The original publication and available result/check/build/parent/envelope/qualification copies were retained.
+The owned result's optin.full_log was then read: actual filename build-shared-tty.log. That exact log was copied; no producer/publication rerun or payload retry.

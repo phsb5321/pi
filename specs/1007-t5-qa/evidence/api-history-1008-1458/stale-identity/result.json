@@ -1,0 +1,14 @@
+{
+  "status": "FAIL",
+  "exit": 3,
+  "fixture": false,
+  "ACED": false,
+  "productHostLaunched": false,
+  "compilerInvocations": 0,
+  "commandsLaunched": 0,
+  "acceptedScopes": [],
+  "historyEntries": null,
+  "clock_brt": "08/10/2026 15:14:36 -0300",
+  "blocker": "Stale source identity: tuple",
+  "rawFiles": []
+}

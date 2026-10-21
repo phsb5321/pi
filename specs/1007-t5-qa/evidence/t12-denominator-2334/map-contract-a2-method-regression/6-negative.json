@@ -1,0 +1,76 @@
+{
+  "schema": "pi-shared-tty-source-map-inventory/1",
+  "root": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t12-denominator-2334/map-contract-a2-method-regression",
+  "metafilesSha256": "4e570171b957bb1a23d16069aa6ae7c8a1583133479e07bc5acbb2b44b852459",
+  "inputs": [
+    {
+      "path": "packages/coding-agent/dist/core/logic.js",
+      "sha256": "fabf90762d6f0da45d1dac2e56522cc8a34b1f4689896f98448e88a5c09ad138",
+      "map": "packages/coding-agent/dist/core/logic.js.map",
+      "mapSha256": "21956babee833df9ef6923acc32e7ffc8867e6cabc993581a4a5a9c1285ccc50",
+      "sourceRoot": "",
+      "sources": [
+        {
+          "path": "packages/coding-agent/src/core/logic.ts",
+          "sha256": "3b02f677aee4afb1466cb65a649399c6231f7650cf6a846351678f58fbac882d"
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "path": "packages/coding-agent/dist/bundle/chunk-B2VWDNC2.js",
+      "sha256": "a791cebdff24a31c0ad8a0746b25b338da83df703f2b712bcf891631ba72f035",
+      "map": "packages/coding-agent/dist/bundle/chunk-B2VWDNC2.js.map",
+      "mapSha256": "4438aa410fff1db2df9e7c0ce5549a0595b66db38a4c579c7861973994f4d861",
+      "sourceRoot": "",
+      "sources": [
+        {
+          "path": "packages/coding-agent/src/core/logic.ts",
+          "sha256": "3b02f677aee4afb1466cb65a649399c6231f7650cf6a846351678f58fbac882d"
+        }
+      ]
+    },
+    {
+      "path": "packages/coding-agent/dist/bundle/never.js",
+      "sha256": "b02d1439d97006240a0fca406f0fda4c8de5b77191812f9e4191475b0b1565da",
+      "map": "packages/coding-agent/dist/bundle/never.js.map",
+      "mapSha256": "60ddb49af40be486eb480b9babbf08260be212df63673b081ad02501fbd7f1f4",
+      "sourceRoot": "",
+      "sources": [
+        {
+          "path": "packages/coding-agent/src/experimental/durable/never.ts",
+          "sha256": "8e467d8f64fe1824500c16bc9e3fe598759c04e9dda94468eb45dfac50d1c485"
+        }
+      ]
+    },
+    {
+      "path": "packages/coding-agent/dist/bundle/shared-tty-host.js",
+      "sha256": "1c012074391b4759947ade006f19af46ee9d9c62c4de16d6ef14e270ff2e090a",
+      "map": "packages/coding-agent/dist/bundle/shared-tty-host.js.map",
+      "mapSha256": "d04f329fb198ffdd9e26686bab435f7cd34dce817782de3a6df9ea3b89ea24cb",
+      "sourceRoot": "",
+      "sources": [
+        {
+          "path": "packages/coding-agent/src/experimental/durable/shared-tty-host.ts",
+          "sha256": "5e5283298ca352eda3f12572421ddf988a4943f270161e910c9c63958584ddd3"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "path": "packages/coding-agent/src/core/logic.ts",
+      "sha256": "3b02f677aee4afb1466cb65a649399c6231f7650cf6a846351678f58fbac882d"
+    },
+    {
+      "path": "packages/coding-agent/src/experimental/durable/never.ts",
+      "sha256": "8e467d8f64fe1824500c16bc9e3fe598759c04e9dda94468eb45dfac50d1c485"
+    },
+    {
+      "path": "packages/coding-agent/src/experimental/durable/shared-tty-host.ts",
+      "sha256": "5e5283298ca352eda3f12572421ddf988a4943f270161e910c9c63958584ddd3"
+    }
+  ],
+  "completeCoverageDenominator": false
+}

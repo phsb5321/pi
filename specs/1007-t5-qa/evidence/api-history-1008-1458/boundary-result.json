@@ -1,0 +1,45 @@
+{
+  "status": "ADMISSION_BOUNDARY_CHECK_PASS_NOT_PRODUCT",
+  "checks": [
+    {
+      "name": "missing-artifact",
+      "argv": [
+        "/run/current-system/sw/bin/python3",
+        "-B",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/api-history.py",
+        "--manifest",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/PROJECT-GATE.T15.API-HISTORY.json",
+        "--evidence",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/api-history-1008-1458/missing-artifact",
+        "--execute"
+      ],
+      "exit": 78,
+      "reason": "Missing qualified compiled artifact",
+      "logSha256": "ab595653cc7aa34713530378f1f36962d3e85ce4b93fe720bbd2d58ebdf568ce",
+      "rawResultSha256": "ab595653cc7aa34713530378f1f36962d3e85ce4b93fe720bbd2d58ebdf568ce"
+    },
+    {
+      "name": "stale-identity",
+      "argv": [
+        "/run/current-system/sw/bin/python3",
+        "-B",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/api-history.py",
+        "--manifest",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/api-history-1008-1458/stale-negative-manifest.json",
+        "--evidence",
+        "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/api-history-1008-1458/stale-identity",
+        "--execute"
+      ],
+      "exit": 3,
+      "reason": "Stale source identity: tuple",
+      "logSha256": "7529f4508acf5fd58aa465578a430fd283a6718816333ae0560fbb71322b28c9",
+      "rawResultSha256": "7529f4508acf5fd58aa465578a430fd283a6718816333ae0560fbb71322b28c9"
+    }
+  ],
+  "productCohorts": 0,
+  "compilerInvocations": 0,
+  "ACED": false,
+  "behaviorExecuted": false,
+  "manifestSha256": "e31212c9cbb9acce433bda71c2fecfc5a3f343bc8f40c096931789008fe74c1c",
+  "fixturePositive": false
+}

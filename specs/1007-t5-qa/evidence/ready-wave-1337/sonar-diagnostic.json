@@ -1,0 +1,24 @@
+{
+  "scans": 0,
+  "entryInspectedWithoutPrinting": "sonar-local",
+  "tokenUsed": false,
+  "metadataSaysProjectAnalysisToken": false,
+  "metadataSaysUserToken": false,
+  "recognizedPiProjectInMetadata": [],
+  "reads": [
+    {
+      "authForm": "canonical-trailing-colon",
+      "http": 200,
+      "authentication": {
+        "valid": false
+      }
+    },
+    {
+      "authForm": "standard-basic",
+      "http": 200,
+      "authentication": {
+        "valid": true
+      }
+    }
+  ]
+}

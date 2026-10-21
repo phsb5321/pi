@@ -1,0 +1,12 @@
+{
+  "result": "EXACT_T5_SOURCE_INPUT_PASS_NOT_COMPILED_ACCEPTANCE",
+  "root": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-catalog-materialize/execution-source",
+  "sourceSha256": "4d9b25183675cbdee2f5da21501623a41a725c69b975a94c14688a041917316b",
+  "inputSha256": "7e12e2b47b2fa1b562b9b18f0b76ce8599fdad7b1f74533a55845deca55cd319",
+  "codeEntriesUnchangedFromT4": 1980,
+  "physicalCatalogueEntries": 43,
+  "totalEntries": 2023,
+  "declaredLinks": 273,
+  "sourceCompilerInvocations": 0,
+  "negativeWrongCatalogueHashRejected": true
+}

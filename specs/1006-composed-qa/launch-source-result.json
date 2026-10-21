@@ -1,0 +1,33 @@
+{
+  "result": "RED_ACTUAL_FROZEN_MAIN_CONTROL_FLOW",
+  "scope": "Exact actual main invoked twice with dependency constructor spies; no real host/process census/PTY/provider/build. This is NOT full-fleet or runtime-floor measurement.",
+  "sourceTuple": "T1-1006-native-lazy-compose-35f5d3fa73ef",
+  "entrySha256": "663ea5a4c88361520456814369538942309cc9749f0d9a673ec5a9dbf72a6bfe",
+  "trace": {
+    "hosts": [
+      {
+        "socket": "/synthetic/pane-a.sock",
+        "sessions": [
+          "pane-a"
+        ],
+        "closed": true
+      },
+      {
+        "socket": "/synthetic/pane-b.sock",
+        "sessions": [
+          "pane-b"
+        ],
+        "closed": true
+      }
+    ],
+    "processTerminals": 2,
+    "uiStarts": 2,
+    "uiStops": 2,
+    "keybindingSets": 2
+  },
+  "failures": [
+    "one configured partition launched 2 hosts, expected 1",
+    "pane-side entry constructs 2 ProcessTerminal/JS UI runtimes, expected attachment-only non-Node legs"
+  ],
+  "requiredFutureOracle": "Launch the corrected actual artifact fleet entry and census all descendants at matched N; classify host and each attachment executable and measure total tree PSS+SwapPss."
+}

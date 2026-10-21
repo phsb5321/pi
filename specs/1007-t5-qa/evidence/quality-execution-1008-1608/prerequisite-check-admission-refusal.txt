@@ -1,0 +1,9 @@
+ONE new completed-source prerequisite-check request, normal SMALL lane, timeout35:
+
+test "$(git rev-parse --show-toplevel)" = '/home/notroot/Documents/Code/pi-upstream-005-shared-isolation' && date '+%d/%m/%Y %H:%M:%S %z' > specs/1007-t5-qa/evidence/quality-execution-1008-1608/check-clock.txt && python3 -B specs/1007-t5-qa/test-quality-boundary.py > specs/1007-t5-qa/evidence/quality-execution-1008-1608/boundary.log 2>&1; rc=$?; printf '%s\n' "$rc" > specs/1007-t5-qa/evidence/quality-execution-1008-1608/boundary.exit; printf 'prerequisite-check exit=%s\n' "$rc"; exit "$rc"
+
+Actual tool return:
+admission refused [budget-exceeded]: fleet-working-set=62665MiB exceeds 59GiB cap
+Command exited with code75.
+
+This was BEFORE Bash payload. No date, guard, Python, Node syntax check, preparation, fixture, product, scanner, credential lookup, HTTP, allocation reader or echo/exit-file command ran. The tool refusal is not a Python/check exit. check-clock.txt, boundary.log, boundary.exit, boundary-result.json and the prepared derivative contract/manifests were NOT produced by this request. Actual new tiny check executions=0. No automatic retry, alternate launcher/tier/host, cap increase, resource/artifact polling, foreign kill or cleanup.

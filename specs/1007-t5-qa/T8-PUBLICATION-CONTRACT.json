@@ -1,0 +1,50 @@
+{
+  "schema": "memory-sound-qa-publication-binding/1",
+  "tuple": "T8-native-semantic-repair-2e0a7baa85d9",
+  "publication": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/acceptance.json",
+  "sourceRoot": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/execution-source",
+  "sourceManifest": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/evidence/pre-event-source-manifest.json",
+    "sha256": "2e0a7baa85d9e9d6d331301e4713636734915e2358f937c482cb129903d2f6d2"
+  },
+  "inputManifest": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/evidence/pre-event-input-manifest.json",
+    "sha256": "483c208446905b50039247fb98cadd0c6b2663a791388d3a2a2fa27ebdeb3a1f"
+  },
+  "originalBindings": {
+    "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/compiler-handoff.pre-event.json": "f2d70a942e0d347279614d8f3b189240cf71fa225029a469a32704b0fc0eb67d"
+  },
+  "reusedControlHashes": {
+    "artifact-entry.py": "1e6dab4b961997246310531f893e2007007e380ea12478aae246e731790ff8f3",
+    "qa-loader.mjs": "c940dc4773f3f8e9e1ded06e3695865645b56b92accd0922736fc4263404a2c2",
+    "test-artifact-gate.py": "5d982575347ecd2833442f54e97fa075ff85237aaf458940129d4ec520b7a50d",
+    "normalize-t6-publication.py": "b05e5d229b599c1847440d63eaee5e6168830678a9d35aae0739972a6799717f",
+    "evidence/fast-feedback-1550/receipt.json": "e8bc54a0d4d8c110abcbe46be504949f89575081eb86f30bee4abbfd4c016504",
+    "evidence/fast-feedback-1550/sonar-authority-action.json": "75bebdf749722a5ab2bda56a83e9432edd187d17ebc4910eadad293e5ad3a0ba"
+  },
+  "requiredProducerClaims": ["full_root_check", "ordinary_offline_build", "optin_build", "packaged_compiled_host", "compiled_production_main", "native_bridge_assets"],
+  "requiredProducerPhases": ["check", "source_regressions", "build", "optin", "compiled_acceptance"],
+  "requiredCompiledExports": ["createSharedTtyHost", "main", "AuthStorage", "ModelRuntime"],
+  "scopedCallbacksAndControls": {
+    "declaredOnlyUntilExecuted": true,
+    "sameCompiledBundleRoles": ["msqa/host", "msqa/auth", "msqa/models"],
+    "factoryInputs": ["hydrate.modelRuntime", "model", "onSurface", "hydrate.onState"],
+    "existingBattery": "focused-rich-pty.py / rich-host.mjs / emitted native attachment",
+    "actualOracles": ["ready/closed/resized callbacks", "native SQLite history/tool/cancel", "renderer and writer refusal", "native PTY negotiation/restoration", "park/resume and loaded-runtime ledger"],
+    "loadedProductTypeScriptOrSourceResolverAllowed": false,
+    "fullExtensionParity": "NOT_ACCEPTED_BY_REFUSAL_OR_THIS_SCOPED_BATTERY"
+  },
+  "memoryHandoff": {
+    "owner": "ms-memory/pM",
+    "trace": "/home/notroot/Documents/Code/pi-upstream-1006-memory-proof/specs/1006-memory-proof/abi-trace-20261007-1618/ABI-TRACE.md",
+    "sharedBEntry": "@earendil-works/pi-coding-agent/shared-tty-host:createSharedTtyHost",
+    "standaloneAGap": ["openDurable", "runDurableTui"],
+    "standaloneAStatus": "PROPOSED_EXISTING_FUNCTION_PUBLICATION_IN_NEW_DERIVATIVE_NOT_T8_COMPILED_EXPORTS",
+    "seedSurface": "public pi-durable Storage/openNodeSqliteStorage; ordering/history/closure require actual compiled controls",
+    "noPrivateSetupExportDemand": true,
+    "noDuplicateCompilerOrSourceFallback": true
+  },
+  "normativeExtensionGate": "Ordinary command/custom-tool/tool_call guard execution required; SOURCE8 local refusal is containment only and cannot finish parity",
+  "sonarAuthority": "Reuse fast-feedback-1550/sonar-authority-action.json; no scoped remote-write authorization verified",
+  "heavyOrder": ["producer", "compiled QA", "quality/coverage", "measurement"]
+}

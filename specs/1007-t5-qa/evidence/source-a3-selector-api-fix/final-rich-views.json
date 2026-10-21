@@ -1,0 +1,776 @@
+{
+  "pane-two": {
+    "session": {
+      "id": "1791380270630-bf8b29a1-01b8-401b-a21e-b39728b51043",
+      "directory": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/source-a3-selector-api-fix/agent/experimental/durable-sessions/be2da41bc36fae381e3d1b1e/1791380270630-bf8b29a1-01b8-401b-a21e-b39728b51043",
+      "cwd": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/source-a3-selector-api-fix/sessions/pane-two"
+    },
+    "conversation": {
+      "conversation": {
+        "id": 1
+      },
+      "entries": [
+        {
+          "model": [
+            {
+              "role": "user",
+              "content": "QAB peer-proof",
+              "timestamp": 1791380273852
+            }
+          ],
+          "kind": "pi.user",
+          "id": 7,
+          "conversationId": 1
+        },
+        {
+          "model": [
+            {
+              "role": "system",
+              "content": "",
+              "sections": {
+                "preamble": "You are an expert coding assistant operating inside pi, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.",
+                "tools": "<tools>\n- read: Read file contents\n- write: Create or overwrite files\n- edit: Make precise file edits with exact text replacement, including multiple disjoint edits in one call\n- bash: Execute bash commands (ls, grep, find, etc.)\n\nIn addition to the tools above, you may have access to other custom tools depending on the project.\n</tools>",
+                "rules": "<rules>\n- Use bash for file operations like ls, rg, find\n- Use read to examine files instead of cat or sed.\n- Use write only for new files or complete rewrites.\n- Use edit for precise changes (edits[].oldText must match exactly)\n- When changing multiple separate locations in one file, use one edit call with multiple entries in edits[] instead of multiple edit calls\n- Each edits[].oldText is matched against the original file, not after earlier edits are applied. Do not emit overlapping or nested edits. Merge nearby changes into one edit.\n- Keep edits[].oldText as small as possible while still being unique in the file. Do not pad with large unchanged regions.\n- You can inspect PI_* environment variables for current model and session details.\n- Be concise in your responses\n- Show file paths clearly when working with files\n</rules>",
+                "docs": "<docs>\nPi documentation (read only when the user asks about pi itself, its SDK, extensions, themes, skills, or TUI):\n- Main documentation: /home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-catalog-materialize/execution-source/packages/coding-agent/README.md\n- Additional docs: /home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-catalog-materialize/execution-source/packages/coding-agent/docs\n- Examples: /home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-catalog-materialize/execution-source/packages/coding-agent/examples (extensions, custom tools, SDK)\n- When reading pi docs or examples, resolve docs/... under Additional docs and examples/... under Examples, not the current working directory\n- When asked about: extensions (docs/extensions.md, examples/extensions/), themes (docs/themes.md), skills (docs/skills.md), prompt templates (docs/prompt-templates.md), TUI components (docs/tui.md), keybindings (docs/keybindings.md), SDK integrations (docs/sdk.md), custom providers (docs/custom-provider.md), adding models (docs/models.md), pi packages (docs/packages.md), environment variables (docs/environment-variables.md), MCP servers (docs/mcp.md), codemode scripts and non-LLM models such as classifiers and image models (docs/codemode.md)\n- When working on pi topics, read the docs and examples, and follow .md cross-references before implementing\n- Always read pi .md files completely and follow links to related docs (e.g., tui.md for TUI API details)\n</docs>",
+                "project_context": "<project_context>\nProject-specific instructions and guidelines:\n\n<project_instructions path=\"/home/notroot/Documents/Code/CLAUDE.md\">\n# `~/Documents/Code/` \u2014 Repo Root\n\nPedro's local code workspace. Auto-loads when Claude Code reads any file under `~/Documents/Code/`. For vault rules see `/Users/notroot/Documents/Notes/CLAUDE.md`. For work-specific rules see `/Users/notroot/Documents/Notes/2. Areas/\ud83d\udc77 Work/CLAUDE.md`.\n\n---\n\n## Ownership Rule (NON-NEGOTIABLE \u2014 applies to every repo under this tree)\n\n**Every open PR, issue, branch, alert, CI failure, or task in any repo Pedro has surfaced is YOUR responsibility \u2014 including those opened by sibling Claude sessions, Pedro, Dependabot, or any human collaborator.** There is no \"not mine, leave alone.\"\n\nForbidden phrases: \"PR#NNN owned by another session\", \"let the other agent handle it\", \"I'll let CI catch it\", \"not my session, not my PR\".\n\n**Default action:** take ownership. Babysit CI, fix red checks, rebase on main if stale, shepherd to merge. If two agents could conflict (mid-rebase, overlapping branches), prefer taking over the older PR + closing the duplicate; never park both.\n\n**Acceptable reasons to defer (must be evidenced, not assumed):**\n1. **Pedro-gated** \u2014 needs MFA, secret rotation, hardware action, billing change. Tag the task `[pending] Pedro: <action>` and continue with other work.\n2. **Active sibling** \u2014 verified by `gh pr view <n> --json updatedAt,commits` showing a fresh push within the last 30 minutes AND no stale red CI.\n3. **Hard-blocked-on-infra** \u2014 PR depends on a service Pedro must touch. Document the blocker, advance every PR that doesn't depend on it.\n\nThis rule supersedes any prior framing that lets you punt work. Pedro correction 06/05/2026: *\"There is no such thing as not mine, everything is your responsibility.\"*\n\n---\n\n## Pretty mindset (NON-NEGOTIABLE)\n\nFolder structure under `~/Documents/Code/` MUST express **intent + ownership**, not technology. A folder name should answer \"**who owns this and what is it?**\" \u2014 not \"what language is it written in?\".\n\n### Why\n\nTech changes. Ownership doesn't. A repo can change from Python \u2192 Go \u2192 Rust over its lifetime, but it stays in the same GitHub org. Tech-grouping (`Python/`, `Golang/`, `Tauri/`, `Firefox/`) creates orphan dirs every time a project pivots. Org-grouping mirrors GitHub structure \u2192 mental model is stable + predictable.\n\n### Required: org / intent grouping\n\n```text\n~/Documents/Code/\n\u251c\u2500\u2500 yolo-labz/                  # public yolo-labz GitHub org\n\u2502   \u251c\u2500\u2500 wa/                     # WhatsApp Go daemon\n\u2502   \u251c\u2500\u2500 claude-mac-chrome/      # Chrome automation Bash/TS\n\u2502   \u251c\u2500\u2500 linkedin-chrome-copilot/ # LinkedIn agent TS\n\u2502   \u251c\u2500\u2500 kokoro-speakd/          # TTS daemon Python\n\u2502   \u251c\u2500\u2500 claude-classroom-submit/ # Classroom auto-submit Python\n\u2502   \u251c\u2500\u2500 fand/                   # Apple Silicon thermal Rust\n\u2502   \u251c\u2500\u2500 homebrew-tap/           # tap formula\n\u2502   \u251c\u2500\u2500 chrome-bridge/          # Chrome automation bridge\n\u2502   \u251c\u2500\u2500 craftcut/               # local-only skeleton (no remote yet)\n\u2502   \u251c\u2500\u2500 diploma-equivalence/    # CIN-UFPE diploma parser (+ 2 worktrees)\n\u2502   \u251c\u2500\u2500 noctalia-appmenu/       # Quickshell app menu\n\u2502   \u251c\u2500\u2500 pedro-diagrams/         # diagram renderer for blog posts\n\u2502   \u251c\u2500\u2500 pedro-portfolio-recipes/ # portfolio recipes\n\u2502   \u2514\u2500\u2500 portfolio/              # pedro/portfolio.home301server.com.br Next.js\n\u2502   # NOTE: blog/ MOVED to personal/blog (canonical phsb5321/blog remote)\n\u251c\u2500\u2500 personal/                   # phsb5321 personal repos (mirror personal GitHub)\n\u2502   \u251c\u2500\u2500 actual-budget-normalizer/\n\u2502   \u251c\u2500\u2500 blog/                   # blog.home301server.com.br Hugo (+ 3 worktrees)\n\u2502   \u251c\u2500\u2500 exec-job-aggregator/\n\u2502   \u251c\u2500\u2500 finances/               # personal hledger work\n\u2502   \u251c\u2500\u2500 finances-dashboard/\n\u2502   \u251c\u2500\u2500 german/                 # German learning factory\n\u2502   \u251c\u2500\u2500 merlin-unbrick/         # router flash recovery (1.9G, blobs gitignored)\n\u2502   \u251c\u2500\u2500 mtst-campanha-jo/       # MTST campanha (was Venom_Lourezon)\n\u2502   \u251c\u2500\u2500 nfce/                   # NFCe extraction (was Python/NFC)\n\u2502   \u251c\u2500\u2500 proso/                  # Firefox TTS extension\n\u2502   \u251c\u2500\u2500 tauri-pdf-reader/       # desktop PDF + TTS\n\u2502   \u251c\u2500\u2500 vocalis/                # document-to-voice Tauri\n\u2502   \u251c\u2500\u2500 voxscribe/              # AI transcription\n\u2502   \u2514\u2500\u2500 watermark-removal/\n\u251c\u2500\u2500 work/                       # employer-bound + freelance client work (NDA-respect)\n\u2502   \u251c\u2500\u2500 ASA_BANK/               # employer (Azure DevOps) + 4 sibling worktrees\n\u2502   \u251c\u2500\u2500 asa-irpf-api-191NN/     # ASA.IRPF.API feature worktrees (\u00d74)\n\u2502   \u251c\u2500\u2500 DeliCasa/               # freelance client (smart-vending startup; Eduardo Mendon\u00e7a)\n\u2502   \u251c\u2500\u2500 DeliCasa.bak/           # backup\n\u2502   \u2514\u2500\u2500 DeliCasa-{BS,NC,Pi,NextClient}-*/  # 20+ DeliCasa submodule worktrees\n\u251c\u2500\u2500 academic/                   # CIN-UFPE student work\n\u2502   \u2514\u2500\u2500 Senac/                  # CITi-UFPE carbo-server (academic, NOT DeliCasa)\n\u251c\u2500\u2500 infra/                      # local infra config (NixOS lives at ~/NixOS)\n\u2502   \u251c\u2500\u2500 proxmox/                # Proxmox host/guest notes + scripts\n\u2502   \u251c\u2500\u2500 proxmox-backup/         # Go daemon: Proxmox VM \u2192 S3\n\u2502   \u251c\u2500\u2500 scripts/                # one-off ops scripts\n\u2502   \u2514\u2500\u2500 notes/                  # infra markdown\n\u251c\u2500\u2500 experiments/                # WIP / research / one-shot prototypes (no upstream OR pre-promotion)\n\u2502   \u251c\u2500\u2500 agents/                 # scratchpad\n\u2502   \u251c\u2500\u2500 automation/             # Rio2C automation experiments\n\u2502   \u251c\u2500\u2500 docling/                # Docling notebook spike\n\u2502   \u251c\u2500\u2500 ethical-hacking/        # pcap/labs/wordlists scratchpad\n\u2502   \u251c\u2500\u2500 goexam/                 # Go exam prep one-shot\n\u2502   \u251c\u2500\u2500 groq-transcribe/        # Groq Whisper hexagonal-arch spike\n\u2502   \u251c\u2500\u2500 lightisgood-scraper/    # specs-driven scraper spike\n\u2502   \u251c\u2500\u2500 normalize-contact-info/\n\u2502   \u251c\u2500\u2500 openai-vision/\n\u2502   \u251c\u2500\u2500 small-script/\n\u2502   \u251c\u2500\u2500 tts/\n\u2502   \u2514\u2500\u2500 web-ui-fork/            # browser-use/web-ui local edits scratchpad\n\u2514\u2500\u2500 archive/                    # dead / deprecated / kept-for-reference\n    \u251c\u2500\u2500 citi-cleanup-marker.md  # stale CITi marker\n    \u251c\u2500\u2500 finances-copy-stale/    # duplicate of personal/finances\n    \u251c\u2500\u2500 globalhitss/            # old client docs\n    \u251c\u2500\u2500 inbox-2026-04-25/       # unopened zips\n    \u251c\u2500\u2500 mtst-50_000/            # historical mtst-campanha-jo nested repos\n    \u251c\u2500\u2500 mtst-py/                # old MTST phone-cleaning script\n    \u251c\u2500\u2500 session-ses_1fc3.md     # transcript dump\n    \u251c\u2500\u2500 upwork/, upwork-2/, upwork-3/ # legacy UpWork skeletons\n    \u2514\u2500\u2500 yolo-labz-blog-stale-snapshot/ # pre-personal/blog draft posts (recover content here)\n```\n\n### Forbidden patterns\n\n- \u274c Top-level dir named after a language (`Python/`, `Golang/`, `Tauri/`)\n- \u274c Top-level dir named after a browser/platform (`Firefox/`, `Apple/` \u2014 was misleading; renamed to `yolo-labz/`)\n- \u274c Empty placeholder dirs (`UpWork/` empty + `UpWork 3/` skeleton)\n- \u274c Dup dirs covering same scope (`Scraping/` + `WebScraping/`)\n- \u274c Snake-case mixed with kebab-case in same level \u2014 pick ONE per level (current root: kebab-case wins)\n- \u274c Dotfiles or hidden state at root that isn't `.git*`, `.gitignore`, `.editorconfig`, `.envrc`\n\n### Required naming conventions\n\n- Top-level dirs (org / intent groupings): kebab-case lowercase (`yolo-labz`, `personal`, `experiments`)\n- Repo dirs: match GitHub repo name verbatim (so `git clone` lands cleanly)\n- Sub-projects within a repo: follow the repo's own convention\n\n### Required per-repo files\n\nEvery repo with code MUST have at minimum:\n\n- `README.md` (what + why + how to run + license)\n- `.gitignore`\n- `LICENSE` (MIT or Apache-2.0 default per yolo-labz constitution)\n- A reproducible build path (Dockerfile / flake.nix / package.json scripts / Makefile)\n\n### Migration ordering (when restructuring)\n\n1. Move target dir\n2. Verify `git log -1` still readable in new location\n3. Update local git remote if needed (`git remote set-url`)\n4. Update path references in dependent docs (Notes vault save-states, sibling repos)\n5. Symlink old path \u2192 new path if external session-resume relies on it (`~/.claude/projects/` encoded paths)\n\n---\n\n## Migration status (2026-05-11 \u2014 major reorg executed)\n\nFull audit + execution log: `~/Documents/Notes/1. Projects/Code-Workspace-Reorg-2026-05-11.md`.\nBleeding-edge tooling research: `~/Documents/Code/BLEEDING-EDGE-STRATEGIES.md`.\nReusable migration technique: `~/Documents/Notes/3. Resources/\ud83d\uddc2\ufe0f Code Workspace/Git Worktree Migration Playbook.md`.\n\nKey decisions codified:\n- **DeliCasa is freelance client work, NOT academic** (Eduardo Mendon\u00e7a's smart-vending startup). Lives in `work/`.\n- **Senac IS academic** (`CITi-UFPE/carbo-server` remote). Stays in `academic/`.\n- `experiments/` is for pre-upstream prototypes. Anything with active vault project notes or a personal phsb5321 remote graduates to `personal/`.\n- **Syncthing must NOT cover `~/Documents/Code/` \u2014 replication is git-remotes-only.** Verified 15/05/2026 (7 folders, none for Code). **REGRESSION 28/05/2026:** Code was re-added as a `sendreceive` Syncthing folder (id=`code`). This caused TWO failures: (a) it re-seeded the dead pre-migration tech-grouped tree (`Apple/ Python/ Firefox/ CITi/ \u2026`) from `Nix.Server` (which was never migrated) back onto desktop \u2014 every old dir stamped 28/05 15:21, ~10 min after the `.stfolder` marker \u2014 so the org/intent structure silently stopped being followed; (b) the `.stignore` `(?d).git` rule (deletable + non-synced) **stripped `.git` from ~12 live repos** (`yolo-labz/{wa,fand,kokoro-speakd,claude-mac-chrome,\u2026}`, `academic/Senac`, `infra/{AWS,vendored}`), leaving working-tree-only dirs. **RESOLVED 03/06/2026:** removed the `code` folder on desktop + `Nix.Server` (REST `DELETE /rest/config/folders/code`, files untouched); quarantined all 21 resurrected old dirs into `archive/_pre-migration-2026-05-28/` (they had DIVERGED \u2014 unique pre-migration work, e.g. `Ethical Hacking/labs/ring-blink/` \u2014 so MOVED not deleted); removed 21 stray in-tree PR clones (clean+pushed, verified on remote); reattached `.git` on the 7 high-confidence yolo-labz repos (`reset --hard origin/main`, full history) \u2014 the stale working trees were 28/04 snapshots, no unique work. Insurance bundles + manifests at `~/code-reconcile-backup-2026-06-03/`. If a \"yolo-labz\" repo looks non-git on desktop, it is `.git`-strip damage from this incident \u2014 re-clone or `git init+fetch+reset`, do NOT re-add Code to Syncthing. **RECURRENCE 09/06/2026:** the 03/06 fix was runtime-only (REST delete) but the folder was DECLARATIVE \u2014 PR #752 (`modules/shared/syncthing/devices.nix`) re-created it on every `nh os switch`, re-seeding the old tree again (peers never migrated, so #752's \"1-12h convergence\" premise never held). **DURABLE FIX: PR #884** removed the `code` folder from devices.nix (merged 09/06); runtime folder also removed on desktop+server+mac. Re-seeded dirs re-quarantined to `archive/_resync-2026-06-09/` (the 03/06 quarantine `_pre-migration-2026-05-28/` was deleted by an unknown actor 09/06 23:20 \u2014 content still recoverable from server/mac disks + bundles). Old flat trees still sit on server+mac LOCAL disks (harmless, unsynced) \u2014 clean opportunistically. Lesson: when killing infra behavior, grep `~/NixOS` for the declarative source FIRST; runtime deletes do not survive rebuilds.\n- `gwq` + `ghq` recommended for future worktrees (out-of-tree at `~/worktrees/github.com/<org>/<repo>/<NNN-slug>/`) \u2014 see `BLEEDING-EDGE-STRATEGIES.md` \u00a71.\n\n### Pre-2026-05-11 migration table (kept for history)\n\n| Repo | Old | New | Status |\n|------|-----|-----|--------|\n| blog | `Apple/blog` | `yolo-labz/blog` | \u2705 moved 2026-04-23 |\n| (others) | `Apple/*` | `yolo-labz/*` | \u23f3 pending Pedro confirm before bulk rename |\n| Personal repos | scattered | `personal/*` | \u23f3 pending |\n| ASA_BANK | top-level | `work/ASA_BANK` | \u23f3 pending |\n| CITi | top-level | `academic/CITi` | \u23f3 pending |\n| Python/, Golang/, Tauri/, Firefox/ | top-level | `personal/*` or `experiments/*` | \u23f3 pending \u2014 split each repo by ownership |\n| Scraping + WebScraping | top-level | `experiments/scraping/` (consolidate) | \u23f3 pending |\n| UpWork/, UpWork 3/ | top-level | `archive/` | \u23f3 pending \u2014 both cruft |\n| _recovered-from-desktop/ | top-level | `archive/` | \u23f3 pending |\n\n### Why staged migration\n\nBulk rename of `Apple/` \u2192 `yolo-labz/` will break `~/.claude/projects/` session-history paths for 6+ existing sessions. Symlinks resolve this but adds noise. Defer to a single audit pass when Pedro is ready.\n\n### Migration command pattern (for future bulk rename)\n\n```bash\n# 1. Rename\nmv ~/Documents/Code/Apple ~/Documents/Code/yolo-labz\n\n# 2. Symlink old Claude session paths to new (preserves /resume from old name)\nfor old in ~/.claude/projects/-Users-notroot-Documents-Code-Apple-*; do\n  base=$(basename \"$old\" | sed 's/-Apple-/-yolo-labz-/')\n  ln -sf \"$old\" ~/.claude/projects/\"$base\"\ndone\n\n# 3. Update remotes (each repo)\n# (no-op \u2014 git remotes use github.com URLs, not local paths)\n\n# 4. Grep + sed Notes vault for old path references\ngrep -rl 'Documents/Code/Apple/' ~/Documents/Notes/ \\\n  | xargs -I{} sed -i '' 's|Documents/Code/Apple/|Documents/Code/yolo-labz/|g' {}\n```\n\n---\n\n## Stealth + framing rules carry over\n\nWhen working on `yolo-labz/blog/`, `yolo-labz/portfolio/`, or any public-facing artifact, the rules in `/Users/notroot/Documents/Notes/2. Areas/\ud83d\udc77 Work/CLAUDE.md` apply:\n\n- Capability-first framing (NEVER autobiographical)\n- Anonymization (no client / employer name)\n- Stealth job-search (no availability copy)\n\n---\n\n## Multi-agent orchestration (proven pattern, 23/04/2026)\n\nWhen task scope exceeds parent context budget, spawn child Claude Code via shell. Verified working: spec 016 portfolio refresh \u2014 5 commits, 354s wall, 59 turns, 0 blockers, all gates pass.\n\n### Working flag combo\n\n```bash\nclaude --print \\\n  --model \"claude-opus-4-7[1m]\" \\\n  --max-turns 80 \\\n  --max-budget-usd 8 \\\n  --permission-mode acceptEdits \\\n  --output-format stream-json \\\n  --include-partial-messages \\\n  --verbose \\\n  --add-dir \"<source-of-truth-dir>\" \\\n  --add-dir \"<work-dir>\" \\\n  --allowedTools \"Read Edit Write Glob Grep TodoWrite Bash(pnpm *) Bash(git *) Bash(npx *) Bash(node *) Bash(ls *) Bash(cat *) Bash(grep *) Bash(mkdir *) Bash(find *) Bash(head *) Bash(tail *) Bash(wc *)\" \\\n  --name \"<descriptive-session-name>\" \\\n  \"$(cat <brief-file>)\" \\\n  > \"<log-file>\" 2>&1\n```\n\nRun with `Bash run_in_background=true` for live observability via stream-json log.\n\n### Pre-flight (mandatory)\n\n1. Write brief to a markdown file (reproducible, reviewable). Sections: mission, source-of-truth context paths, NON-NEGOTIABLE constraints, concrete tasks in order, acceptance gates, branch/commit conventions, output file path.\n2. Restrict Bash via `--allowedTools` allowlist (NOT `bypassPermissions`). Whitelist exact commands the child needs; deny shell escape vectors.\n3. Cap budget via `--max-budget-usd` AND `--max-turns`.\n4. Write to a NEW git branch (child creates `<feature>-<purpose>` off main); parent reviews before merge.\n5. Tell child to NOT push to remote \u2014 parent pushes after review.\n\n### Capture + monitor\n\n- `session_id` extracted from first stream event (`grep -m1 session_id <log> | jq`)\n- Resume child at any time: `claude --resume <session_id>`\n- Final result line in JSON: `grep '\"type\":\"result\"' <log> | tail -1` includes duration_ms, num_turns, cost\n- Background ID from Bash run_in_background = handle for `BashOutput` / `KillShell`\n\n### Failure modes seen + mitigations\n\n- **Parent Write stomped by child git checkout.** Mitigation: parent commits work to a branch BEFORE spawning child OR re-applies post-child. (Spec 016 case: child saw stale `projects.ts`, flagged in summary, parent re-wrote + committed `855f5d8`.)\n- **Lockfile drift on child `pnpm install`.** Mitigation: brief instructs child to restore lockfile via `git checkout main -- pnpm-lock.yaml` if drift unrelated to task scope.\n- **Lighthouse / Chrome unavailable in headless sandbox.** Mitigation: brief flags Lighthouse as DEFERRED gate \u2014 parent runs locally before push.\n\n### Anti-patterns (do NOT)\n\n- \u274c Spawn child with `--permission-mode bypassPermissions` (no allowlist = blast radius unbounded)\n- \u274c Skip the brief markdown \u2014 inline prompt = no audit trail\n- \u274c Child pushes directly to remote (parent loses review gate)\n- \u274c Spawn 5+ children for one feature \u2014 coordination overhead exceeds savings; use Agent Teams or Multiclaude orchestrator if you really need fanout\n\n### When to use built-in alternatives instead\n\n- **Subagents (Task tool)** \u2014 same-context Claude Code session. Use for research / parallel reads. NOT for long-running edits (subagent context ends with parent turn).\n- **Agent Teams** (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`) \u2014 built-in multi-agent. Use for \u22653 coordinated children with shared task list. Heavyweight setup.\n- **Gas Town / Multiclaude** \u2014 third-party orchestrators. Use when scaling beyond 5 parallel agents OR when multi-day autonomous runs needed.\n\nFor typical 1-child scope (single feature, focused task list), the DIY shell pattern above is the right tool.\n\n## Recurrent activities (auto-trigger when relevant)\n\nPeriodic operations that prevent silent infrastructure rot. Each entry has a **trigger** (what makes you remember it), a **command** (how to do it), and a **cadence** (how often). When you notice the trigger condition, run the command \u2014 don't wait for Pedro to ask.\n\n### Multi-agent browser automation\n\n| Activity | Trigger | Command | Cadence |\n|---|---|---|---|\n| **Marionette broker liveness** | Before any `marionette-call` from a fresh shell | `systemctl --user is-active marionette-broker.service` \u2014 start with `systemctl --user start marionette-broker.service` if inactive | on demand |\n| **Tab-ownership audit** | After SessionEnd hooks fail; debugging a refused SwitchToWindow | `marionette-call <agent-id> broker:list-mine` per agent | on rare contention |\n| **Broker restart after Firefox restart** | Firefox restarted \u2192 broker has stale Marionette session | `systemctl --user restart marionette-broker.service` | when FF restarts |\n\n### Vault hygiene\n\n| Activity | Trigger | Command | Cadence |\n|---|---|---|---|\n| **Bitwarden vault health check** | Any rbw error, before any rbw rotation, after BW web-UI bulk edits | `~/bw-vault-health.sh` | quarterly OR on rbw breakage |\n| **Vault entry hunt for empty names** | `rbw list` returns `failed to decrypt: invalid mac` (the doy/rbw#205 bug) | Inside health-check; or manual `bw list items \\| jq '.[] \\| select(.name == \"\")'` | on demand |\n| **rbw fresh re-register** | `rbw unlocked` returns \"agent is locked\" + `bw-keyring-unlock` cycles fail; OR after master pwd rotation | `~/bw-rbw-fresh-register.sh` (auto-fetches 2FA from vault entry \u2014 no Pedro typing) | as needed |\n\n### Multi-host sync + backup\n\n| Activity | Trigger | Command | Cadence |\n|---|---|---|---|\n| **Cross-host main HEAD parity** | After sibling-agent merges OR before any deploy | `for h in Nix.Server Nix.Laptop Mac.Pro; do echo -n \"$h=\"; ssh -o ConnectTimeout=5 $h 'cd ~/NixOS && git rev-parse HEAD'; done; echo \"desktop=$(cd ~/NixOS && git rev-parse HEAD)\"` \u2014 all 4 should match | post-merge |\n| **Cross-host syncthing folder health** | Any conflict-notify alert, or after editing notes/code on multiple hosts in parallel | Per-host: `APIKEY=$(grep -oP '<apikey>\\K[^<]+' ~/.config/syncthing/config.xml); for f in notes claude-memories claude-state; do curl -fsS -H \"X-API-Key: $APIKEY\" \"http://127.0.0.1:8384/rest/db/status?folder=$f\" \\| jq '{folder:\"'$f'\", state, need: .needTotalItems, errors}'; done` | weekly |\n| **Cross-host transcript replication tally** | Doubting whether claude-state is actually flowing | `for h in Nix.Server Nix.Laptop Mac.Pro; do echo -n \"$h:\"; ssh -o ConnectTimeout=5 $h \"find ~/Documents/ClaudeState -name '*.jsonl' \\| wc -l\"; done; echo \"desktop:$(find ~/Documents/ClaudeState -name '*.jsonl' \\| wc -l)\"` | monthly |\n| **AWS Object Lock + restic backup health** | After any IAM change, after `restic forget`, before any cost audit | `ssh Nix.Server \"sudo systemctl status restic-backups-s3-daily.timer; sudo bash -c 'set -a; source /etc/restic/aws-env; export RESTIC_REPOSITORY=s3:s3.us-east-1.amazonaws.com/nixos-server-backups; export RESTIC_PASSWORD_FILE=/etc/restic/password; restic snapshots --latest 1'\"` + `aws s3api get-object-lock-configuration --bucket nixos-server-backups --profile PERSONAL_ROOT` | monthly |\n| **Stale-PR audit** | Open PRs older than 7 days from sibling agents | `gh pr list --state open --json number,title,headRefName,updatedAt` \u2014 close obvious abandons, take ownership of viable ones | weekly |\n| **wip-rescue branch cleanup** | wip-rescue-* branches older than 7 days uneventful | `gh api repos/phsb5321/NixOS/git/refs/heads/wip-rescue-<sha> --method DELETE` per branch | after 7 days |\n\n### NixOS workspace hygiene\n\n| Activity | Trigger | Command | Cadence |\n|---|---|---|---|\n| **Stray ~/NixOS edits from sibling agents** | Before any pull/rebase or `nh os switch` from main worktree | `cd ~/NixOS && git status -s` \u2014 any `M` file is a sibling-agent WIP; rescue to feature branch BEFORE pull (see PR #287 pattern) | before every main-worktree action |\n| **Worktree audit** | Disk pressure on ~/, OR before fleet-wide deploys | `cd ~/NixOS && git worktree list` \u2014 remove any merged-PR worktrees still hanging | weekly |\n| **HM mutable file drift** | Per-host config files that HM marks `mutable*=true` (e.g. zed keymap) silently diverge from `dotfiles/` source | Per-host `diff ~/NixOS/dotfiles/<src> ~/<live-path>` | quarterly |\n| **System gen prune** | After any major upgrade, before disk-pressure warnings | `nix-collect-garbage --delete-older-than 30d` (after `nh os switch` confirms current gen healthy) | monthly |\n\n### Security\n\n| Activity | Trigger | Command | Cadence |\n|---|---|---|---|\n| **AWS root key audit** | Annual security pass, after any host compromise scare | `aws iam list-access-keys --profile PERSONAL_ROOT` + `aws iam get-access-key-last-used --access-key-id <id>` per key \u2014 deactivate any unused >180d | annual + on-demand |\n| **Bitwarden organization membership** | Annual; after Pedro leaves any org | `bw list items \\| jq '[.[] \\| select(.organizationId)] \\| group_by(.organizationId) \\| map({org: .[0].organizationId, count: length})'` \u2014 verify Pedro still in those orgs via web UI | annual |\n| **Syncthing audit log review** | Suspected unauthorized peer activity, OR before any incident triage | `for h in desktop laptop server; do ssh $h \"ls -la ~/.local/state/syncthing/audit-*.log; tail -200 ~/.local/state/syncthing/audit-*.log | jq -c 'select(.type==\\\"ItemFinished\\\")'\"; done` \u2014 look for `delete`+`update` from different devices within 60s | quarterly + on suspicion |\n| **GitHub access token audit** | Annual security pass | `gh auth status` + GitHub Settings \u2192 Developer settings \u2192 Personal access tokens (web UI) \u2014 revoke any not used in 90 days | annual |\n\n### Observability\n\n| Activity | Trigger | Command | Cadence |\n|---|---|---|---|\n| **Gatus dashboard scan** | Whenever a service feels off | Browser `http://server.tailf59220.ts.net/` (port 3000 dashboard) \u2014 red boxes are the issue list | as needed |\n| **vm103 CI runner pool liveness** | Any repo's checks stuck `pending` >30 min with nothing `in_progress` (oomd kills whole batches silently \u2014 7 units died 01/10/2026) | `ssh ProxMox.Runner 'systemctl --no-pager list-units \"actions.runner.*\" --all'` \u2014 restart each `failed` unit with `sudo systemctl start actions.runner.<UNIT>.service`; verify via `gh api repos/<o>/<r>/actions/runners`. Trust the runner journal over lagging `gh` API states. See `[[GitHub Actions Self-Hosted Runner Registration (VM 103)]]` \u2192 *Recovery* | on demand |\n| **Disk pressure check** | Quarterly OR after suspected runaway log/cache | `for h in Nix.Server Nix.Laptop Mac.Pro; do echo \"=== $h ===\"; ssh $h \"df -h / /home 2>/dev/null \\| head -3\"; done; df -h / /home` | quarterly |\n| **VM 105 (server) health** | Weekly | `ssh Nix.Server \"uptime; df -h / /mnt/torrents 2>/dev/null; sudo systemctl --failed\"` | weekly |\n| **Forgejo Notes mirror lag** | After any Notes vault bulk edit | `ssh Nix.Server \"cd /var/lib/forgejo-notes-mirror && git log -1 --format='%cI %s' main\"` (PHASE 4 PR pending \u2014 script + check pattern only after that lands) | weekly post-deploy |\n\n### Annual / on-demand\n\n| Activity | Trigger | Command | Cadence |\n|---|---|---|---|\n| **Master password rotation** | Suspected compromise OR every 24 months | `[[Bitwarden Master Password Rotation Playbook]]` end-to-end | annual or on-incident |\n| **AWS root key rotation** | After any local-creds-leak suspicion | `~/Documents/Notes/2. Areas/\ud83d\udcdd Personal/CLAUDE-SAVE-STATE \u2014 2026-05-06 Marathon.md#Bonus infra` for the IAM-user pattern | annual |\n| **Flake input update** | Before any feature work that touches a stale dep | `cd ~/NixOS && nix flake update <input> && nix build .#nixosConfigurations.<host>.config.system.build.toplevel` | as needed |\n| **Plugin reaper check** | Sluggish Claude Code, ghost MCPs | Inspect `claude-mcp-reaper.service` logs; spec 161 \u2014 kills stale claude procs + orphan MCPs | as needed |\n\n## Last updated\n\n2026-06-03 \u2014 corrected the Syncthing key-decision bullet after discovering the org/intent structure had silently stopped being followed: Code was re-added as a `sendreceive` Syncthing folder on 28/05, re-seeding the dead pre-migration tree from `Nix.Server` + stripping `.git` from live repos. Removed the folder (desktop + Nix.Server), quarantined old dirs to `archive/_pre-migration-2026-05-28/`, repaired the damaged repos. Findings + manifests at `~/code-reconcile-backup-2026-06-03/`. See `[[Code-Workspace-Reorg-2026-05-11]]`.\n\n2026-05-06 \u2014 added Recurrent activities section after Bitwarden empty-name vault item caused multi-hour rbw decrypt debug. Goal: future-Claude auto-runs the health-check before suspecting deeper bugs. See `[[Bitwarden Vault Health Check]]` + `[[CLAUDE-SAVE-STATE \u2014 2026-05-06 Marathon]]`.\n\n</project_instructions>\n\n<project_instructions path=\"/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/AGENTS.md\">\n# Development Rules\n\n## Conversational Style\n\n- Keep answers short and concise\n- No emojis in commits, issues, PR comments, or code\n- No fluff or cheerful filler text (e.g., \"Thanks @user\" not \"Thanks so much @user!\")\n- Technical prose only, be direct\n- Use concise, clear, simple language. Define unavoidable jargon before using it.\n- Explain non-trivial designs and problems as: problem, concrete example or short trace, then solution. State why the solution is necessary and distinguish it from optional complexity.\n- Prefer concrete behavior and small illustrations over abstract summaries, dense terminology, or unexplained lists of changes.\n- When the user asks a question, answer it first before making edits or running implementation commands.\n- When responding to user feedback or an analysis, explicitly say whether you agree or disagree before saying what you changed.\n\n## Code Quality\n\n- Read files in full before wide-ranging changes, before editing files you have not fully inspected, and when asked to investigate or audit. Do not rely on search snippets for broad changes.\n- No `any` unless absolutely necessary.\n- Inline single-line helpers that have only one call site.\n- Check node_modules for external API types; don't guess.\n- **No inline imports** (`await import()`, `import(\"pkg\").Type`, dynamic type imports). Top-level imports only.\n- In `packages/coding-agent`, resolve package assets through helpers in `src/config.ts`. Do not use `__dirname` directly; the helpers account for source checkouts, npm installations, and standalone binaries.\n- Never remove or downgrade code to fix type errors from outdated deps; upgrade the dep instead.\n- Use only erasable TypeScript syntax (Node strip-only mode) in code checked by the root config (`packages/*/src`, `packages/*/test`, `packages/coding-agent/examples`): no parameter properties, `enum`, `namespace`/`module`, `import =`, `export =`, or other constructs needing JS emit. Use explicit fields with constructor assignments.\n- Always ask before removing functionality or code that appears intentional.\n- Do not preserve backward compatibility unless the user asks for it.\n- Never hardcode key checks (e.g. `matchesKey(keyData, \"ctrl+x\")`). Add defaults to `DEFAULT_EDITOR_KEYBINDINGS` or `DEFAULT_APP_KEYBINDINGS` so they stay configurable.\n- Never modify `packages/ai/src/models.generated.ts` directly; update `packages/ai/scripts/generate-models.ts` instead, then regenerate. Including the resulting `models.generated.ts` diff is always OK, even if regeneration includes unrelated upstream model metadata changes.\n\n## Commands\n\n- After code changes (not docs): `npm run check` (full output, no tail). Fix all errors, warnings, and infos before committing. Does not run tests.\n- Never run `npm run build` or `npm test` unless requested by the user.\n- Never run the full vitest suite directly: it includes e2e tests that activate when endpoint/auth env vars are present. For all non-e2e tests, run `./test.sh` from the repo root. Otherwise run specific tests from the package root:\n  - Vitest: `node \"$(git rev-parse --show-toplevel)/node_modules/vitest/dist/cli.js\" --run test/specific.test.ts`\n  - `packages/tui` (`node:test`): `node --test test/specific.test.ts`\n- If you create or modify a test file, run it and iterate on test or implementation until it passes.\n- For `packages/coding-agent/test/suite/`, use `test/suite/harness.ts` + the faux provider. No real provider APIs, keys, or paid tokens.\n- When regressions tests for fixing a github issue, add a comment with the github issue number next to the test.\n- For ad-hoc scripts, `write` them to a temp file (e.g. `/tmp`), run, edit if needed, remove when done. Don't embed multi-line scripts in `bash` commands.\n- Never commit unless the user asks.\n\n## Dependency and Install Security\n\n- Treat npm dep and lockfile changes as reviewed code. Direct external deps stay pinned to exact versions.\n- When updating `undici`, you MUST read its changelog/release notes for the target version and evaluate whether any changes may affect functionality before applying the update.\n- Hydrate/update locally with `npm install --ignore-scripts`; clean/CI-style with `npm ci --ignore-scripts`. Don't run lifecycle scripts unless the user asks.\n- If dep metadata changes, refresh `package-lock.json` with `npm install --package-lock-only --ignore-scripts`.\n- If `packages/coding-agent/install-lock/` needs regen, run `node scripts/generate-coding-agent-install-lock.mjs` (verify with `--check` or `npm run check`). New deps with lifecycle scripts require review and an explicit allowlist entry in that script; never add one silently.\n- Pre-commit blocks lockfile commits unless `PI_ALLOW_LOCKFILE_CHANGE=1`. Don't bypass unless the user wants the lockfile change committed.\n\n## Git\n\nMultiple pi sessions may be running in this cwd at the same time, each modifying different files. Git operations that touch unstaged, staged, or untracked files outside your own changes will stomp on other sessions' work. Follow these rules:\n\nCommitting:\n\n- Only commit files YOU changed in THIS session.\n- Stage explicit paths (`git add <path1> <path2>`); never `git add -A` / `git add .`.\n- Before committing, run `git status` and verify you are only staging your files.\n- `packages/ai/src/models.generated.ts` may always be included alongside your files.\n- Message format: `{feat,fix,docs}[(ai,tui,agent,coding-agent)]: <commit message> (optionally multiple lines)`. Message is informative and concise.\n\nNever run (destroys other agents' work or bypasses checks):\n\n- `git reset --hard`, `git checkout .`, `git clean -fd`, `git stash`, `git add -A`, `git add .`, `git commit --no-verify`.\n\nIf rebase conflicts occur:\n\n- Resolve conflicts only in files you modified.\n- If a conflict is in a file you did not modify, abort and ask the user.\n- Never force push.\n\n## Issues and PRs\n\nSee `CONTRIBUTING.md` for the contributor gate (auto-close workflows, `lgtm`/`lgtmi`, quality bar).\n\nWhen reviewing PRs:\n\n- Do not run `gh pr checkout`, `git switch`, or otherwise move the worktree to the PR branch unless the user explicitly asks.\n- Use `gh pr view`, `gh pr diff`, `gh api`, and local `git show`/`git diff` against fetched refs to inspect PR metadata, commits, and patches without changing branches.\n- If you need PR file contents, fetch/read them into temporary files or use `git show <ref>:<path>` without switching branches.\n\nWhen creating issues:\n\n- Add `pkg:*` labels for affected packages (`pkg:agent`, `pkg:ai`, `pkg:coding-agent`, `pkg:tui`); use all that apply.\n\nWhen posting issue/PR comments:\n\n- Write the comment to a temp file and post with `gh issue/pr comment --body-file` (never multi-line markdown via `--body`).\n- Keep comments concise, technical, in the user's tone.\n- End every AI-posted comment with the AI-generated disclaimer line specified by the originating prompt (e.g. `This comment is AI-generated by `/wr``).\n\nWhen closing issues via commit:\n\n- Include `fixes #<number>` or `closes #<number>` in the message so merging auto-closes the issue. For multiple issues, repeat the keyword per issue (`closes #1, closes #2`); a shared keyword (`closes #1, #2`) only closes the first.\n\n## Testing pi Interactive Mode with tmux\n\nFor testing pi's interactive mode, load and follow [.pi/skills/interactive-testing.md](.pi/skills/interactive-testing.md).\n\n## Changelog\n\nLocation: `packages/*/CHANGELOG.md` (one per package).\n\nSections under `## [Unreleased]`: `### Breaking Changes` (API changes requiring migration), `### Added`, `### Changed`, `### Fixed`, `### Removed`.\n\nRules:\n\n- All new entries go under `## [Unreleased]`. Read the full section first and append to existing subsections; never duplicate them.\n- Released version sections (e.g. `## [0.12.2]`) are immutable; never modify them.\n- Do not create changelog entries when working on a branch other than `main` or pull request\n\nAttribution:\n\n- Internal (from issues): `Fixed foo bar ([#123](https://github.com/earendil-works/pi/issues/123))`\n- External contributions: `Added feature X ([#456](https://github.com/earendil-works/pi/pull/456) by [@username](https://github.com/username))`\n\n## Releasing\n\nFor release preparation, publishing, verification, or recovery, load and follow [.pi/skills/release.md](.pi/skills/release.md).\n\n## User Override\n\nIf the user's instructions conflict with any rule in this document, ask for explicit confirmation before overriding. Only then execute their instructions.\n\n</project_instructions>\n</project_context>",
+                "cwd": "<cwd>\n/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/source-a3-selector-api-fix/sessions/pane-two\n</cwd>"
+              },
+              "toolsAdded": [
+                {
+                  "name": "read",
+                  "description": "Read the contents of a text file. Output is truncated to 2000 lines or 50KB (whichever is hit first). Use offset/limit for large files. When you need the full file, continue with offset until complete.",
+                  "parameters": {
+                    "type": "object",
+                    "required": [
+                      "path"
+                    ],
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Path to the file to read (relative or absolute)"
+                      },
+                      "offset": {
+                        "type": "number",
+                        "description": "Line number to start reading from (1-indexed)"
+                      },
+                      "limit": {
+                        "type": "number",
+                        "description": "Maximum number of lines to read"
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "write",
+                  "description": "Write content to a file. Creates the file if it doesn't exist, overwrites if it does. Automatically creates parent directories.",
+                  "parameters": {
+                    "type": "object",
+                    "required": [
+                      "path",
+                      "content"
+                    ],
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Path to the file to write (relative or absolute)"
+                      },
+                      "content": {
+                        "type": "string",
+                        "description": "Content to write to the file"
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "edit",
+                  "description": "Edit a single file using exact text replacement. Every edits[].oldText must match a unique, non-overlapping region of the original file. If two changes affect the same block or nearby lines, merge them into one edit instead of emitting overlapping edits. Do not include large unchanged regions just to connect distant changes.",
+                  "parameters": {
+                    "type": "object",
+                    "required": [
+                      "path",
+                      "edits"
+                    ],
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Path to the file to edit (relative or absolute)"
+                      },
+                      "edits": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "oldText",
+                            "newText"
+                          ],
+                          "properties": {
+                            "oldText": {
+                              "type": "string",
+                              "description": "Exact text for one targeted replacement. It must be unique in the original file and must not overlap with any other edits[].oldText in the same call."
+                            },
+                            "newText": {
+                              "type": "string",
+                              "description": "Replacement text for this targeted edit."
+                            }
+                          }
+                        },
+                        "description": "One or more targeted replacements. Each edit is matched against the original file, not incrementally. Do not include overlapping or nested edits. If two changes touch the same block or nearby lines, merge them into one edit instead."
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "bash",
+                  "description": "Execute a bash command in the current working directory. Returns combined stdout and stderr. Output is truncated to last 2000 lines or 50KB (whichever is hit first). If truncated, full output is saved to a temp file. Optionally provide a timeout in seconds.",
+                  "parameters": {
+                    "type": "object",
+                    "required": [
+                      "command"
+                    ],
+                    "properties": {
+                      "command": {
+                        "type": "string",
+                        "description": "Bash command to execute"
+                      },
+                      "timeout": {
+                        "type": "number",
+                        "description": "Timeout in seconds (optional, no default timeout)"
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "subagent",
+                  "description": "Delegate a self-contained task to a subagent with the same tools and get its answer back. Give it everything it needs to know; it does not see this conversation.",
+                  "parameters": {
+                    "type": "object",
+                    "required": [
+                      "task"
+                    ],
+                    "properties": {
+                      "task": {
+                        "type": "string",
+                        "description": "What the subagent should do"
+                      }
+                    }
+                  }
+                }
+              ],
+              "timestamp": 1791380273857
+            }
+          ],
+          "kind": "pi.system",
+          "id": 10,
+          "conversationId": 1,
+          "byTaskId": 9
+        },
+        {
+          "model": [
+            {
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "QAB STREAM_START first-part steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta  middle-part last-part STREAM_END"
+                }
+              ],
+              "api": "faux:1791380270315:0145cwbotml3g",
+              "provider": "msqa-native",
+              "model": "faux-1",
+              "usage": {
+                "input": 10139,
+                "output": 328,
+                "cacheRead": 0,
+                "cacheWrite": 10139,
+                "totalTokens": 20606,
+                "cost": {
+                  "input": 0,
+                  "output": 0,
+                  "cacheRead": 0,
+                  "cacheWrite": 0,
+                  "total": 0
+                }
+              },
+              "stopReason": "stop",
+              "timestamp": 1791380273863
+            }
+          ],
+          "kind": "pi.assistant",
+          "id": 11,
+          "conversationId": 1,
+          "byTaskId": 9
+        },
+        {
+          "model": [
+            {
+              "role": "user",
+              "content": "QAB cancel-peer",
+              "timestamp": 1791380275882
+            }
+          ],
+          "kind": "pi.user",
+          "id": 12,
+          "conversationId": 1
+        },
+        {
+          "model": [
+            {
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "QAB STREAM_START first-part steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta  middle-part last-part STREAM_END"
+                }
+              ],
+              "api": "faux:1791380270315:0145cwbotml3g",
+              "provider": "msqa-native",
+              "model": "faux-1",
+              "usage": {
+                "input": 336,
+                "output": 328,
+                "cacheRead": 10139,
+                "cacheWrite": 336,
+                "totalTokens": 11139,
+                "cost": {
+                  "input": 0,
+                  "output": 0,
+                  "cacheRead": 0,
+                  "cacheWrite": 0,
+                  "total": 0
+                }
+              },
+              "stopReason": "stop",
+              "timestamp": 1791380275889
+            }
+          ],
+          "kind": "pi.assistant",
+          "id": 15,
+          "conversationId": 1,
+          "byTaskId": 14
+        }
+      ],
+      "docs": {
+        "pi.agent": {
+          "model": {
+            "provider": "msqa-native",
+            "modelId": "faux-1"
+          },
+          "thinkingLevel": "off",
+          "cwd": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/source-a3-selector-api-fix/sessions/pane-two"
+        },
+        "pi.live": {},
+        "pi.inbox": {
+          "items": []
+        },
+        "pi.provider": {
+          "sessionId": "01a11695-b354-7104-acdc-cfb4c5a3e278"
+        },
+        "pi.usage": {
+          "models": {
+            "msqa-native/faux-1": {
+              "input": 10475,
+              "output": 656,
+              "cacheRead": 10139,
+              "cacheWrite": 10475,
+              "totalTokens": 31745,
+              "cost": {
+                "input": 0,
+                "output": 0,
+                "cacheRead": 0,
+                "cacheWrite": 0,
+                "total": 0
+              }
+            }
+          },
+          "tools": {}
+        }
+      }
+    },
+    "conversations": [
+      {
+        "id": 1,
+        "label": "main",
+        "title": "QAB peer-proof"
+      }
+    ],
+    "models": [
+      {
+        "provider": "msqa-native",
+        "modelId": "faux-1",
+        "name": "Faux Model",
+        "contextWindow": 128000
+      }
+    ],
+    "notices": [],
+    "tasks": {
+      "tasks": {}
+    }
+  },
+  "pane-one": {
+    "session": {
+      "id": "1791380272010-458bc4c2-8696-4c7a-8eab-97a787076abe",
+      "directory": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/source-a3-selector-api-fix/agent/experimental/durable-sessions/2eaabfe6cf9b7950358a92ed/1791380272010-458bc4c2-8696-4c7a-8eab-97a787076abe",
+      "cwd": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/source-a3-selector-api-fix/sessions/pane-one"
+    },
+    "conversation": {
+      "conversation": {
+        "id": 1
+      },
+      "entries": [
+        {
+          "model": [
+            {
+              "role": "user",
+              "content": "QAA history-proof\nlong-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged-long-unchanged- PASTE_END",
+              "timestamp": 1791380273001
+            }
+          ],
+          "kind": "pi.user",
+          "id": 7,
+          "conversationId": 1
+        },
+        {
+          "model": [
+            {
+              "role": "system",
+              "content": "",
+              "sections": {
+                "preamble": "You are an expert coding assistant operating inside pi, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.",
+                "tools": "<tools>\n- read: Read file contents\n- write: Create or overwrite files\n- edit: Make precise file edits with exact text replacement, including multiple disjoint edits in one call\n- bash: Execute bash commands (ls, grep, find, etc.)\n\nIn addition to the tools above, you may have access to other custom tools depending on the project.\n</tools>",
+                "rules": "<rules>\n- Use bash for file operations like ls, rg, find\n- Use read to examine files instead of cat or sed.\n- Use write only for new files or complete rewrites.\n- Use edit for precise changes (edits[].oldText must match exactly)\n- When changing multiple separate locations in one file, use one edit call with multiple entries in edits[] instead of multiple edit calls\n- Each edits[].oldText is matched against the original file, not after earlier edits are applied. Do not emit overlapping or nested edits. Merge nearby changes into one edit.\n- Keep edits[].oldText as small as possible while still being unique in the file. Do not pad with large unchanged regions.\n- You can inspect PI_* environment variables for current model and session details.\n- Be concise in your responses\n- Show file paths clearly when working with files\n</rules>",
+                "docs": "<docs>\nPi documentation (read only when the user asks about pi itself, its SDK, extensions, themes, skills, or TUI):\n- Main documentation: /home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-catalog-materialize/execution-source/packages/coding-agent/README.md\n- Additional docs: /home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-catalog-materialize/execution-source/packages/coding-agent/docs\n- Examples: /home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-catalog-materialize/execution-source/packages/coding-agent/examples (extensions, custom tools, SDK)\n- When reading pi docs or examples, resolve docs/... under Additional docs and examples/... under Examples, not the current working directory\n- When asked about: extensions (docs/extensions.md, examples/extensions/), themes (docs/themes.md), skills (docs/skills.md), prompt templates (docs/prompt-templates.md), TUI components (docs/tui.md), keybindings (docs/keybindings.md), SDK integrations (docs/sdk.md), custom providers (docs/custom-provider.md), adding models (docs/models.md), pi packages (docs/packages.md), environment variables (docs/environment-variables.md), MCP servers (docs/mcp.md), codemode scripts and non-LLM models such as classifiers and image models (docs/codemode.md)\n- When working on pi topics, read the docs and examples, and follow .md cross-references before implementing\n- Always read pi .md files completely and follow links to related docs (e.g., tui.md for TUI API details)\n</docs>",
+                "project_context": "<project_context>\nProject-specific instructions and guidelines:\n\n<project_instructions path=\"/home/notroot/Documents/Code/CLAUDE.md\">\n# `~/Documents/Code/` \u2014 Repo Root\n\nPedro's local code workspace. Auto-loads when Claude Code reads any file under `~/Documents/Code/`. For vault rules see `/Users/notroot/Documents/Notes/CLAUDE.md`. For work-specific rules see `/Users/notroot/Documents/Notes/2. Areas/\ud83d\udc77 Work/CLAUDE.md`.\n\n---\n\n## Ownership Rule (NON-NEGOTIABLE \u2014 applies to every repo under this tree)\n\n**Every open PR, issue, branch, alert, CI failure, or task in any repo Pedro has surfaced is YOUR responsibility \u2014 including those opened by sibling Claude sessions, Pedro, Dependabot, or any human collaborator.** There is no \"not mine, leave alone.\"\n\nForbidden phrases: \"PR#NNN owned by another session\", \"let the other agent handle it\", \"I'll let CI catch it\", \"not my session, not my PR\".\n\n**Default action:** take ownership. Babysit CI, fix red checks, rebase on main if stale, shepherd to merge. If two agents could conflict (mid-rebase, overlapping branches), prefer taking over the older PR + closing the duplicate; never park both.\n\n**Acceptable reasons to defer (must be evidenced, not assumed):**\n1. **Pedro-gated** \u2014 needs MFA, secret rotation, hardware action, billing change. Tag the task `[pending] Pedro: <action>` and continue with other work.\n2. **Active sibling** \u2014 verified by `gh pr view <n> --json updatedAt,commits` showing a fresh push within the last 30 minutes AND no stale red CI.\n3. **Hard-blocked-on-infra** \u2014 PR depends on a service Pedro must touch. Document the blocker, advance every PR that doesn't depend on it.\n\nThis rule supersedes any prior framing that lets you punt work. Pedro correction 06/05/2026: *\"There is no such thing as not mine, everything is your responsibility.\"*\n\n---\n\n## Pretty mindset (NON-NEGOTIABLE)\n\nFolder structure under `~/Documents/Code/` MUST express **intent + ownership**, not technology. A folder name should answer \"**who owns this and what is it?**\" \u2014 not \"what language is it written in?\".\n\n### Why\n\nTech changes. Ownership doesn't. A repo can change from Python \u2192 Go \u2192 Rust over its lifetime, but it stays in the same GitHub org. Tech-grouping (`Python/`, `Golang/`, `Tauri/`, `Firefox/`) creates orphan dirs every time a project pivots. Org-grouping mirrors GitHub structure \u2192 mental model is stable + predictable.\n\n### Required: org / intent grouping\n\n```text\n~/Documents/Code/\n\u251c\u2500\u2500 yolo-labz/                  # public yolo-labz GitHub org\n\u2502   \u251c\u2500\u2500 wa/                     # WhatsApp Go daemon\n\u2502   \u251c\u2500\u2500 claude-mac-chrome/      # Chrome automation Bash/TS\n\u2502   \u251c\u2500\u2500 linkedin-chrome-copilot/ # LinkedIn agent TS\n\u2502   \u251c\u2500\u2500 kokoro-speakd/          # TTS daemon Python\n\u2502   \u251c\u2500\u2500 claude-classroom-submit/ # Classroom auto-submit Python\n\u2502   \u251c\u2500\u2500 fand/                   # Apple Silicon thermal Rust\n\u2502   \u251c\u2500\u2500 homebrew-tap/           # tap formula\n\u2502   \u251c\u2500\u2500 chrome-bridge/          # Chrome automation bridge\n\u2502   \u251c\u2500\u2500 craftcut/               # local-only skeleton (no remote yet)\n\u2502   \u251c\u2500\u2500 diploma-equivalence/    # CIN-UFPE diploma parser (+ 2 worktrees)\n\u2502   \u251c\u2500\u2500 noctalia-appmenu/       # Quickshell app menu\n\u2502   \u251c\u2500\u2500 pedro-diagrams/         # diagram renderer for blog posts\n\u2502   \u251c\u2500\u2500 pedro-portfolio-recipes/ # portfolio recipes\n\u2502   \u2514\u2500\u2500 portfolio/              # pedro/portfolio.home301server.com.br Next.js\n\u2502   # NOTE: blog/ MOVED to personal/blog (canonical phsb5321/blog remote)\n\u251c\u2500\u2500 personal/                   # phsb5321 personal repos (mirror personal GitHub)\n\u2502   \u251c\u2500\u2500 actual-budget-normalizer/\n\u2502   \u251c\u2500\u2500 blog/                   # blog.home301server.com.br Hugo (+ 3 worktrees)\n\u2502   \u251c\u2500\u2500 exec-job-aggregator/\n\u2502   \u251c\u2500\u2500 finances/               # personal hledger work\n\u2502   \u251c\u2500\u2500 finances-dashboard/\n\u2502   \u251c\u2500\u2500 german/                 # German learning factory\n\u2502   \u251c\u2500\u2500 merlin-unbrick/         # router flash recovery (1.9G, blobs gitignored)\n\u2502   \u251c\u2500\u2500 mtst-campanha-jo/       # MTST campanha (was Venom_Lourezon)\n\u2502   \u251c\u2500\u2500 nfce/                   # NFCe extraction (was Python/NFC)\n\u2502   \u251c\u2500\u2500 proso/                  # Firefox TTS extension\n\u2502   \u251c\u2500\u2500 tauri-pdf-reader/       # desktop PDF + TTS\n\u2502   \u251c\u2500\u2500 vocalis/                # document-to-voice Tauri\n\u2502   \u251c\u2500\u2500 voxscribe/              # AI transcription\n\u2502   \u2514\u2500\u2500 watermark-removal/\n\u251c\u2500\u2500 work/                       # employer-bound + freelance client work (NDA-respect)\n\u2502   \u251c\u2500\u2500 ASA_BANK/               # employer (Azure DevOps) + 4 sibling worktrees\n\u2502   \u251c\u2500\u2500 asa-irpf-api-191NN/     # ASA.IRPF.API feature worktrees (\u00d74)\n\u2502   \u251c\u2500\u2500 DeliCasa/               # freelance client (smart-vending startup; Eduardo Mendon\u00e7a)\n\u2502   \u251c\u2500\u2500 DeliCasa.bak/           # backup\n\u2502   \u2514\u2500\u2500 DeliCasa-{BS,NC,Pi,NextClient}-*/  # 20+ DeliCasa submodule worktrees\n\u251c\u2500\u2500 academic/                   # CIN-UFPE student work\n\u2502   \u2514\u2500\u2500 Senac/                  # CITi-UFPE carbo-server (academic, NOT DeliCasa)\n\u251c\u2500\u2500 infra/                      # local infra config (NixOS lives at ~/NixOS)\n\u2502   \u251c\u2500\u2500 proxmox/                # Proxmox host/guest notes + scripts\n\u2502   \u251c\u2500\u2500 proxmox-backup/         # Go daemon: Proxmox VM \u2192 S3\n\u2502   \u251c\u2500\u2500 scripts/                # one-off ops scripts\n\u2502   \u2514\u2500\u2500 notes/                  # infra markdown\n\u251c\u2500\u2500 experiments/                # WIP / research / one-shot prototypes (no upstream OR pre-promotion)\n\u2502   \u251c\u2500\u2500 agents/                 # scratchpad\n\u2502   \u251c\u2500\u2500 automation/             # Rio2C automation experiments\n\u2502   \u251c\u2500\u2500 docling/                # Docling notebook spike\n\u2502   \u251c\u2500\u2500 ethical-hacking/        # pcap/labs/wordlists scratchpad\n\u2502   \u251c\u2500\u2500 goexam/                 # Go exam prep one-shot\n\u2502   \u251c\u2500\u2500 groq-transcribe/        # Groq Whisper hexagonal-arch spike\n\u2502   \u251c\u2500\u2500 lightisgood-scraper/    # specs-driven scraper spike\n\u2502   \u251c\u2500\u2500 normalize-contact-info/\n\u2502   \u251c\u2500\u2500 openai-vision/\n\u2502   \u251c\u2500\u2500 small-script/\n\u2502   \u251c\u2500\u2500 tts/\n\u2502   \u2514\u2500\u2500 web-ui-fork/            # browser-use/web-ui local edits scratchpad\n\u2514\u2500\u2500 archive/                    # dead / deprecated / kept-for-reference\n    \u251c\u2500\u2500 citi-cleanup-marker.md  # stale CITi marker\n    \u251c\u2500\u2500 finances-copy-stale/    # duplicate of personal/finances\n    \u251c\u2500\u2500 globalhitss/            # old client docs\n    \u251c\u2500\u2500 inbox-2026-04-25/       # unopened zips\n    \u251c\u2500\u2500 mtst-50_000/            # historical mtst-campanha-jo nested repos\n    \u251c\u2500\u2500 mtst-py/                # old MTST phone-cleaning script\n    \u251c\u2500\u2500 session-ses_1fc3.md     # transcript dump\n    \u251c\u2500\u2500 upwork/, upwork-2/, upwork-3/ # legacy UpWork skeletons\n    \u2514\u2500\u2500 yolo-labz-blog-stale-snapshot/ # pre-personal/blog draft posts (recover content here)\n```\n\n### Forbidden patterns\n\n- \u274c Top-level dir named after a language (`Python/`, `Golang/`, `Tauri/`)\n- \u274c Top-level dir named after a browser/platform (`Firefox/`, `Apple/` \u2014 was misleading; renamed to `yolo-labz/`)\n- \u274c Empty placeholder dirs (`UpWork/` empty + `UpWork 3/` skeleton)\n- \u274c Dup dirs covering same scope (`Scraping/` + `WebScraping/`)\n- \u274c Snake-case mixed with kebab-case in same level \u2014 pick ONE per level (current root: kebab-case wins)\n- \u274c Dotfiles or hidden state at root that isn't `.git*`, `.gitignore`, `.editorconfig`, `.envrc`\n\n### Required naming conventions\n\n- Top-level dirs (org / intent groupings): kebab-case lowercase (`yolo-labz`, `personal`, `experiments`)\n- Repo dirs: match GitHub repo name verbatim (so `git clone` lands cleanly)\n- Sub-projects within a repo: follow the repo's own convention\n\n### Required per-repo files\n\nEvery repo with code MUST have at minimum:\n\n- `README.md` (what + why + how to run + license)\n- `.gitignore`\n- `LICENSE` (MIT or Apache-2.0 default per yolo-labz constitution)\n- A reproducible build path (Dockerfile / flake.nix / package.json scripts / Makefile)\n\n### Migration ordering (when restructuring)\n\n1. Move target dir\n2. Verify `git log -1` still readable in new location\n3. Update local git remote if needed (`git remote set-url`)\n4. Update path references in dependent docs (Notes vault save-states, sibling repos)\n5. Symlink old path \u2192 new path if external session-resume relies on it (`~/.claude/projects/` encoded paths)\n\n---\n\n## Migration status (2026-05-11 \u2014 major reorg executed)\n\nFull audit + execution log: `~/Documents/Notes/1. Projects/Code-Workspace-Reorg-2026-05-11.md`.\nBleeding-edge tooling research: `~/Documents/Code/BLEEDING-EDGE-STRATEGIES.md`.\nReusable migration technique: `~/Documents/Notes/3. Resources/\ud83d\uddc2\ufe0f Code Workspace/Git Worktree Migration Playbook.md`.\n\nKey decisions codified:\n- **DeliCasa is freelance client work, NOT academic** (Eduardo Mendon\u00e7a's smart-vending startup). Lives in `work/`.\n- **Senac IS academic** (`CITi-UFPE/carbo-server` remote). Stays in `academic/`.\n- `experiments/` is for pre-upstream prototypes. Anything with active vault project notes or a personal phsb5321 remote graduates to `personal/`.\n- **Syncthing must NOT cover `~/Documents/Code/` \u2014 replication is git-remotes-only.** Verified 15/05/2026 (7 folders, none for Code). **REGRESSION 28/05/2026:** Code was re-added as a `sendreceive` Syncthing folder (id=`code`). This caused TWO failures: (a) it re-seeded the dead pre-migration tech-grouped tree (`Apple/ Python/ Firefox/ CITi/ \u2026`) from `Nix.Server` (which was never migrated) back onto desktop \u2014 every old dir stamped 28/05 15:21, ~10 min after the `.stfolder` marker \u2014 so the org/intent structure silently stopped being followed; (b) the `.stignore` `(?d).git` rule (deletable + non-synced) **stripped `.git` from ~12 live repos** (`yolo-labz/{wa,fand,kokoro-speakd,claude-mac-chrome,\u2026}`, `academic/Senac`, `infra/{AWS,vendored}`), leaving working-tree-only dirs. **RESOLVED 03/06/2026:** removed the `code` folder on desktop + `Nix.Server` (REST `DELETE /rest/config/folders/code`, files untouched); quarantined all 21 resurrected old dirs into `archive/_pre-migration-2026-05-28/` (they had DIVERGED \u2014 unique pre-migration work, e.g. `Ethical Hacking/labs/ring-blink/` \u2014 so MOVED not deleted); removed 21 stray in-tree PR clones (clean+pushed, verified on remote); reattached `.git` on the 7 high-confidence yolo-labz repos (`reset --hard origin/main`, full history) \u2014 the stale working trees were 28/04 snapshots, no unique work. Insurance bundles + manifests at `~/code-reconcile-backup-2026-06-03/`. If a \"yolo-labz\" repo looks non-git on desktop, it is `.git`-strip damage from this incident \u2014 re-clone or `git init+fetch+reset`, do NOT re-add Code to Syncthing. **RECURRENCE 09/06/2026:** the 03/06 fix was runtime-only (REST delete) but the folder was DECLARATIVE \u2014 PR #752 (`modules/shared/syncthing/devices.nix`) re-created it on every `nh os switch`, re-seeding the old tree again (peers never migrated, so #752's \"1-12h convergence\" premise never held). **DURABLE FIX: PR #884** removed the `code` folder from devices.nix (merged 09/06); runtime folder also removed on desktop+server+mac. Re-seeded dirs re-quarantined to `archive/_resync-2026-06-09/` (the 03/06 quarantine `_pre-migration-2026-05-28/` was deleted by an unknown actor 09/06 23:20 \u2014 content still recoverable from server/mac disks + bundles). Old flat trees still sit on server+mac LOCAL disks (harmless, unsynced) \u2014 clean opportunistically. Lesson: when killing infra behavior, grep `~/NixOS` for the declarative source FIRST; runtime deletes do not survive rebuilds.\n- `gwq` + `ghq` recommended for future worktrees (out-of-tree at `~/worktrees/github.com/<org>/<repo>/<NNN-slug>/`) \u2014 see `BLEEDING-EDGE-STRATEGIES.md` \u00a71.\n\n### Pre-2026-05-11 migration table (kept for history)\n\n| Repo | Old | New | Status |\n|------|-----|-----|--------|\n| blog | `Apple/blog` | `yolo-labz/blog` | \u2705 moved 2026-04-23 |\n| (others) | `Apple/*` | `yolo-labz/*` | \u23f3 pending Pedro confirm before bulk rename |\n| Personal repos | scattered | `personal/*` | \u23f3 pending |\n| ASA_BANK | top-level | `work/ASA_BANK` | \u23f3 pending |\n| CITi | top-level | `academic/CITi` | \u23f3 pending |\n| Python/, Golang/, Tauri/, Firefox/ | top-level | `personal/*` or `experiments/*` | \u23f3 pending \u2014 split each repo by ownership |\n| Scraping + WebScraping | top-level | `experiments/scraping/` (consolidate) | \u23f3 pending |\n| UpWork/, UpWork 3/ | top-level | `archive/` | \u23f3 pending \u2014 both cruft |\n| _recovered-from-desktop/ | top-level | `archive/` | \u23f3 pending |\n\n### Why staged migration\n\nBulk rename of `Apple/` \u2192 `yolo-labz/` will break `~/.claude/projects/` session-history paths for 6+ existing sessions. Symlinks resolve this but adds noise. Defer to a single audit pass when Pedro is ready.\n\n### Migration command pattern (for future bulk rename)\n\n```bash\n# 1. Rename\nmv ~/Documents/Code/Apple ~/Documents/Code/yolo-labz\n\n# 2. Symlink old Claude session paths to new (preserves /resume from old name)\nfor old in ~/.claude/projects/-Users-notroot-Documents-Code-Apple-*; do\n  base=$(basename \"$old\" | sed 's/-Apple-/-yolo-labz-/')\n  ln -sf \"$old\" ~/.claude/projects/\"$base\"\ndone\n\n# 3. Update remotes (each repo)\n# (no-op \u2014 git remotes use github.com URLs, not local paths)\n\n# 4. Grep + sed Notes vault for old path references\ngrep -rl 'Documents/Code/Apple/' ~/Documents/Notes/ \\\n  | xargs -I{} sed -i '' 's|Documents/Code/Apple/|Documents/Code/yolo-labz/|g' {}\n```\n\n---\n\n## Stealth + framing rules carry over\n\nWhen working on `yolo-labz/blog/`, `yolo-labz/portfolio/`, or any public-facing artifact, the rules in `/Users/notroot/Documents/Notes/2. Areas/\ud83d\udc77 Work/CLAUDE.md` apply:\n\n- Capability-first framing (NEVER autobiographical)\n- Anonymization (no client / employer name)\n- Stealth job-search (no availability copy)\n\n---\n\n## Multi-agent orchestration (proven pattern, 23/04/2026)\n\nWhen task scope exceeds parent context budget, spawn child Claude Code via shell. Verified working: spec 016 portfolio refresh \u2014 5 commits, 354s wall, 59 turns, 0 blockers, all gates pass.\n\n### Working flag combo\n\n```bash\nclaude --print \\\n  --model \"claude-opus-4-7[1m]\" \\\n  --max-turns 80 \\\n  --max-budget-usd 8 \\\n  --permission-mode acceptEdits \\\n  --output-format stream-json \\\n  --include-partial-messages \\\n  --verbose \\\n  --add-dir \"<source-of-truth-dir>\" \\\n  --add-dir \"<work-dir>\" \\\n  --allowedTools \"Read Edit Write Glob Grep TodoWrite Bash(pnpm *) Bash(git *) Bash(npx *) Bash(node *) Bash(ls *) Bash(cat *) Bash(grep *) Bash(mkdir *) Bash(find *) Bash(head *) Bash(tail *) Bash(wc *)\" \\\n  --name \"<descriptive-session-name>\" \\\n  \"$(cat <brief-file>)\" \\\n  > \"<log-file>\" 2>&1\n```\n\nRun with `Bash run_in_background=true` for live observability via stream-json log.\n\n### Pre-flight (mandatory)\n\n1. Write brief to a markdown file (reproducible, reviewable). Sections: mission, source-of-truth context paths, NON-NEGOTIABLE constraints, concrete tasks in order, acceptance gates, branch/commit conventions, output file path.\n2. Restrict Bash via `--allowedTools` allowlist (NOT `bypassPermissions`). Whitelist exact commands the child needs; deny shell escape vectors.\n3. Cap budget via `--max-budget-usd` AND `--max-turns`.\n4. Write to a NEW git branch (child creates `<feature>-<purpose>` off main); parent reviews before merge.\n5. Tell child to NOT push to remote \u2014 parent pushes after review.\n\n### Capture + monitor\n\n- `session_id` extracted from first stream event (`grep -m1 session_id <log> | jq`)\n- Resume child at any time: `claude --resume <session_id>`\n- Final result line in JSON: `grep '\"type\":\"result\"' <log> | tail -1` includes duration_ms, num_turns, cost\n- Background ID from Bash run_in_background = handle for `BashOutput` / `KillShell`\n\n### Failure modes seen + mitigations\n\n- **Parent Write stomped by child git checkout.** Mitigation: parent commits work to a branch BEFORE spawning child OR re-applies post-child. (Spec 016 case: child saw stale `projects.ts`, flagged in summary, parent re-wrote + committed `855f5d8`.)\n- **Lockfile drift on child `pnpm install`.** Mitigation: brief instructs child to restore lockfile via `git checkout main -- pnpm-lock.yaml` if drift unrelated to task scope.\n- **Lighthouse / Chrome unavailable in headless sandbox.** Mitigation: brief flags Lighthouse as DEFERRED gate \u2014 parent runs locally before push.\n\n### Anti-patterns (do NOT)\n\n- \u274c Spawn child with `--permission-mode bypassPermissions` (no allowlist = blast radius unbounded)\n- \u274c Skip the brief markdown \u2014 inline prompt = no audit trail\n- \u274c Child pushes directly to remote (parent loses review gate)\n- \u274c Spawn 5+ children for one feature \u2014 coordination overhead exceeds savings; use Agent Teams or Multiclaude orchestrator if you really need fanout\n\n### When to use built-in alternatives instead\n\n- **Subagents (Task tool)** \u2014 same-context Claude Code session. Use for research / parallel reads. NOT for long-running edits (subagent context ends with parent turn).\n- **Agent Teams** (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`) \u2014 built-in multi-agent. Use for \u22653 coordinated children with shared task list. Heavyweight setup.\n- **Gas Town / Multiclaude** \u2014 third-party orchestrators. Use when scaling beyond 5 parallel agents OR when multi-day autonomous runs needed.\n\nFor typical 1-child scope (single feature, focused task list), the DIY shell pattern above is the right tool.\n\n## Recurrent activities (auto-trigger when relevant)\n\nPeriodic operations that prevent silent infrastructure rot. Each entry has a **trigger** (what makes you remember it), a **command** (how to do it), and a **cadence** (how often). When you notice the trigger condition, run the command \u2014 don't wait for Pedro to ask.\n\n### Multi-agent browser automation\n\n| Activity | Trigger | Command | Cadence |\n|---|---|---|---|\n| **Marionette broker liveness** | Before any `marionette-call` from a fresh shell | `systemctl --user is-active marionette-broker.service` \u2014 start with `systemctl --user start marionette-broker.service` if inactive | on demand |\n| **Tab-ownership audit** | After SessionEnd hooks fail; debugging a refused SwitchToWindow | `marionette-call <agent-id> broker:list-mine` per agent | on rare contention |\n| **Broker restart after Firefox restart** | Firefox restarted \u2192 broker has stale Marionette session | `systemctl --user restart marionette-broker.service` | when FF restarts |\n\n### Vault hygiene\n\n| Activity | Trigger | Command | Cadence |\n|---|---|---|---|\n| **Bitwarden vault health check** | Any rbw error, before any rbw rotation, after BW web-UI bulk edits | `~/bw-vault-health.sh` | quarterly OR on rbw breakage |\n| **Vault entry hunt for empty names** | `rbw list` returns `failed to decrypt: invalid mac` (the doy/rbw#205 bug) | Inside health-check; or manual `bw list items \\| jq '.[] \\| select(.name == \"\")'` | on demand |\n| **rbw fresh re-register** | `rbw unlocked` returns \"agent is locked\" + `bw-keyring-unlock` cycles fail; OR after master pwd rotation | `~/bw-rbw-fresh-register.sh` (auto-fetches 2FA from vault entry \u2014 no Pedro typing) | as needed |\n\n### Multi-host sync + backup\n\n| Activity | Trigger | Command | Cadence |\n|---|---|---|---|\n| **Cross-host main HEAD parity** | After sibling-agent merges OR before any deploy | `for h in Nix.Server Nix.Laptop Mac.Pro; do echo -n \"$h=\"; ssh -o ConnectTimeout=5 $h 'cd ~/NixOS && git rev-parse HEAD'; done; echo \"desktop=$(cd ~/NixOS && git rev-parse HEAD)\"` \u2014 all 4 should match | post-merge |\n| **Cross-host syncthing folder health** | Any conflict-notify alert, or after editing notes/code on multiple hosts in parallel | Per-host: `APIKEY=$(grep -oP '<apikey>\\K[^<]+' ~/.config/syncthing/config.xml); for f in notes claude-memories claude-state; do curl -fsS -H \"X-API-Key: $APIKEY\" \"http://127.0.0.1:8384/rest/db/status?folder=$f\" \\| jq '{folder:\"'$f'\", state, need: .needTotalItems, errors}'; done` | weekly |\n| **Cross-host transcript replication tally** | Doubting whether claude-state is actually flowing | `for h in Nix.Server Nix.Laptop Mac.Pro; do echo -n \"$h:\"; ssh -o ConnectTimeout=5 $h \"find ~/Documents/ClaudeState -name '*.jsonl' \\| wc -l\"; done; echo \"desktop:$(find ~/Documents/ClaudeState -name '*.jsonl' \\| wc -l)\"` | monthly |\n| **AWS Object Lock + restic backup health** | After any IAM change, after `restic forget`, before any cost audit | `ssh Nix.Server \"sudo systemctl status restic-backups-s3-daily.timer; sudo bash -c 'set -a; source /etc/restic/aws-env; export RESTIC_REPOSITORY=s3:s3.us-east-1.amazonaws.com/nixos-server-backups; export RESTIC_PASSWORD_FILE=/etc/restic/password; restic snapshots --latest 1'\"` + `aws s3api get-object-lock-configuration --bucket nixos-server-backups --profile PERSONAL_ROOT` | monthly |\n| **Stale-PR audit** | Open PRs older than 7 days from sibling agents | `gh pr list --state open --json number,title,headRefName,updatedAt` \u2014 close obvious abandons, take ownership of viable ones | weekly |\n| **wip-rescue branch cleanup** | wip-rescue-* branches older than 7 days uneventful | `gh api repos/phsb5321/NixOS/git/refs/heads/wip-rescue-<sha> --method DELETE` per branch | after 7 days |\n\n### NixOS workspace hygiene\n\n| Activity | Trigger | Command | Cadence |\n|---|---|---|---|\n| **Stray ~/NixOS edits from sibling agents** | Before any pull/rebase or `nh os switch` from main worktree | `cd ~/NixOS && git status -s` \u2014 any `M` file is a sibling-agent WIP; rescue to feature branch BEFORE pull (see PR #287 pattern) | before every main-worktree action |\n| **Worktree audit** | Disk pressure on ~/, OR before fleet-wide deploys | `cd ~/NixOS && git worktree list` \u2014 remove any merged-PR worktrees still hanging | weekly |\n| **HM mutable file drift** | Per-host config files that HM marks `mutable*=true` (e.g. zed keymap) silently diverge from `dotfiles/` source | Per-host `diff ~/NixOS/dotfiles/<src> ~/<live-path>` | quarterly |\n| **System gen prune** | After any major upgrade, before disk-pressure warnings | `nix-collect-garbage --delete-older-than 30d` (after `nh os switch` confirms current gen healthy) | monthly |\n\n### Security\n\n| Activity | Trigger | Command | Cadence |\n|---|---|---|---|\n| **AWS root key audit** | Annual security pass, after any host compromise scare | `aws iam list-access-keys --profile PERSONAL_ROOT` + `aws iam get-access-key-last-used --access-key-id <id>` per key \u2014 deactivate any unused >180d | annual + on-demand |\n| **Bitwarden organization membership** | Annual; after Pedro leaves any org | `bw list items \\| jq '[.[] \\| select(.organizationId)] \\| group_by(.organizationId) \\| map({org: .[0].organizationId, count: length})'` \u2014 verify Pedro still in those orgs via web UI | annual |\n| **Syncthing audit log review** | Suspected unauthorized peer activity, OR before any incident triage | `for h in desktop laptop server; do ssh $h \"ls -la ~/.local/state/syncthing/audit-*.log; tail -200 ~/.local/state/syncthing/audit-*.log | jq -c 'select(.type==\\\"ItemFinished\\\")'\"; done` \u2014 look for `delete`+`update` from different devices within 60s | quarterly + on suspicion |\n| **GitHub access token audit** | Annual security pass | `gh auth status` + GitHub Settings \u2192 Developer settings \u2192 Personal access tokens (web UI) \u2014 revoke any not used in 90 days | annual |\n\n### Observability\n\n| Activity | Trigger | Command | Cadence |\n|---|---|---|---|\n| **Gatus dashboard scan** | Whenever a service feels off | Browser `http://server.tailf59220.ts.net/` (port 3000 dashboard) \u2014 red boxes are the issue list | as needed |\n| **vm103 CI runner pool liveness** | Any repo's checks stuck `pending` >30 min with nothing `in_progress` (oomd kills whole batches silently \u2014 7 units died 01/10/2026) | `ssh ProxMox.Runner 'systemctl --no-pager list-units \"actions.runner.*\" --all'` \u2014 restart each `failed` unit with `sudo systemctl start actions.runner.<UNIT>.service`; verify via `gh api repos/<o>/<r>/actions/runners`. Trust the runner journal over lagging `gh` API states. See `[[GitHub Actions Self-Hosted Runner Registration (VM 103)]]` \u2192 *Recovery* | on demand |\n| **Disk pressure check** | Quarterly OR after suspected runaway log/cache | `for h in Nix.Server Nix.Laptop Mac.Pro; do echo \"=== $h ===\"; ssh $h \"df -h / /home 2>/dev/null \\| head -3\"; done; df -h / /home` | quarterly |\n| **VM 105 (server) health** | Weekly | `ssh Nix.Server \"uptime; df -h / /mnt/torrents 2>/dev/null; sudo systemctl --failed\"` | weekly |\n| **Forgejo Notes mirror lag** | After any Notes vault bulk edit | `ssh Nix.Server \"cd /var/lib/forgejo-notes-mirror && git log -1 --format='%cI %s' main\"` (PHASE 4 PR pending \u2014 script + check pattern only after that lands) | weekly post-deploy |\n\n### Annual / on-demand\n\n| Activity | Trigger | Command | Cadence |\n|---|---|---|---|\n| **Master password rotation** | Suspected compromise OR every 24 months | `[[Bitwarden Master Password Rotation Playbook]]` end-to-end | annual or on-incident |\n| **AWS root key rotation** | After any local-creds-leak suspicion | `~/Documents/Notes/2. Areas/\ud83d\udcdd Personal/CLAUDE-SAVE-STATE \u2014 2026-05-06 Marathon.md#Bonus infra` for the IAM-user pattern | annual |\n| **Flake input update** | Before any feature work that touches a stale dep | `cd ~/NixOS && nix flake update <input> && nix build .#nixosConfigurations.<host>.config.system.build.toplevel` | as needed |\n| **Plugin reaper check** | Sluggish Claude Code, ghost MCPs | Inspect `claude-mcp-reaper.service` logs; spec 161 \u2014 kills stale claude procs + orphan MCPs | as needed |\n\n## Last updated\n\n2026-06-03 \u2014 corrected the Syncthing key-decision bullet after discovering the org/intent structure had silently stopped being followed: Code was re-added as a `sendreceive` Syncthing folder on 28/05, re-seeding the dead pre-migration tree from `Nix.Server` + stripping `.git` from live repos. Removed the folder (desktop + Nix.Server), quarantined old dirs to `archive/_pre-migration-2026-05-28/`, repaired the damaged repos. Findings + manifests at `~/code-reconcile-backup-2026-06-03/`. See `[[Code-Workspace-Reorg-2026-05-11]]`.\n\n2026-05-06 \u2014 added Recurrent activities section after Bitwarden empty-name vault item caused multi-hour rbw decrypt debug. Goal: future-Claude auto-runs the health-check before suspecting deeper bugs. See `[[Bitwarden Vault Health Check]]` + `[[CLAUDE-SAVE-STATE \u2014 2026-05-06 Marathon]]`.\n\n</project_instructions>\n\n<project_instructions path=\"/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/AGENTS.md\">\n# Development Rules\n\n## Conversational Style\n\n- Keep answers short and concise\n- No emojis in commits, issues, PR comments, or code\n- No fluff or cheerful filler text (e.g., \"Thanks @user\" not \"Thanks so much @user!\")\n- Technical prose only, be direct\n- Use concise, clear, simple language. Define unavoidable jargon before using it.\n- Explain non-trivial designs and problems as: problem, concrete example or short trace, then solution. State why the solution is necessary and distinguish it from optional complexity.\n- Prefer concrete behavior and small illustrations over abstract summaries, dense terminology, or unexplained lists of changes.\n- When the user asks a question, answer it first before making edits or running implementation commands.\n- When responding to user feedback or an analysis, explicitly say whether you agree or disagree before saying what you changed.\n\n## Code Quality\n\n- Read files in full before wide-ranging changes, before editing files you have not fully inspected, and when asked to investigate or audit. Do not rely on search snippets for broad changes.\n- No `any` unless absolutely necessary.\n- Inline single-line helpers that have only one call site.\n- Check node_modules for external API types; don't guess.\n- **No inline imports** (`await import()`, `import(\"pkg\").Type`, dynamic type imports). Top-level imports only.\n- In `packages/coding-agent`, resolve package assets through helpers in `src/config.ts`. Do not use `__dirname` directly; the helpers account for source checkouts, npm installations, and standalone binaries.\n- Never remove or downgrade code to fix type errors from outdated deps; upgrade the dep instead.\n- Use only erasable TypeScript syntax (Node strip-only mode) in code checked by the root config (`packages/*/src`, `packages/*/test`, `packages/coding-agent/examples`): no parameter properties, `enum`, `namespace`/`module`, `import =`, `export =`, or other constructs needing JS emit. Use explicit fields with constructor assignments.\n- Always ask before removing functionality or code that appears intentional.\n- Do not preserve backward compatibility unless the user asks for it.\n- Never hardcode key checks (e.g. `matchesKey(keyData, \"ctrl+x\")`). Add defaults to `DEFAULT_EDITOR_KEYBINDINGS` or `DEFAULT_APP_KEYBINDINGS` so they stay configurable.\n- Never modify `packages/ai/src/models.generated.ts` directly; update `packages/ai/scripts/generate-models.ts` instead, then regenerate. Including the resulting `models.generated.ts` diff is always OK, even if regeneration includes unrelated upstream model metadata changes.\n\n## Commands\n\n- After code changes (not docs): `npm run check` (full output, no tail). Fix all errors, warnings, and infos before committing. Does not run tests.\n- Never run `npm run build` or `npm test` unless requested by the user.\n- Never run the full vitest suite directly: it includes e2e tests that activate when endpoint/auth env vars are present. For all non-e2e tests, run `./test.sh` from the repo root. Otherwise run specific tests from the package root:\n  - Vitest: `node \"$(git rev-parse --show-toplevel)/node_modules/vitest/dist/cli.js\" --run test/specific.test.ts`\n  - `packages/tui` (`node:test`): `node --test test/specific.test.ts`\n- If you create or modify a test file, run it and iterate on test or implementation until it passes.\n- For `packages/coding-agent/test/suite/`, use `test/suite/harness.ts` + the faux provider. No real provider APIs, keys, or paid tokens.\n- When regressions tests for fixing a github issue, add a comment with the github issue number next to the test.\n- For ad-hoc scripts, `write` them to a temp file (e.g. `/tmp`), run, edit if needed, remove when done. Don't embed multi-line scripts in `bash` commands.\n- Never commit unless the user asks.\n\n## Dependency and Install Security\n\n- Treat npm dep and lockfile changes as reviewed code. Direct external deps stay pinned to exact versions.\n- When updating `undici`, you MUST read its changelog/release notes for the target version and evaluate whether any changes may affect functionality before applying the update.\n- Hydrate/update locally with `npm install --ignore-scripts`; clean/CI-style with `npm ci --ignore-scripts`. Don't run lifecycle scripts unless the user asks.\n- If dep metadata changes, refresh `package-lock.json` with `npm install --package-lock-only --ignore-scripts`.\n- If `packages/coding-agent/install-lock/` needs regen, run `node scripts/generate-coding-agent-install-lock.mjs` (verify with `--check` or `npm run check`). New deps with lifecycle scripts require review and an explicit allowlist entry in that script; never add one silently.\n- Pre-commit blocks lockfile commits unless `PI_ALLOW_LOCKFILE_CHANGE=1`. Don't bypass unless the user wants the lockfile change committed.\n\n## Git\n\nMultiple pi sessions may be running in this cwd at the same time, each modifying different files. Git operations that touch unstaged, staged, or untracked files outside your own changes will stomp on other sessions' work. Follow these rules:\n\nCommitting:\n\n- Only commit files YOU changed in THIS session.\n- Stage explicit paths (`git add <path1> <path2>`); never `git add -A` / `git add .`.\n- Before committing, run `git status` and verify you are only staging your files.\n- `packages/ai/src/models.generated.ts` may always be included alongside your files.\n- Message format: `{feat,fix,docs}[(ai,tui,agent,coding-agent)]: <commit message> (optionally multiple lines)`. Message is informative and concise.\n\nNever run (destroys other agents' work or bypasses checks):\n\n- `git reset --hard`, `git checkout .`, `git clean -fd`, `git stash`, `git add -A`, `git add .`, `git commit --no-verify`.\n\nIf rebase conflicts occur:\n\n- Resolve conflicts only in files you modified.\n- If a conflict is in a file you did not modify, abort and ask the user.\n- Never force push.\n\n## Issues and PRs\n\nSee `CONTRIBUTING.md` for the contributor gate (auto-close workflows, `lgtm`/`lgtmi`, quality bar).\n\nWhen reviewing PRs:\n\n- Do not run `gh pr checkout`, `git switch`, or otherwise move the worktree to the PR branch unless the user explicitly asks.\n- Use `gh pr view`, `gh pr diff`, `gh api`, and local `git show`/`git diff` against fetched refs to inspect PR metadata, commits, and patches without changing branches.\n- If you need PR file contents, fetch/read them into temporary files or use `git show <ref>:<path>` without switching branches.\n\nWhen creating issues:\n\n- Add `pkg:*` labels for affected packages (`pkg:agent`, `pkg:ai`, `pkg:coding-agent`, `pkg:tui`); use all that apply.\n\nWhen posting issue/PR comments:\n\n- Write the comment to a temp file and post with `gh issue/pr comment --body-file` (never multi-line markdown via `--body`).\n- Keep comments concise, technical, in the user's tone.\n- End every AI-posted comment with the AI-generated disclaimer line specified by the originating prompt (e.g. `This comment is AI-generated by `/wr``).\n\nWhen closing issues via commit:\n\n- Include `fixes #<number>` or `closes #<number>` in the message so merging auto-closes the issue. For multiple issues, repeat the keyword per issue (`closes #1, closes #2`); a shared keyword (`closes #1, #2`) only closes the first.\n\n## Testing pi Interactive Mode with tmux\n\nFor testing pi's interactive mode, load and follow [.pi/skills/interactive-testing.md](.pi/skills/interactive-testing.md).\n\n## Changelog\n\nLocation: `packages/*/CHANGELOG.md` (one per package).\n\nSections under `## [Unreleased]`: `### Breaking Changes` (API changes requiring migration), `### Added`, `### Changed`, `### Fixed`, `### Removed`.\n\nRules:\n\n- All new entries go under `## [Unreleased]`. Read the full section first and append to existing subsections; never duplicate them.\n- Released version sections (e.g. `## [0.12.2]`) are immutable; never modify them.\n- Do not create changelog entries when working on a branch other than `main` or pull request\n\nAttribution:\n\n- Internal (from issues): `Fixed foo bar ([#123](https://github.com/earendil-works/pi/issues/123))`\n- External contributions: `Added feature X ([#456](https://github.com/earendil-works/pi/pull/456) by [@username](https://github.com/username))`\n\n## Releasing\n\nFor release preparation, publishing, verification, or recovery, load and follow [.pi/skills/release.md](.pi/skills/release.md).\n\n## User Override\n\nIf the user's instructions conflict with any rule in this document, ask for explicit confirmation before overriding. Only then execute their instructions.\n\n</project_instructions>\n</project_context>",
+                "cwd": "<cwd>\n/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/source-a3-selector-api-fix/sessions/pane-one\n</cwd>"
+              },
+              "toolsAdded": [
+                {
+                  "name": "read",
+                  "description": "Read the contents of a text file. Output is truncated to 2000 lines or 50KB (whichever is hit first). Use offset/limit for large files. When you need the full file, continue with offset until complete.",
+                  "parameters": {
+                    "type": "object",
+                    "required": [
+                      "path"
+                    ],
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Path to the file to read (relative or absolute)"
+                      },
+                      "offset": {
+                        "type": "number",
+                        "description": "Line number to start reading from (1-indexed)"
+                      },
+                      "limit": {
+                        "type": "number",
+                        "description": "Maximum number of lines to read"
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "write",
+                  "description": "Write content to a file. Creates the file if it doesn't exist, overwrites if it does. Automatically creates parent directories.",
+                  "parameters": {
+                    "type": "object",
+                    "required": [
+                      "path",
+                      "content"
+                    ],
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Path to the file to write (relative or absolute)"
+                      },
+                      "content": {
+                        "type": "string",
+                        "description": "Content to write to the file"
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "edit",
+                  "description": "Edit a single file using exact text replacement. Every edits[].oldText must match a unique, non-overlapping region of the original file. If two changes affect the same block or nearby lines, merge them into one edit instead of emitting overlapping edits. Do not include large unchanged regions just to connect distant changes.",
+                  "parameters": {
+                    "type": "object",
+                    "required": [
+                      "path",
+                      "edits"
+                    ],
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Path to the file to edit (relative or absolute)"
+                      },
+                      "edits": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "oldText",
+                            "newText"
+                          ],
+                          "properties": {
+                            "oldText": {
+                              "type": "string",
+                              "description": "Exact text for one targeted replacement. It must be unique in the original file and must not overlap with any other edits[].oldText in the same call."
+                            },
+                            "newText": {
+                              "type": "string",
+                              "description": "Replacement text for this targeted edit."
+                            }
+                          }
+                        },
+                        "description": "One or more targeted replacements. Each edit is matched against the original file, not incrementally. Do not include overlapping or nested edits. If two changes touch the same block or nearby lines, merge them into one edit instead."
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "bash",
+                  "description": "Execute a bash command in the current working directory. Returns combined stdout and stderr. Output is truncated to last 2000 lines or 50KB (whichever is hit first). If truncated, full output is saved to a temp file. Optionally provide a timeout in seconds.",
+                  "parameters": {
+                    "type": "object",
+                    "required": [
+                      "command"
+                    ],
+                    "properties": {
+                      "command": {
+                        "type": "string",
+                        "description": "Bash command to execute"
+                      },
+                      "timeout": {
+                        "type": "number",
+                        "description": "Timeout in seconds (optional, no default timeout)"
+                      }
+                    }
+                  }
+                },
+                {
+                  "name": "subagent",
+                  "description": "Delegate a self-contained task to a subagent with the same tools and get its answer back. Give it everything it needs to know; it does not see this conversation.",
+                  "parameters": {
+                    "type": "object",
+                    "required": [
+                      "task"
+                    ],
+                    "properties": {
+                      "task": {
+                        "type": "string",
+                        "description": "What the subagent should do"
+                      }
+                    }
+                  }
+                }
+              ],
+              "timestamp": 1791380273015
+            }
+          ],
+          "kind": "pi.system",
+          "id": 10,
+          "conversationId": 1,
+          "byTaskId": 9
+        },
+        {
+          "model": [
+            {
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "QAA STREAM_START first-part steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta  middle-part last-part STREAM_END"
+                }
+              ],
+              "api": "faux:1791380270315:0145cwbotml3g",
+              "provider": "msqa-native",
+              "model": "faux-1",
+              "usage": {
+                "input": 11380,
+                "output": 328,
+                "cacheRead": 0,
+                "cacheWrite": 11380,
+                "totalTokens": 23088,
+                "cost": {
+                  "input": 0,
+                  "output": 0,
+                  "cacheRead": 0,
+                  "cacheWrite": 0,
+                  "total": 0
+                }
+              },
+              "stopReason": "stop",
+              "timestamp": 1791380273029
+            }
+          ],
+          "kind": "pi.assistant",
+          "id": 11,
+          "conversationId": 1,
+          "byTaskId": 9
+        },
+        {
+          "model": [
+            {
+              "role": "user",
+              "content": "QAA tool-proof",
+              "timestamp": 1791380274643
+            }
+          ],
+          "kind": "pi.user",
+          "id": 12,
+          "conversationId": 1
+        },
+        {
+          "model": [
+            {
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "toolCall",
+                  "id": "tool:1791380274653:qlvlsao2nm",
+                  "name": "bash",
+                  "arguments": {
+                    "command": "printf 'one-effect\\n' >> tool-proof.txt; printf 'native-tool-result'"
+                  }
+                }
+              ],
+              "api": "faux:1791380270315:0145cwbotml3g",
+              "provider": "msqa-native",
+              "model": "faux-1",
+              "usage": {
+                "input": 336,
+                "output": 22,
+                "cacheRead": 11380,
+                "cacheWrite": 336,
+                "totalTokens": 12074,
+                "cost": {
+                  "input": 0,
+                  "output": 0,
+                  "cacheRead": 0,
+                  "cacheWrite": 0,
+                  "total": 0
+                }
+              },
+              "stopReason": "toolUse",
+              "timestamp": 1791380274653
+            }
+          ],
+          "kind": "pi.assistant",
+          "id": 15,
+          "conversationId": 1,
+          "byTaskId": 14
+        },
+        {
+          "model": [
+            {
+              "role": "toolResult",
+              "toolCallId": "tool:1791380274653:qlvlsao2nm",
+              "toolName": "bash",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "native-tool-result"
+                }
+              ],
+              "isError": false,
+              "timestamp": 1791380274757
+            }
+          ],
+          "data": {
+            "diagnostics": []
+          },
+          "kind": "pi.tool-result",
+          "id": 17,
+          "conversationId": 1,
+          "byTaskId": 16
+        },
+        {
+          "model": [
+            {
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "QAA STREAM_START first-part steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta  middle-part last-part STREAM_END"
+                }
+              ],
+              "api": "faux:1791380270315:0145cwbotml3g",
+              "provider": "msqa-native",
+              "model": "faux-1",
+              "usage": {
+                "input": 34,
+                "output": 328,
+                "cacheRead": 11716,
+                "cacheWrite": 34,
+                "totalTokens": 12112,
+                "cost": {
+                  "input": 0,
+                  "output": 0,
+                  "cacheRead": 0,
+                  "cacheWrite": 0,
+                  "total": 0
+                }
+              },
+              "stopReason": "stop",
+              "timestamp": 1791380274781
+            }
+          ],
+          "kind": "pi.assistant",
+          "id": 19,
+          "conversationId": 1,
+          "byTaskId": 18
+        },
+        {
+          "model": [
+            {
+              "role": "user",
+              "content": "QAA cancel-proof",
+              "timestamp": 1791380275742
+            }
+          ],
+          "kind": "pi.user",
+          "id": 20,
+          "conversationId": 1
+        },
+        {
+          "model": [
+            {
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "QAA STREAM_START streaming-ongoing streaming-ongoing streaming-ongoing streaming-ongoing streaming-ongoing streaming-ongoing streaming-ongoing streaming-ongoing streaming-o"
+                }
+              ],
+              "api": "faux:1791380270315:0145cwbotml3g",
+              "provider": "msqa-native",
+              "model": "faux-1",
+              "usage": {
+                "input": 336,
+                "output": 4507,
+                "cacheRead": 11750,
+                "cacheWrite": 336,
+                "totalTokens": 16929,
+                "cost": {
+                  "input": 0,
+                  "output": 0,
+                  "cacheRead": 0,
+                  "cacheWrite": 0,
+                  "total": 0
+                }
+              },
+              "stopReason": "aborted",
+              "timestamp": 1791380275754
+            }
+          ],
+          "kind": "pi.assistant",
+          "id": 23,
+          "conversationId": 1,
+          "byTaskId": 22
+        },
+        {
+          "model": [
+            {
+              "role": "user",
+              "content": "QAA recall-proof",
+              "timestamp": 1791380277602
+            }
+          ],
+          "kind": "pi.user",
+          "id": 24,
+          "conversationId": 1
+        },
+        {
+          "model": [
+            {
+              "role": "assistant",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "QAA STREAM_START first-part steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta steady-delta  middle-part last-part STREAM_END"
+                }
+              ],
+              "api": "faux:1791380270315:0145cwbotml3g",
+              "provider": "msqa-native",
+              "model": "faux-1",
+              "usage": {
+                "input": 5,
+                "output": 328,
+                "cacheRead": 12086,
+                "cacheWrite": 6,
+                "totalTokens": 12425,
+                "cost": {
+                  "input": 0,
+                  "output": 0,
+                  "cacheRead": 0,
+                  "cacheWrite": 0,
+                  "total": 0
+                }
+              },
+              "stopReason": "stop",
+              "timestamp": 1791380277704
+            }
+          ],
+          "kind": "pi.assistant",
+          "id": 27,
+          "conversationId": 1,
+          "byTaskId": 26
+        }
+      ],
+      "docs": {
+        "pi.agent": {
+          "model": {
+            "provider": "msqa-native",
+            "modelId": "faux-1"
+          },
+          "thinkingLevel": "off",
+          "cwd": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/source-a3-selector-api-fix/sessions/pane-one"
+        },
+        "pi.live": {},
+        "pi.inbox": {
+          "items": []
+        },
+        "pi.provider": {
+          "sessionId": "01a11695-b6f3-7104-acdc-cfb737ec98d0"
+        },
+        "pi.usage": {
+          "models": {
+            "msqa-native/faux-1": {
+              "input": 12091,
+              "output": 5513,
+              "cacheRead": 46932,
+              "cacheWrite": 12092,
+              "totalTokens": 76628,
+              "cost": {
+                "input": 0,
+                "output": 0,
+                "cacheRead": 0,
+                "cacheWrite": 0,
+                "total": 0
+              }
+            }
+          },
+          "tools": {}
+        }
+      }
+    },
+    "conversations": [
+      {
+        "id": 1,
+        "label": "main",
+        "title": "QAA recall-proof"
+      }
+    ],
+    "models": [
+      {
+        "provider": "msqa-native",
+        "modelId": "faux-1",
+        "name": "Faux Model",
+        "contextWindow": 128000
+      }
+    ],
+    "notices": [],
+    "tasks": {
+      "tasks": {}
+    }
+  }
+}

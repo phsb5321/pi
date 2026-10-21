@@ -1,0 +1,71 @@
+{
+  "schema": "memory-sound-pi-sonar-authority-action/1",
+  "status": "PREPARED_AUTHORITY_REQUIRED_NO_REMOTE_WRITE",
+  "actionCount": 1,
+  "authorityOwner": "Pedro",
+  "executionOwnerAfterAuthorization": "ms-qa / side-projects:w28:pK",
+  "standard": "/home/notroot/Documents/Notes-1007-memory-sound-resume/1. Projects/Memory-Sound Program/FASTER-FEEDBACK-2026-10-07.md",
+  "canonicalRunbook": "/home/notroot/Documents/Notes/2. Areas/👷 Work/sonar-integration-runbook.md",
+  "host": "https://sonarqube.home301server.com.br",
+  "repository": "https://github.com/phsb5321/pi.git",
+  "scopeRequested": {
+    "projectKey": "phsb5321_pi-memory-sound-qa",
+    "projectName": "Pi Memory-Sound isolated QA",
+    "visibility": "private",
+    "analysisView": "one dedicated Community single-branch project, not the unrelated main of any existing project",
+    "token": {
+      "type": "PROJECT_ANALYSIS_TOKEN",
+      "projectKey": "phsb5321_pi-memory-sound-qa",
+      "serverName": "memory-sound-pi-qa-analysis",
+      "rbwEntry": "sonar-pi-memory-sound-qa",
+      "value": null,
+      "permissions": "analysis submission to this project only; never USER_TOKEN or unrelated project",
+      "issuance": "requires explicit authority for this exact new secret/project scope; value captured privately and stored in rbw without printing or argv exposure"
+    },
+    "newCodeBaseline": {
+      "version": "1.0.4",
+      "tag": "refs/tags/v1.0.4",
+      "commit": "7c10bd4337495ee613f2224843ecdf349b80d1df",
+      "tree": "de4e0ad2e4ca4d3bf80a6e89d1bec453edbc85a0",
+      "package": "@earendil-works/pi-coding-agent",
+      "packageVersionVerified": "1.0.4",
+      "type": "SPECIFIC_ANALYSIS",
+      "analysisId": null,
+      "analysisIdResolution": "run the exact v1.0.4 baseline analysis in the dedicated project during the quality stage, verify its successful CE task, revision and version, then pin that returned analysis ID; the literal tag/version is not an API analysis ID",
+      "immutable": true,
+      "noPreviousVersionOrRollingDaysSubstitution": true
+    }
+  },
+  "executionAfterExactGrant": [
+    "Read the exact proposed project key first. If it exists without matching isolated ownership, stop rather than overwrite its Community main. No broad project/credential hunt.",
+    "Create only this private isolated project if absent; no global settings, existing projects, quality profiles or thresholds changed.",
+    "Reuse an EXISTING exact-project PROJECT_ANALYSIS_TOKEN in rbw if verified; otherwise issue and store only the specifically authorized scoped token. No token is issued now.",
+    "Keep heavy order producer -> exact compiled QA -> quality/coverage -> measurement. Baseline and candidate scans are quality work, never parallel compiler contention.",
+    "Analyze immutable v1.0.4 commit/tree with projectVersion1.0.4 and matching SCM revision in the isolated view, read back the exact successful analysis ID, then set only this project's SPECIFIC_ANALYSIS new-code baseline to it.",
+    "Analyze only the independently verified candidate frozen source/input/runtime tuple with complete new-code coverage accounting; preserve raw CE/metrics/hotspot/gate receipts and reject mismatched revisions or drift. No source fallback or coverage carve-out."
+  ],
+  "unchangedAcceptance": {
+    "maintainabilityRating": "A",
+    "reliabilityRating": "A",
+    "securityRating": "A",
+    "newCoverageMinimumPercent": 80,
+    "newIssuesMaximum": 0,
+    "hotspotsReviewedPercent": 100,
+    "newDuplicationMaximumPercent": 3,
+    "aislopErrorsMaximum": 0,
+    "newCloneGrowthMaximumPercent": 0,
+    "jscpdMinimumTokens": 50,
+    "cloneRatchetGitBaseline": "origin/main 4e494929998d6bc4fccf75e0a233f727db4b70ee; NOT reset to v1.0.4 by the Sonar-baseline action"
+  },
+  "existingEvidenceReused": [
+    "../ready-wave-1337/sonar-preflight-standard.json",
+    "../ready-wave-1337/sonar-diagnostic.json"
+  ],
+  "preciseAuthorityBlocker": "The faster-feedback standard explicitly does not grant new secret issuance or remote project/baseline writes. This exact isolated key/token/v1.0.4 SPECIFIC_ANALYSIS scope has no verified prior authorization. Prepared action only; no avoidable credential ask or remote mutation.",
+  "remoteRequestsThisPreparation": 0,
+  "projectsCreated": 0,
+  "tokensIssued": 0,
+  "baselineWrites": 0,
+  "scansSubmitted": 0,
+  "secretPrinted": false
+}

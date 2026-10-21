@@ -1,0 +1,1 @@
+ROOT R5 source-only ACK: NON_EQUIVALENT / NOT_COMPILED / NOT_EXECUTED. SDK0.99.1 on-disk package/core hashes match offer066fc0bb94f4; T8's1.0.4 native SQLite is not JSONL/gzip, loaded hook order unbound. Loaded-growth UNACCEPTED/0B; no test/compiler/adoption. Receipt: /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/r5-offer-1748/RECEIPT.md

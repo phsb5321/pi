@@ -1,0 +1,63 @@
+{
+  "schema": "memory-sound-qa-source-delta-checkpoint/1",
+  "owner": "original-ms-qa-side-projects-w28-pK",
+  "pickup": "08/10/2026 12:53:51 BRT",
+  "status": "T15_SOURCE_BINDING_DELTA_COMPLETE_PRODUCT_NOT_EXECUTED",
+  "identity": {
+    "tuple": "T15-native-nested-type-repair-c60ad0ff1455",
+    "sourceSha256": "c60ad0ff14551d1f2e0714d9168ed3a2ac534d3991c725c8087da165038ef96d",
+    "inputSha256": "a7da1f25fd1bcdf327c12b5cbee52cee7abe793d4550d10363370d3045cc9ef7",
+    "entries": 2030,
+    "catalogues": 43,
+    "links": 273,
+    "output": null,
+    "runtime": null,
+    "publication": null
+  },
+  "sourceScope": {
+    "eligible": 929,
+    "recensused": 1,
+    "changedPath": "packages/coding-agent/src/experimental/durable/extension-composition.ts",
+    "retainedZeroScopes": 928,
+    "physicalSourcesVerified": 929,
+    "changedRelativeToRelease": 62,
+    "potentialStaticConditionSlots": 58081,
+    "changedLines": 6002,
+    "potentialNewConditionSlots": 1252,
+    "retainedReleasePartitions": 61,
+    "releasedTargetAbsentActuallyVerified": true,
+    "graphSha256": "41083f5fa6b4765a660d5246a28c659108847423069ee75d637c5d056d876d75",
+    "partitionSha256": "a602bc3ecba415602d0012585d961e769677be2dd836e855c25203e3fda54cd4",
+    "observedV8Coverage": false,
+    "actualEmittedMapBinding": false
+  },
+  "commands": [
+    {"script": "build-t15-delta.mjs", "evidence": "source-a1", "exit": 0, "tinyBindingAssertions": 5},
+    {"script": "prepare-t15-gate.py", "evidence": "preparation-result.json", "exit": 0},
+    {"script": "project-gate.py --manifest PROJECT-GATE.T15.json", "evidence": "source-only-gate-a1", "exit": 78, "status": "BLOCKED", "commandsLaunched": 0}
+  ],
+  "bindingCheck": {"currentT15": "ACCEPTED_SOURCE_ONLY", "staleT14": "REJECTED", "droppedUnexecutedCondition": "REJECTED", "fabricatedArtifact": "REJECTED", "fabricatedObservedCoverageACED": "REJECTED"},
+  "manifestSha256": "7692ff4f53022ca65490dcf1755f0ee7a3c2884bb5b08e79450afc5b5c2a333d",
+  "failedCompiler": {
+    "identity": "T14-native-nested-policy-7c2021ac9f3c",
+    "checkExit": 1,
+    "seconds": 64.15500048099784,
+    "InvocationID": "906b0bff81f44c30ab52509894db8357",
+    "resultSha256": "2a98ca1d18be106a7770358f33bfc6dee4e9df315e9188f33e99f30f4f005742",
+    "fullLogSha256": "9adcc060b292b55c63f302e360a69a5326f903a10c0e3437409876a3ee0c2243",
+    "shippingWave": "1/1 CONSUMED",
+    "oldWave": "2/2",
+    "totalActualEvents": 3,
+    "furtherCompilerAuthorizedByThisTask": false
+  },
+  "release": {"revision": "7c10bd4337495ee613f2224843ecdf349b80d1df", "tree": "de4e0ad2e4ca4d3bf80a6e89d1bec453edbc85a0", "SonarAnalysisId": null},
+  "stages": {"compiledQA": "NOT_EXECUTED", "observedV8Coverage": "NOT_EXECUTED", "realBaselineSonar": "NOT_EXECUTED", "candidateSonar": "NOT_EXECUTED", "ACED": "NOT_EXECUTED", "aislop": "NOT_EXECUTED", "jscpd": "NOT_EXECUTED"},
+  "qualifiedMatrices": {"artifact": 18, "scanner": 7, "converter": 8, "gate": 16, "reruns": 0, "bytesUnchanged": true},
+  "policy": {"ratings": "A", "newCoverageMinimum": 80, "newDuplicationMaximum": 3, "newIssuesMaximum": 0, "hotspotsReviewedMinimum": 100, "aislopErrorsMaximum": 0, "newClonesMaximum": 0, "minTokens": 50, "cloneBaseline": "4e494929998d6bc4fccf75e0a233f727db4b70ee"},
+  "QACompilerRuntimeScannerSecretOperations": 0,
+  "artifactReadinessPolling": 0,
+  "newAgentsAccountsDependenciesDefaultGates": 0,
+  "targetedDeltaFailuresDiscarded": 0,
+  "ACED": false,
+  "finalCustody": "See executed final-custody.log/.exit; no result inferred before execution"
+}

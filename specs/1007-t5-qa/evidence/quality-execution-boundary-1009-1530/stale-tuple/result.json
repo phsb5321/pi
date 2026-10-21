@@ -1,0 +1,13 @@
+{
+  "status": "FAIL",
+  "exit": 3,
+  "ACED": false,
+  "scansSubmitted": 0,
+  "credentialFetches": 0,
+  "httpRequests": 0,
+  "productLaunched": false,
+  "compilerInvocations": 0,
+  "commandsLaunched": 0,
+  "clock_brt": "09/10/2026 15:36:37 -0300",
+  "blocker": "Stale source identity: tuple"
+}

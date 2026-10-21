@@ -1,0 +1,23 @@
+{
+  "status": "NOT_EXECUTED_PUBLICATION_REJECTED",
+  "productHostLaunched": false,
+  "compilerInvocations": 0,
+  "normalizerInvocations": 0,
+  "compiledBatteryInvocations": 0,
+  "contract": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/T8-PUBLICATION-CONTRACT.json",
+    "sha256": "dcb2d366f0b5f996a833ca64388bbe8dec711bab464cfc8368c296208e9951ad"
+  },
+  "producerPublication": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/acceptance.json",
+    "sha256": "041bf4a19974e210a45a82a39c3d233d50ed5eb4b962d90561c4ed2c1392ef45",
+    "snapshot": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t8-continuation-1709/publication-check/producer-publication.json",
+    "status": "blocked-before-payload-heavy-unit-start-refusal-2-T8-source-green",
+    "tuple": "T8-native-semantic-repair-2e0a7baa85d9",
+    "event": null
+  },
+  "sourceSha256": "2e0a7baa85d9e9d6d331301e4713636734915e2358f937c482cb129903d2f6d2",
+  "inputSha256": "483c208446905b50039247fb98cadd0c6b2663a791388d3a2a2fa27ebdeb3a1f",
+  "blocker": "No qualified compiled publication: blocked-before-payload-heavy-unit-start-refusal-2-T8-source-green",
+  "exit": 78
+}

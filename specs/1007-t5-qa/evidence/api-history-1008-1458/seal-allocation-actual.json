@@ -1,0 +1,158 @@
+{
+  "clock_brt": "08/10/2026 15:24:24 -03",
+  "unit": "desktop-job-small-4.service",
+  "InvocationID": "e687b9ce16604434828fd44d8b9b7315",
+  "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/herdr.slice/herdr-jobs.slice/herdr-jobs-small.slice/desktop-job-small-4.service\n",
+  "typed_lifetime": {
+    "RuntimeMaxUSec": 17000000,
+    "ActiveEnterTimestampMonotonic": 441424395274
+  },
+  "deadline_monotonic": 441441.395274,
+  "pid_namespace": "pid:[4026533333]",
+  "net_namespace": "net:[4026531840]",
+  "pid1_cgroup": "0::/user.slice/user-1000.slice/user@1000.service/herdr.slice/herdr-jobs.slice/herdr-jobs-small.slice/desktop-job-small-4.service\n",
+  "actual_bounds_and_pressure": [
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/herdr.slice/herdr-jobs.slice/herdr-jobs-small.slice/desktop-job-small-4.service",
+      "fields": {
+        "cpu.max": "100000 100000",
+        "memory.max": "536870912",
+        "memory.high": "max",
+        "memory.swap.max": "0",
+        "pids.max": "64",
+        "memory.current": "15450112",
+        "memory.peak": "16367616",
+        "memory.swap.current": "0",
+        "pids.current": "3",
+        "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+        "pids.events": "max 0",
+        "memory.pressure": "some avg10=0.00 avg60=0.00 avg300=0.00 total=1097\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=1097",
+        "cpu.pressure": "some avg10=0.00 avg60=0.00 avg300=0.00 total=464\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=464",
+        "io.pressure": "some avg10=0.00 avg60=0.00 avg300=0.00 total=5061\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=5061"
+      }
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/herdr.slice/herdr-jobs.slice/herdr-jobs-small.slice",
+      "fields": {
+        "cpu.max": "200000 100000",
+        "memory.max": "2147483648",
+        "memory.high": "max",
+        "memory.swap.max": "0",
+        "pids.max": "256",
+        "memory.current": "2146447360",
+        "memory.peak": "2156068864",
+        "memory.swap.current": "0",
+        "pids.current": "25",
+        "memory.events": "low 0\nhigh 0\nmax 2105022\noom 80\noom_kill 411\noom_group_kill 73",
+        "pids.events": "max 3394",
+        "memory.pressure": "some avg10=0.96 avg60=0.26 avg300=0.06 total=105480548\nfull avg10=0.96 avg60=0.26 avg300=0.06 total=104936849",
+        "cpu.pressure": "some avg10=0.71 avg60=0.55 avg300=0.34 total=1945287692\nfull avg10=0.71 avg60=0.54 avg300=0.33 total=1924476581",
+        "io.pressure": "some avg10=28.48 avg60=9.79 avg300=13.42 total=10231876714\nfull avg10=27.89 avg60=9.60 avg300=13.30 total=10179673394"
+      }
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/herdr.slice/herdr-jobs.slice",
+      "fields": {
+        "cpu.max": "800000 100000",
+        "memory.max": "17179869184",
+        "memory.high": "12884901888",
+        "memory.swap.max": "2147483648",
+        "pids.max": "max",
+        "memory.current": "12445249536",
+        "memory.peak": "12887539712",
+        "memory.swap.current": "139915264",
+        "pids.current": "43",
+        "memory.events": "low 0\nhigh 2340195\nmax 2204347\noom 81\noom_kill 444\noom_group_kill 74",
+        "pids.events": "max 5009",
+        "memory.pressure": "some avg10=0.67 avg60=0.15 avg300=0.03 total=897831527\nfull avg10=0.67 avg60=0.15 avg300=0.03 total=871377378",
+        "cpu.pressure": "some avg10=0.56 avg60=0.68 avg300=0.60 total=3017526603\nfull avg10=0.56 avg60=0.59 avg300=0.54 total=2631517974",
+        "io.pressure": "some avg10=18.60 avg60=6.47 avg300=11.54 total=9849991058\nfull avg10=18.08 avg60=6.28 avg300=11.39 total=9764839681"
+      }
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/herdr.slice",
+      "fields": {
+        "cpu.max": "3200000 100000",
+        "memory.max": "max",
+        "memory.high": "max",
+        "memory.swap.max": "max",
+        "pids.max": "max",
+        "memory.current": "81312112640",
+        "memory.peak": "85877702656",
+        "memory.swap.current": "18303275008",
+        "pids.current": "6493",
+        "memory.events": "low 0\nhigh 2340195\nmax 2204347\noom 81\noom_kill 444\noom_group_kill 74",
+        "pids.events": "max 5009",
+        "memory.pressure": "some avg10=0.09 avg60=0.02 avg300=0.00 total=506046155\nfull avg10=0.09 avg60=0.02 avg300=0.00 total=451099017",
+        "cpu.pressure": "some avg10=0.34 avg60=0.73 avg300=0.55 total=2440581899\nfull avg10=0.25 avg60=0.43 avg300=0.34 total=2037786337",
+        "io.pressure": "some avg10=7.42 avg60=2.52 avg300=3.66 total=3868623691\nfull avg10=6.28 avg60=2.14 avg300=3.19 total=3506911763"
+      }
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service",
+      "fields": {
+        "cpu.max": "max 100000",
+        "memory.max": "max",
+        "memory.high": "max",
+        "memory.swap.max": "max",
+        "pids.max": "max",
+        "memory.current": "104849989632",
+        "memory.peak": "112311984128",
+        "memory.swap.current": "25077370880",
+        "pids.current": "9364",
+        "memory.events": "low 0\nhigh 2340195\nmax 2518421\noom 81\noom_kill 444\noom_group_kill 74",
+        "pids.events": "max 5009",
+        "memory.pressure": "some avg10=0.09 avg60=0.02 avg300=0.00 total=484354336\nfull avg10=0.09 avg60=0.02 avg300=0.00 total=419434073",
+        "cpu.pressure": "some avg10=0.52 avg60=1.16 avg300=0.95 total=4593944573\nfull avg10=0.33 avg60=0.40 avg300=0.42 total=3794738335",
+        "io.pressure": "some avg10=5.48 avg60=1.89 avg300=2.71 total=3449028539\nfull avg10=3.98 avg60=1.41 avg300=2.18 total=3014275832"
+      }
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice/user-1000.slice",
+      "fields": {
+        "cpu.max": "max 100000",
+        "memory.max": "max",
+        "memory.high": "max",
+        "memory.swap.max": "max",
+        "pids.max": "max",
+        "memory.current": "105265729536",
+        "memory.peak": "112725962752",
+        "memory.swap.current": "25189621760",
+        "pids.current": "9422",
+        "memory.events": "low 0\nhigh 2340195\nmax 2518421\noom 81\noom_kill 444\noom_group_kill 74",
+        "pids.events": "max 5009",
+        "memory.pressure": "some avg10=0.09 avg60=0.02 avg300=0.00 total=484385048\nfull avg10=0.09 avg60=0.02 avg300=0.00 total=418336236",
+        "cpu.pressure": "some avg10=0.53 avg60=1.17 avg300=0.95 total=4636500548\nfull avg10=0.36 avg60=0.41 avg300=0.41 total=3594023919",
+        "io.pressure": "some avg10=5.24 avg60=1.80 avg300=2.69 total=3371362198\nfull avg10=3.82 avg60=1.35 avg300=2.17 total=2922522989"
+      }
+    },
+    {
+      "path": "/sys/fs/cgroup/user.slice",
+      "fields": {
+        "cpu.max": "max 100000",
+        "memory.max": "max",
+        "memory.high": "max",
+        "memory.swap.max": "max",
+        "pids.max": "max",
+        "memory.current": "105289551872",
+        "memory.peak": "112741388288",
+        "memory.swap.current": "25189621760",
+        "pids.current": "9431",
+        "memory.events": "low 0\nhigh 2340195\nmax 2518421\noom 81\noom_kill 444\noom_group_kill 74",
+        "pids.events": "max 5009",
+        "memory.pressure": "some avg10=0.09 avg60=0.02 avg300=0.00 total=484883169\nfull avg10=0.09 avg60=0.02 avg300=0.00 total=418841911",
+        "cpu.pressure": "some avg10=0.52 avg60=1.19 avg300=0.97 total=4637393662\nfull avg10=0.34 avg60=0.43 avg300=0.44 total=3594656772",
+        "io.pressure": "some avg10=5.46 avg60=1.89 avg300=2.71 total=3368822133\nfull avg10=4.02 avg60=1.42 avg300=2.20 total=2920487855"
+      }
+    },
+    {
+      "path": "/sys/fs/cgroup",
+      "fields": {
+        "memory.pressure": "some avg10=0.18 avg60=0.03 avg300=0.00 total=2124304018\nfull avg10=0.18 avg60=0.03 avg300=0.00 total=1921745462",
+        "cpu.pressure": "some avg10=0.71 avg60=1.42 avg300=1.17 total=5235866493\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+        "io.pressure": "some avg10=5.32 avg60=2.00 avg300=3.10 total=22530840617\nfull avg10=3.86 avg60=1.48 avg300=2.50 total=20741390051"
+      }
+    }
+  ],
+  "allocation_created_by_this_reader": false
+}

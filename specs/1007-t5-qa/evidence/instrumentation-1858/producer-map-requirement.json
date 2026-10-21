@@ -1,0 +1,23 @@
+{
+  "schema": "memory-sound-producer-source-map-requirement/1",
+  "inspectedTuple": "T9-standalone-native-api-8e3a3d9b738a",
+  "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-standalone-native-api/execution-source/scripts/build-coding-agent-bundle.mjs",
+  "sha256": "8d562065fffe01fb461a7cd1e38a29a2db327d94cd0ba9d872d63d42be22ad6c",
+  "symbol": "commonBuildOptions",
+  "line": 118,
+  "actualSetting": "sourcemap: false",
+  "entryTrace": "mainResult builds shared-tty-host and splitting chunks using commonBuildOptions; compiledSharedTtyImports also redirects canonical core imports to existing compiled JS",
+  "status": "EXACT_INSPECTED_PRODUCER_REQUIREMENT_NOT_EDITED",
+  "requiredBeforeCandidateSourceMappedCoverage": [
+    "actual emitted host and loaded product chunks have physical source maps tied to the same source/input/output/runtime tuple",
+    "compose any compiled-core JS input maps through to exact frozen TypeScript source; a map that stops at dist JS is not a TS coverage proof",
+    "bind map bytes, sourcesContent, sourceRoot/path resolution and compiled bytes in output inventory/runtime declarations",
+    "retain every eligible unexecuted source and condition in denominator; reject missing/out-of-root/unmapped/mismatched sources",
+    "verify any new derivative's actual declarations/output rather than transferring this T9 setting by name"
+  ],
+  "producerFilesChanged": false,
+  "producerCompilerRequested": false,
+  "occupiedPanePrompted": false,
+  "noBlanketExperimentalOrSourceCoverageExclusion": true,
+  "noProductSourceExecutionFallback": true
+}

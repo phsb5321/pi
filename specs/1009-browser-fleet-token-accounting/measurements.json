@@ -1,0 +1,83 @@
+{
+  "measurement": "browser-fleet MCP token-accounting claims (a) and (b) — re-targeted from jobs",
+  "seat": "ms-qa (transcript identity), OWN pi-upstream-005-shared-isolation",
+  "clock_brt": "09/10/2026 19:22 pickup, measured 19:31–20:05",
+  "runtime": {
+    "fleet_sessions_run": "pi 0.99.1 via HM wrapper /etc/profiles/per-user/notroot/bin/pi (this session: PI_FLEET_PIN=0.99.1+7f32a8d9)",
+    "path_shim_note": "PATH pi shim (installed 09/10 17:33) resolves pi-fleet/current = 1.1.0 with DIFFERENT MCP semantics (mcp_servers system-prompt section; codemode description does not list tools; first prompt waits only for direct-exposure servers). Early arms on 1.1.0 are retained as methodology evidence; all reported numbers are from 0.99.1.",
+    "model": "deepseek/deepseek-v4-pro (provider usage reporting works; zai/glm-5.3 proxy reported usage zeros and was discarded)",
+    "usage_metric": "input-side tokens per turn = usage.input + cacheRead + cacheWrite from the assistant message_end event"
+  },
+  "method": {
+    "prompt": "Reply with exactly OK (identical in all arms)",
+    "flags": "--print --no-session --no-context-files --model deepseek/deepseek-v4-pro --mode json",
+    "arm_switch": "PI_CODING_AGENT_DIR scratch config dirs, byte-identical except mcp.json (0.99.1 has no --no-mcp flag)",
+    "arm_a_no_server": "scratch agent dir WITHOUT mcp.json",
+    "arm_b_codemode": "real ~/.pi/agent (browser-fleet, exposure:codemode) = fleet default",
+    "arm_c_direct": "scratch agent dir with mcp.json exposure:direct (counterfactual)",
+    "captured": "full event streams arm-*-print.out; tool lists from system message toolsAdded; usage from assistant message_end"
+  },
+
+  "claim_a_codemode_keeps_schemas_out_of_model_visible_declarations": {
+    "before_after_declared_tool_tokens_per_turn": {
+      "A_no_server": {"toolsDeclared": 12, "toolNames": ["read","bash","edit","write","remote_bash","search_vault","get_note","todo","delegate_subscription","zai_web_search","zai_web_reader","AskClaude"], "inputSideTokens": 16951},
+      "B_with_server_codemode_default": {"toolsDeclared": 13, "toolNamesDelta": ["codemode"], "browserFleetToolsDeclared": 0, "inputSideTokens": 21468, "delta_vs_A": 4517},
+      "C_with_server_direct_counterfactual": {"toolsDeclared": 18, "toolNamesDelta": ["mcp__browser-fleet__browser_identities","mcp__browser-fleet__browser_status","mcp__browser-fleet__browser_ensure","mcp__browser-fleet__browser_attach","mcp__browser-fleet__browser_run","mcp__browser-fleet__browser_stop"], "codemodeDeclared": false, "inputSideTokens": 17591, "delta_vs_A": 640}
+    },
+    "schema_absence_proof": {
+      "armB_declared_tool_entries_with_browser_fleet": 0,
+      "armB_codemode_entry_bytes": 9986,
+      "armB_codemode_description_bytes": 9147,
+      "armB_ts_declaration_blocks_in_codemode_description": 6,
+      "armB_json_schema_markers_in_codemode_description": 0,
+      "raw_inputSchema_bytes_from_tools_list": 1198,
+      "raw_description_bytes_from_tools_list": 650,
+      "armC_schema_entry_bytes_for_the_6_tools": 2321,
+      "armC_sample_parameters_json": "{\"type\": \"object\", \"properties\": {}}",
+      "statement": "With exposure:codemode the six tools appear in NO model-visible tool declaration (toolsAdded = 13 entries, none browser-fleet) and their JSON inputSchema objects (1198 B) are absent; the codemode description carries only name + one-line description + compact TS type signatures (6 'codemode tool declaration' blocks, 0 JSON-schema markers). With exposure:direct the schemas appear inline as parameters JSON in the declarations (+640 tok)."
+    },
+    "honest_nuances": [
+      "TS-type signatures of the nested tools ARE present as text inside the codemode tool description; what is kept out is the tools' JSON Schema declarations (the API-level tool entries).",
+      "Per-turn token economy is NOT savings for this small server: codemode costs +4517 tok/turn vs +640 for direct declarations (the 9147 B codemode scaffold dominates). The schema-out property is structural (big tool lists stay out of the tools array; declarations share a token budget), and is a win for large servers, not for six tools.",
+      "arm C (direct) does not activate codemode at all in 0.99.1; its +640 tok is purely the six schema-bearing declarations."
+    ],
+    "verdict": "claim (a) SUPPORTED and measured: schemas are absent from model-visible declarations (before/after per-turn counts above); net per-turn cost named honestly."
+  },
+
+  "claim_b_tool_returns_are_filtered_for_the_model": {
+    "full_raw_payload_record_on_disk": {
+      "file": "raw-payload.jsonl (captured live from the server's stdio JSON-RPC)",
+      "file_bytes": 16956,
+      "browser_identities_jsonrpc_line_bytes": 14520,
+      "browser_identities_calltoolresult_bytes": 14481,
+      "jsonrpc_envelope_bytes": 39,
+      "content_text_bytes": 12774,
+      "content_text_shape": "{host, count, identities[68], wanted_not_running, note}",
+      "identity_record_fields": ["identity","state","mode","unit","started_at","tunneled","local_port"]
+    },
+    "model_visible_side": {
+      "default_no_script_forward_bytes_of_tool_data": 0,
+      "default_evidence": "a failed codemode script whose tool call had already succeeded (browser_identities ok) delivered only the error line to the model — none of the 14.5 KB raw result entered context; pi's contract: the model sees only what the script returns",
+      "curated_forward_measured_bytes": 73,
+      "curated_forward_text": "identities=68; states={\"ready\":68}; sample=aliexpress,amazon,amigos-share",
+      "curated_raw_result_bytes_same_call": 14475
+    },
+    "THE_DELTA": {
+      "filtered_out_bytes": 14402,
+      "filtered_out_percent": 99.5,
+      "dropped_from_model": ["per-record local_port","per-record mode","per-record started_at","per-record unit","per-record tunneled","65 of 68 identity names","wanted_not_running","note","host","count","content/isError JSON envelope (39 B at RPC layer)"],
+      "kept": ["identity names (3 samples)","aggregate state counts"]
+    },
+    "tool_level_filters_documented_in_design_note": [
+      "browser_run returns text only, max_chars (default 2000, hard cap 20000) truncates page text",
+      "screenshots, file download, arbitrary CDP passthrough rejected in-server (a 4 MB base64 blob must not re-enter agent context)",
+      "refusals carry no title/text payload"
+    ],
+    "verdict": "claim (b) SUPPORTED and measured: model-visible carry is 0-73 B against a 14,475-14,481 B raw result; 14,402 B filtered out, fields named above."
+  },
+
+  "FALSIFIERS": {
+    "claim_a": "With exposure=codemode, find any mcp__browser-fleet__* entry in the model-visible tool declarations (toolsAdded/request tools array) or a JSON-schema object (inputSchema/'type':'object' parameters) inside the codemode tool description => claim (a) false. Measured: 0 entries, 0 schema markers.",
+    "claim_b": "Capture a model-visible browser-fleet tool result that contains any raw-record-only field (local_port, started_at, unit, tunneled, the full identities list, content/isError envelope) or that is byte-identical to the raw CallToolResult => claim (b) false. (Design note's own falsifier: a browser_run result carrying base64 longer than 20,000 chars.) Measured: 73 B curated vs 14,475 B raw, none of the dropped fields present."
+  }
+}

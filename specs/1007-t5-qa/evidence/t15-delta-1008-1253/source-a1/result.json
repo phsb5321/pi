@@ -1,0 +1,35 @@
+{
+  "status": "EXACT_CURRENT_INCREMENTAL_SOURCE_SCOPE_BOUND",
+  "eligible": 929,
+  "recensused": 1,
+  "retained": 928,
+  "observedCoverage": false,
+  "ACED": false,
+  "identity": {
+    "tuple": "T15-native-nested-type-repair-c60ad0ff1455",
+    "sourceSha256": "c60ad0ff14551d1f2e0714d9168ed3a2ac534d3991c725c8087da165038ef96d",
+    "inputSha256": "a7da1f25fd1bcdf327c12b5cbee52cee7abe793d4550d10363370d3045cc9ef7"
+  },
+  "checks": [
+    "current exact T15 one-file delta and928retained zero scopes accept",
+    "stale T14 identity rejects",
+    "dropped inherited unexecuted condition rejects",
+    "fabricated artifact rejects",
+    "fabricated observed coverage/ACED rejects"
+  ],
+  "checkCount": 5,
+  "sourceChanges": [
+    "packages/coding-agent/src/experimental/durable/extension-composition.ts"
+  ],
+  "changedRelativeToRelease": 62,
+  "conditions": 58081,
+  "statementSpans": 89937,
+  "inheritedGraphSha256": "0a145e6ee1e923154480ef0d77e61ef80d5aad6e110436dd7e2fad61961bcbd1",
+  "graphSha256": "41083f5fa6b4765a660d5246a28c659108847423069ee75d637c5d056d876d75",
+  "deltaGraphSha256": "00851f9be8aa916e678b2fc59460df709fe88e1abff5e53c88b08199e0752eec",
+  "physicalCurrentSourcesVerified": 929,
+  "productCompilerRuns": 0,
+  "sourceRuntimeImports": 0,
+  "oldMatrixReruns": 0,
+  "actualMapBinding": false
+}

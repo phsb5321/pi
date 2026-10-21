@@ -1,0 +1,26 @@
+{
+  "sources": [
+    {
+      "path": "covered.ts",
+      "sha256": "eb9e5149e0f32cd90c52be18d9aa54518d5911ca62b7666d9ed475e717053b2c"
+    },
+    {
+      "path": "unexecuted.ts",
+      "sha256": "c8c53d6fe4ce45efe1a4a3067d66aac9b1ea52d9e3cd1219d0b3787690a2ff2c"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "dist/covered.js",
+      "map": "dist/covered.js.map",
+      "sha256": "ff8754215813633945ef10a15cf61ae808f8460fac9f1b808167432e55f2540a",
+      "mapSha256": "51b18bc1f651084fb7f9049d5d381ef5c4d255a69b93abf1e29196ae2c116caf"
+    },
+    {
+      "path": "dist/unexecuted.js",
+      "map": "dist/unexecuted.js.map",
+      "sha256": "025bba10ca34172309373483ca18a8d626066fd06acc086159c74c60fdcdea17",
+      "mapSha256": "c645d5a2d56b7abad0fcbc4f10e882c95ca3394d076103d918c26e9f696c22fb"
+    }
+  ]
+}

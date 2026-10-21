@@ -1,0 +1,75 @@
+{
+  "schema": "memory-sound-api-history-executor/1",
+  "sourceIdentity": {
+    "tuple": "T15-native-nested-type-repair-c60ad0ff1455",
+    "sourceSha256": "c60ad0ff14551d1f2e0714d9168ed3a2ac534d3991c725c8087da165038ef96d",
+    "inputSha256": "a7da1f25fd1bcdf327c12b5cbee52cee7abe793d4550d10363370d3045cc9ef7"
+  },
+  "originalPreparation": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/PROJECT-GATE.T15.json",
+    "sha256": "7692ff4f53022ca65490dcf1755f0ee7a3c2884bb5b08e79450afc5b5c2a333d"
+  },
+  "nativeJobTemplate": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/api-history-reuse/N1.job.template.json",
+    "sha256": "4e0bd3227a52a3f3a3bdd05aebc41b563e84ed65f91ee688e3f6bb4fbbef7470"
+  },
+  "originalNativeJobTemplate": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-memory-proof/specs/1006-memory-proof/current-t15-20261008-1308/N1.job.template.json",
+    "sha256": "4e0bd3227a52a3f3a3bdd05aebc41b563e84ed65f91ee688e3f6bb4fbbef7470"
+  },
+  "node": {
+    "path": "/nix/store/2gd4h12irmnanhg33md2rpjygrsj5ypb-nodejs-slim-22.23.2/bin/node",
+    "sha256": "1c986b3913f4f67a25d7085750654fca847a28bf015913636294614b4443ff4f"
+  },
+  "python": {
+    "path": "/nix/store/qh015vy6jn3g15hn4ymb2yy9s4w7ras9-python3-3.14.7-env/bin/python3.14",
+    "sha256": "71dcb2f744bf70a81b65bdc45cda5d299a81842d47ca642b7079b5450f483988"
+  },
+  "pythonVersion": "3.14.7",
+  "instrumentFiles": {
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/api-history.py": "4935be3c17cd8ba5163c236ca14caa500ab84c9ff9f096f60c1d378f87b0ab8d",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/api-history-probe.mjs": "8be5c87d2128aa6cc540cec7071ecc2b499089bced9a1b82211fffcbb248263d",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/api-history-network.mjs": "bcc9b6f714801784bfbbce248d32af11ab2a533e7f7fe39c9643d8c1e115b6b0",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/prepare-api-history.py": "b711de73acc87d71bd8926a46054f5e99612c851550ddbc601f6d5fabe548209",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/artifact-entry.py": "1e6dab4b961997246310531f893e2007007e380ea12478aae246e731790ff8f3",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/project-gate.py": "6a077b03c76566f2113a95985f43f3ce5adfb8a25aabf9defae41818051ebd3b",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/api-history-reuse/matched-memory-driver.py": "c782dee976a7e0de54222de38087af48adfb0741e5b5ba80ca0be1817d300aa4",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/api-history-reuse/matched-native-adapter.mjs": "4acd3e38d10995b3b5f9120d6d6cd05b9efa948231c6c907f7c02fa75f606127",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/api-history-reuse/matched-native-loader.mjs": "61161a968f721d72acf591de8f2a10a505a253eee8ace2ba16d2e4d45e4db512",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/api-history-reuse/matched-memory-allocation.py": "a468cc4d0bab0e5e8dd2674802c726bd0212d34f0b21baa48abc8f3229dba028"
+  },
+  "runtimeNormalizedReferences": [
+    {
+      "path": "/home/notroot/Documents/Notes-2356-runtime-memory-research/1. Projects/Herdr Fleet Coordination/evidence/runtime-alchemy-2026-10-07/semantic-acceptance/README.md",
+      "sha256": "2c9fefa828a3a4e3e57bfb6ce8ddf15e63a1b915e731b74fd734d13ab2780fb0"
+    },
+    {
+      "path": "/home/notroot/Documents/Notes-2356-runtime-memory-research/1. Projects/Herdr Fleet Coordination/evidence/runtime-alchemy-2026-10-07/semantic-acceptance/loader.mjs",
+      "sha256": "5b2342e5c6a986d1c2e2cd9e31e9a7c49cb08a8873e3bff2e0c8f30b66acc5e4"
+    },
+    {
+      "path": "/home/notroot/Documents/Notes-2356-runtime-memory-research/1. Projects/Herdr Fleet Coordination/evidence/runtime-alchemy-2026-10-07/semantic-acceptance/host.mjs",
+      "sha256": "6b55c67d49dee5eba7e7ee192fddac84ce395af366bdab02f09eab25355166f3"
+    },
+    {
+      "path": "/home/notroot/Documents/Notes-2356-runtime-memory-research/1. Projects/Herdr Fleet Coordination/evidence/runtime-alchemy-2026-10-07/semantic-acceptance/run.py",
+      "sha256": "9e0fc4e9b49c778bc247b36137bbd3d0ac87714dac3a89d23c3734cbb8b28788"
+    }
+  ],
+  "scope": "compiled native history850/full paged readback/closed clones/paired rich PTYs/normal teardown, not memory idle or ratio",
+  "postBoundaryDelta": {
+    "testedExecutor": {
+      "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/api-history-1008-1458/boundary-tested-api-history.py",
+      "sha256": "05127cd7713450fd97127b8f3c6dd099871b9a428dcda2fb08fc26b0e1af4d14"
+    },
+    "testedManifest": {
+      "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/api-history-1008-1458/boundary-tested-manifest.json",
+      "sha256": "e31212c9cbb9acce433bda71c2fecfc5a3f343bc8f40c096931789008fe74c1c"
+    },
+    "reason": "Native env -i strips INVOCATION_ID; reuse actual unit reader/normal envelope validator. Capture pressure and exact child-command count.",
+    "boundaryReruns": 0,
+    "compiledPathVerified": false
+  },
+  "supportsOwnedV8Capture": true,
+  "qualityDelta": "Owned NODE_V8_COVERAGE forwarded to every real native adapter child; native helpers unchanged; compiled path unverified"
+}

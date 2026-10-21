@@ -1,0 +1,82 @@
+{
+  "schema": "memory-sound-exact-quality-contract/1",
+  "projectKey": "phsb5321_pi-memory-sound-qa",
+  "host": "https://sonarqube.home301server.com.br",
+  "visibility": "private",
+  "accessProof": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-goal-unblock/specs/1007-unblock-1744/sonar-setup-scope-shape-repair.json",
+    "sha256": "0d4ad9021583a9155f32cbc2cb70c48177575d91dc7849752e3cac19320e2a23"
+  },
+  "accessStatus": "PROJECT_AND_TOKEN_BLOCKER_CLOSED",
+  "token": {
+    "type": "PROJECT_ANALYSIS_TOKEN",
+    "serverName": "memory-sound-pi-qa-analysis",
+    "rbwEntry": "sonar-pi-memory-sound-qa",
+    "expirationBrtDate": "05/01/2027",
+    "day80RotationBrtDate": "26/12/2026",
+    "value": null,
+    "transport": "rbw captured privately inside launcher process; never printed/env/argv/repository file",
+    "noNewIssuanceOrRotation": true
+  },
+  "baseline": {
+    "version": "1.0.4",
+    "tag": "refs/tags/v1.0.4",
+    "commit": "7c10bd4337495ee613f2224843ecdf349b80d1df",
+    "tree": "de4e0ad2e4ca4d3bf80a6e89d1bec453edbc85a0",
+    "analysisId": null,
+    "type": "SPECIFIC_ANALYSIS",
+    "status": "NOT_ANALYZED_NO_ACTUAL_ANALYSIS_ID",
+    "sequence": ["after compiled QA, ordinarily admit exact released baseline scan", "retain scanner report-task and exact CE task", "require CE SUCCESS and matching project/revision/version from actual analysis", "pin only returned actual analysisId through this project's new_code_periods/set", "read back type/value then analyze exact candidate"],
+    "greenHistoricalQualityGateRequiredToInventAnId": false,
+    "noTagAsIdPreviousVersionRollingDaysOrProjectReset": true
+  },
+  "scanner": {
+    "binary": "/nix/store/zd52304wjfbvr63lfs2w7nqywqv7zvz2-sonar-scanner-cli-8.1.0.6389/bin/sonar-scanner",
+    "version": "8.1.0.6389",
+    "template": "sonar-analysis.properties.template",
+    "analysisView": "OWN immutable materialization: exact Git baseline or exact candidate frozen manifest, never QA HEAD",
+    "candidateProvenance": "exact source/input/runtime hashes and actual original SCM/provenance mapping; no fabricated Git revision",
+    "secretFileTransportCandidate": "scanner-fd.py: private anonymous memfd project.settings; actual installed Bash/scanner-shell/JVM fd inheritance verified with fake bytes only; streaming raw/Basic redaction and failure/timeout cleanup qualified",
+    "launcherPositiveStatus": "FAKE_TOKEN_ACTUAL_LAUNCHER_CHAIN_QUALIFIED_NO_REMOTE_ANALYSIS",
+    "launcherQualification": "evidence/instrumentation-1858/scanner-a2-final/result.json",
+    "actualScannerAnalysisSettingsReadAndBaseline": "NOT_EXECUTED_UNTIL_COMPILED_ELIGIBILITY", 
+    "adminReadback": "rbw admin password captured privately in process; standard Basic admin:password, no stale trailing colon",
+    "tokenGenerationExpirationParameter": "expirationDate",
+    "noWorkflowGithubSecretsGlobalProfileThresholdChanges": true,
+    "apiReadback": ["api/ce/task", "api/project_analyses/search", "api/new_code_periods/show", "api/qualitygates/project_status", "api/measures/component", "api/issues/search", "api/hotspots/search"],
+    "exactAnalysisBindingAndAllPagesRequired": true
+  },
+  "coverage": {
+    "prerequisite": "same-identity COMPILED_FOCUSED_QA_PASS and actual loaded runtime ledger",
+    "runner": "quality-entry.py -> compiled-coverage.test.mjs -> ONE existing focused compiled battery",
+    "v8Flush": "takeCoverage before intentional host loss; raw process coverage preserved",
+    "converterInstalled": "ast-v8-to-istanbul1.0.5 in producer-declared existing input tree; no hydration",
+    "positiveConversionSourceMapAccounting": "REAL_COMPILED_TS_V8_FIXTURE_QUALIFIED_WITH_UNEXECUTED_FILE_BRANCH_AND_SOURCE_REJECTIONS",
+    "converterHelper": "source-map-coverage.mjs",
+    "converterQualification": "evidence/instrumentation-1858/coverage-a2-final/result.json",
+    "actualCandidateGraphConversion": "NOT_EXECUTED_REQUIRES_BOUND_EMITTED_MAPS_AND_COMPILED_PASS",
+    "producerMapRequirement": "evidence/instrumentation-1858/producer-map-requirement.json", 
+    "sourceMapContract": ["verify each map/generated file against compiled output inventory and source manifest", "resolve every source to exact candidate path/bytes; reject foreign or unmapped changed sources", "merge actual functions/ranges/branches and preserve uncovered conditions", "emit source-mapped TypeScript LCOV, not generated-JS LCOV relabeled", "include every changed eligible source and condition in denominator; zero-hit sources do not disappear", "compare exact baseline/candidate source partitions with actual Sonar new-code lines", "read back actual new_coverage and reject incomplete/path-mismatched accounting"],
+    "noCoverageExclusionsOrFirstPartyCarveout": true,
+    "generatedJsLcovProves80Percent": false
+  },
+  "cloneRatchet": {
+    "originalGitBaseline": "4e494929998d6bc4fccf75e0a233f727db4b70ee",
+    "independentOfSonarV1_0_4Baseline": true,
+    "engine": "/nix/store/rvc5bdlips64617figwb7zdgvv47c5x7-code-slop-gate-0.1.0/libexec/code-slop-gate",
+    "minTokens": 50,
+    "newCloneGrowthMaximum": 0,
+    "aislopErrorsMaximum": 0,
+    "collectionThreshold100IsNotAcceptance": true,
+    "noCarveout": true
+  },
+  "acceptance": {
+    "maintainability": "A", "reliability": "A", "security": "A",
+    "newCoverageMinimumPercent": 80, "newIssuesMaximum": 0,
+    "hotspotsReviewedPercent": 100, "newDuplicationMaximumPercent": 3,
+    "aislopErrorsMaximum": 0, "newCloneGrowthMaximum": 0
+  },
+  "heavyOrder": ["producer", "compiled QA", "quality", "memory"],
+  "authorization": "Pedro17:44 goal-level routine acceptance, exact isolated project only; no per-step reapproval",
+  "noCurrentScanOrBaselineWrite": true
+}

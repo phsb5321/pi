@@ -1,0 +1,8 @@
+e516af42033827f7fa40421f7cc40ecd2fe6dd5269bfff724b41891bc7d8cc39  specs/1007-t5-qa/project-gate.py
+cf1e0d709b810dfcdcc1c748f42a0dd06f38cbbdbdaca82db5923a7819e11bb0  specs/1007-t5-qa/test-project-gate.py
+ca10d8bda3039cbe5020f39808d3b993451d43a1b5cd6ef586ad3d7e3ad6fcdc  specs/1007-t5-qa/PROJECT-GATE.json
+e56990c084b2176adb2a434fb91d8838c7c2ea8feb1531c922e16419fd4bd90b  specs/1007-t5-qa/scanner-fd.py
+f2cd72afc683f4b6974ba44cee1538468e6f7c5aab4edf813e421e51f3770f6b  specs/1007-t5-qa/source-map-coverage.mjs
+1e6dab4b961997246310531f893e2007007e380ea12478aae246e731790ff8f3  specs/1007-t5-qa/artifact-entry.py
+c940dc4773f3f8e9e1ded06e3695865645b56b92accd0922736fc4263404a2c2  specs/1007-t5-qa/qa-loader.mjs
+5d982575347ecd2833442f54e97fa075ff85237aaf458940129d4ec520b7a50d  specs/1007-t5-qa/test-artifact-gate.py

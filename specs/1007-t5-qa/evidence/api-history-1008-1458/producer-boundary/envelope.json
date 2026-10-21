@@ -1,0 +1,36 @@
+{
+  "counts": {
+    "build_package_typechecker_commands": [
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "npm run check:model-data && tsc -p tsconfig.build.json && shx rm -rf dist/providers/data && shx cp -r src/providers/data dist/providers/data",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json && shx chmod +x dist/cli.js dist/rpc-entry.js && npm run copy-assets"
+    ],
+    "build_package_typechecker_invocations_this_event": 13,
+    "compiler_events_this_wave": 1,
+    "count_proof": "Prior2/2 + shipping1/1 preserved,total3; fresh MAX2 wave, one actual payload here; no automatic second event. Root browser-smoke follows successful tsc; TS diagnostics prove failed tsc. Sequential successful package build confirms printed tsc commands executed. Opt-in uses existing esbuild only. Raw logs retained.",
+    "new_wave_actual_events": 1,
+    "new_wave_limit": 2,
+    "old_wave_actual_events": 2,
+    "old_wave_limit": 2,
+    "optin_bundle_build_this_event": 1,
+    "ordinary_offline_build_this_event": 1,
+    "previous_actual_total": 3,
+    "printed_build_typechecker_command_count": 13,
+    "root_typechecker_invocations_this_event": 1,
+    "shipping_wave_actual_events": 1,
+    "shipping_wave_limit": 1,
+    "total_actual_events": 4
+  },
+  "namespace_child_exit": 1,
+  "pipeline_metadata_available": true
+}

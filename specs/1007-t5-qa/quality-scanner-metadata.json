@@ -1,0 +1,11 @@
+{
+  "version": "8.1.0.6389",
+  "binary": {
+    "path": "/nix/store/zd52304wjfbvr63lfs2w7nqywqv7zvz2-sonar-scanner-cli-8.1.0.6389/bin/sonar-scanner",
+    "sha256": "8e9316c396b37b2b994cc1cacb99792a5bb2b7c6a876b16a75de6fed0f742b48"
+  },
+  "qualification": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/instrumentation-1858/scanner-a2-final/result.json",
+    "sha256": "1820147748c97834a989300fff0cfd839bd555d9e86e240faa8611431346d4b9"
+  }
+}

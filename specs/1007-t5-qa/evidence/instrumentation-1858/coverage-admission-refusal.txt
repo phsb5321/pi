@@ -1,0 +1,4 @@
+First TS/V8/map fixture submission: small admission refused before payload, exit74.
+desktop-job-run: small pool unavailable (deadline); nothing executed; wait included in caller timeout
+desktop-job-run: queue-status lane=small-pool waited=30s budget=30s observations=last-admission-probe | desktop-job-small-1.service[not-observed] | desktop-job-small-2.service[not-observed] | desktop-job-small-3.service[not-observed] | desktop-job-small-4.service[not-observed]
+No Bash payload, fixture tsc, V8 run or conversion occurred in this refused submission. No in-lease waiting, heavy fallback or capacity change.

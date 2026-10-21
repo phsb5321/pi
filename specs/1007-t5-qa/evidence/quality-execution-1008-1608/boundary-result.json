@@ -1,0 +1,30 @@
+{
+  "status": "PREREQUISITE_CHECK_PASS",
+  "exit": 0,
+  "clock_brt": "08/10/2026 19:25:25 -0300",
+  "missingArtifactExit": 78,
+  "ineligibleExit": 3,
+  "sideEffectAttempts": [],
+  "sourceGraphFiles": 929,
+  "syntax": "PASS",
+  "validCodepathInspection": "STATIC_ONLY",
+  "positiveProductExecution": "UNVERIFIED",
+  "ACED": false,
+  "oldControlsRerun": 0,
+  "manifest": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/PROJECT-GATE.T15.QUALITY.json",
+    "sha256": "4cf4f52f19135f50672fae93f3257d962996ffbc221d26d3208afa92f5515870"
+  },
+  "files": {
+    "quality-entry.py": "0ec936adc1c82aac07e22873fe51bcffd27f6ac39a2904aaa4e650ca3b6ef065",
+    "quality-execution.py": "fc44ffbb1acad5f7b3f1becf91b10233e1474c2533a9c8e145cc6c1eef62b8f7",
+    "quality-sonar.py": "1b592873f309309523b19c9563f98644cff8026ebda8a94f8b64dcc569091d4b",
+    "api-history.py": "4935be3c17cd8ba5163c236ca14caa500ab84c9ff9f096f60c1d378f87b0ab8d",
+    "prepare-quality-execution.py": "4ddfb50a14eb63d56022376212ef3aeeba3648eea6efa908d84e1c3cf2e3b4a4",
+    "test-quality-boundary.py": "8c9c30da3ca2e25db2e0b71c096c713dd7cd2306d372975f99de9fd300061f70",
+    "quality-coverage.mjs": "55205ffc534e5ca7ffa56927458e876aeb24c2808897fb0989e07ddcbec17dcf",
+    "PROJECT-GATE.T15.QUALITY.json": "4cf4f52f19135f50672fae93f3257d962996ffbc221d26d3208afa92f5515870",
+    "API-HISTORY.QUALITY.json": "63b1acb9d37a5f3f6ad78de3519a656c3b903015eea7f2b640db69c1909ec42e",
+    "QUALITY-EXECUTION.json": "b89772a90cb4759c76264fc9ec9697c2649d4304f77ea2dfba0da2fd2b7c4751"
+  }
+}

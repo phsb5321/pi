@@ -1,0 +1,6 @@
+Attempt: ordinary small lane, 30-second caller deadline; changed bounded prepare-t12-gate.py followed by project-gate.py only on success.
+Actual tool return:
+desktop-job-run: small pool unavailable (deadline); nothing executed; wait included in caller timeout
+desktop-job-run: queue-status lane=small-pool waited=30s budget=30s observations=last-admission-probe | desktop-job-small-1.service[not-observed] | desktop-job-small-2.service[LoadState=loaded ActiveState=deactivating SubState=stop-sigterm] | desktop-job-small-3.service[not-observed] | desktop-job-small-4.service[not-observed]
+Command exited with code 74.
+Pre-payload refusal: no prepare-gate-a2-stream log/exit or product-gate-boundary result/exit is inferred. New source graph/line partition/tiny checks retain their actual earlier exits; no new fixture or product PASS. No fallback, cap/unit adjustment, new worker or admission retry.

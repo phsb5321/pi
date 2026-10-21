@@ -1,0 +1,1 @@
+PYTHONDONTWRITEBYTECODE=1 python specs/1007-t5-qa/quality-entry.py --compiled-pass specs/1007-t5-qa/evidence/quality-access-1807/publication-check/result.json --artifact-receipt specs/1007-t5-qa/evidence/quality-access-1807/publication-check/artifact-receipt.json --evidence specs/1007-t5-qa/evidence/quality-access-1807/quality-precondition

@@ -1,0 +1,11 @@
+{
+  "compiled_acceptance": false,
+  "compiled_outputs": null,
+  "compiler_events_used": 2,
+  "declaration_controls_executed": false,
+  "fixture_checks": 18,
+  "input_sha256": "ac15f1c8c03e9ee362f109804262326a6de1b49d5128877e869122fc02c236b1",
+  "source_sha256": "59d93fa891b2def373cef7436555545a63e122c216b0a487e7cb9e57fddd0355",
+  "status": "source-optin-external-composed-maps-fixture-qualified-product-unexecuted",
+  "tuple": "T12-optin-source-maps-59d93fa891b2"
+}

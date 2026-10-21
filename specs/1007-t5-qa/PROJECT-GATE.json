@@ -1,0 +1,50 @@
+{
+  "schema": "memory-sound-project-gate/1",
+  "fixture": false,
+  "projectKey": "phsb5321_pi-memory-sound-qa",
+  "candidateRevision": null,
+  "policy": {"cloneBaseline": "4e494929998d6bc4fccf75e0a233f727db4b70ee", "minTokens": 50, "newCloneMaximum": 0, "aislopErrorsMaximum": 0, "newCoverageMinimum": 80, "newDuplicationMaximum": 3},
+  "identity": {
+    "tuple": "T9-standalone-native-api-8e3a3d9b738a",
+    "sourceSha256": "8e3a3d9b738a5fedfc5eb8e47fbbb96f7247985c4ffe7ee1e3d35a526b972091",
+    "inputSha256": "b9f966fed665762044bba33c8991d81c1cf1b1855542c1355689fc3d60a5ec0d",
+    "distSha256": null,
+    "runtimeClosureSha256": null
+  },
+  "identityFiles": {
+    "publication": null,
+    "source": {"path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-standalone-native-api/evidence/pre-event-source-manifest.json", "sha256": "8e3a3d9b738a5fedfc5eb8e47fbbb96f7247985c4ffe7ee1e3d35a526b972091"},
+    "input": {"path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-standalone-native-api/evidence/pre-event-input-manifest.json", "sha256": "b9f966fed665762044bba33c8991d81c1cf1b1855542c1355689fc3d60a5ec0d"}
+  },
+  "artifactReceipt": null,
+  "eligibleSources": [],
+  "expectedNewSources": [],
+  "tools": {
+    "biome": {"version": "2.3.5", "binary": null, "metadata": {"path": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/@biomejs/biome/package.json", "sha256": "6f007d9271fb1e4e9f9e6a8cf99fb92803eaf144ddc89866050643cfd64a5f3e"}, "packageMetadata": true},
+    "types": {"version": "7.0.2", "binary": null, "metadata": {"path": "/home/notroot/Documents/Code/pi-upstream-ms-g4-bundle/node_modules/typescript/package.json", "sha256": "3722b30210616a13a3213ded11575ba6b2dbab10c32a5ef67afca8513e27017e"}, "packageMetadata": true},
+    "aislop": {"version": "0.12.0", "binary": null, "metadata": {"path": "/nix/store/rvc5bdlips64617figwb7zdgvv47c5x7-code-slop-gate-0.1.0/libexec/code-slop-gate/node_modules/aislop/package.json", "sha256": "5e89b01dc9ac3be48d5ca098576da4ce43125b051e3d20350db6d0bfd62a9b30"}, "packageMetadata": true},
+    "jscpd": {"version": "5.0.10", "binary": null, "metadata": {"path": "/nix/store/rvc5bdlips64617figwb7zdgvv47c5x7-code-slop-gate-0.1.0/libexec/code-slop-gate/node_modules/jscpd/package.json", "sha256": "f10d31ff8aaaa2a2d723b3edbc56899fb14325166309dc7dd801ed0c1dcc7068"}, "packageMetadata": true},
+    "sonar": {"version": "8.1.0.6389", "binary": null, "metadata": null, "packageMetadata": false}
+  },
+  "stages": {
+    "compiled": {"receipt": null, "command": null, "executor": "existing artifact-entry.py --execute after source-free normalization"},
+    "api-history": {"receipt": null, "command": null, "executor": "same-emitted-six-export API/history850/richPTY/bridge/package controls"},
+    "biome": {"receipt": null, "command": ["npm", "run", "check"], "executor": "reuse original producer complete root-check log/identity; no second lint/type wave"},
+    "types": {"receipt": null, "command": ["npm", "run", "check"], "executor": "reuse same producer mandatory root-check log/identity"},
+    "coverage": {"receipt": null, "command": null, "executor": "existing one compiled-coverage rerun -> qualified source-map-coverage.mjs with all eligible sources/new conditions"},
+    "aislop": {"receipt": null, "command": null, "executor": "quality-entry.py installed aislop after compiled PASS"},
+    "jscpd": {"receipt": null, "command": null, "executor": "quality-entry.py installed jscpd/snapshot comparator, original ratchet"},
+    "baseline": {"receipt": null, "command": null, "executor": "scanner-fd.py exact released v1.0.4 -> actual CE/revision/version/analysis ID -> project SPECIFIC_ANALYSIS readback"},
+    "sonar": {"receipt": null, "command": null, "executor": "scanner-fd.py exact candidate -> hash-bound full actual API metrics/pages/analysis readback"}
+  },
+  "bindingState": "KNOWN_T9_PREPARATION_NOT_CURRENT_ARTIFACT; replace only from genuine new original producer/QA receipts at final emitted boundary, never by label",
+  "mapRequirement": "evidence/instrumentation-1858/producer-map-requirement.json",
+  "instrumentationReused": {
+    "scanner-fd.py": "e56990c084b2176adb2a434fb91d8838c7c2ea8feb1531c922e16419fd4bd90b",
+    "source-map-coverage.mjs": "f2cd72afc683f4b6974ba44cee1538468e6f7c5aab4edf813e421e51f3770f6b"
+  },
+  "heavyOrder": ["producer", "compiled QA", "quality", "memory"],
+  "rootCheckBuildDuplicationAllowed": false,
+  "noAbsentArtifactReread": true,
+  "fixtureScoresAreACED": false
+}

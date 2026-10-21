@@ -1,0 +1,38 @@
+{
+  "status": "EXACT_CURRENT_INCREMENTAL_SOURCE_SCOPE_BOUND",
+  "eligible": 929,
+  "recensused": 5,
+  "retained": 924,
+  "observedCoverage": false,
+  "ACED": false,
+  "identity": {
+    "tuple": "T14-native-nested-policy-7c2021ac9f3c",
+    "sourceSha256": "7c2021ac9f3c1465767f868f2c391d3e21a83544902b6882e339ae3187743517",
+    "inputSha256": "7833c614065c0aa6966d751453e7dd445b040db44bb6f5a495851678c73b6976"
+  },
+  "sourceChanges": [
+    "packages/coding-agent/src/experimental/durable/extension-composition.ts",
+    "packages/coding-agent/src/experimental/durable/extension-tool-policy.ts",
+    "packages/durable/src/harness/tool.ts",
+    "packages/durable/src/harness/types.ts",
+    "scripts/build-coding-agent-bundle.mjs"
+  ],
+  "removedPaths": [],
+  "recensusedPaths": [
+    "packages/coding-agent/src/experimental/durable/extension-composition.ts",
+    "packages/coding-agent/src/experimental/durable/extension-tool-policy.ts",
+    "packages/durable/src/harness/tool.ts",
+    "packages/durable/src/harness/types.ts",
+    "scripts/build-coding-agent-bundle.mjs"
+  ],
+  "changedRelativeToRelease": 62,
+  "conditions": 58079,
+  "statementSpans": 89937,
+  "graphSha256": "0a145e6ee1e923154480ef0d77e61ef80d5aad6e110436dd7e2fad61961bcbd1",
+  "deltaGraphSha256": "46d3ac73e8667b6c92e4295a5d57f4f5cc456a418696714d874f1c0e65a6f598",
+  "inheritedGraphSha256": "aafc156d3500f6dbe745e5c37cc089182d6160f655af6566d76c99619eaed1f2",
+  "physicalCurrentSourcesVerified": 929,
+  "productCompilerRuns": 0,
+  "sourceRuntimeImports": 0,
+  "oldMatrixReruns": 0
+}

@@ -1,0 +1,1 @@
+PYTHONDONTWRITEBYTECODE=1 python specs/1007-t5-qa/normalize-bound-publication.py --contract specs/1007-t5-qa/T8-PUBLICATION-CONTRACT.json --evidence specs/1007-t5-qa/evidence/t8-continuation-1709/publication-check

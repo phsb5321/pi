@@ -1,0 +1,82 @@
+{
+  "schema": "memory-sound-source-compatibility-ack/1",
+  "id": "ROOT-R5-RETENTION-COMPAT-20261007-v1:ms-qa-source-only",
+  "ackBrt": "07/10/2026 17:48:58 -03",
+  "receiver": {"session": "side-projects", "pane": "w28:pK", "role": "ms-qa", "settledState": "evidence/t8-continuation-1709/receipt.json"},
+  "status": "SOURCE_ONLY_ACK_NON_EQUIVALENT_NOT_COMPILED_NOT_EXECUTED",
+  "offer": {
+    "notesRevisionOffered": "phsb5321/Notes@41df74ffe7b3e822ffa9631d1e974f588b662444",
+    "notesPath": "1. Projects/Herdr Fleet Coordination/evidence/disk-growth-2026-10-07/1701-r5-compatibility/producer-contract-v1.json",
+    "localPath": "/home/notroot/Documents/Notes-2378-disk-2144-files/1. Projects/Herdr Fleet Coordination/evidence/disk-growth-2026-10-07/1701-r5-compatibility/producer-contract-v1.json",
+    "sha256": "066fc0bb94f4828e48e12d6c40d9d12d5ef5ce07c6fceaf9cdb9e6c089e73cde",
+    "localBytesVerified": true,
+    "producerRepo": "phsb5321/NixOS",
+    "producerCommit": "dc6b02eed915198a7eb5e35e22cc20b4250fe411",
+    "producerPR": 2680,
+    "nativeGitGuardianSuccessAndOpenPR": "user/offer report, not rechecked or merged here",
+    "adapterSourceSha256": "8376b6594bf5713341f71ca15587cc7d0bb99a7de447f9dbea886b380f6bdf0a",
+    "syntheticOnly": true,
+    "adoption": "OFF"
+  },
+  "onDiskSeatSDK": {
+    "package": "@earendil-works/pi-coding-agent",
+    "version": "0.99.1",
+    "canonicalPath": "/home/notroot/.cache/pi-npx/0.99.1/_npx/78709cf4b2f1011c/node_modules/@earendil-works/pi-coding-agent",
+    "hashes": {
+      "package.json": "c701ddbf28b5170deb478b8586ee713f9372027c04736946a4ffe82168ece5ba",
+      "dist/core/agent-session.js": "fc2ea38a53937a66dc39322c1e97387694580765078f1736a3f11a0330b8bb23",
+      "dist/core/session-manager.js": "046b6a1109ac3f0ed893bb85bf0648709362fa926a5da75761216cf2fcf9d926",
+      "dist/core/extensions/runner.js": "7583772d6d29a23c06496b6e0b4764ace220fb4289d5523916323642efa50306",
+      "dist/core/resource-loader.js": "710e367e37c40df9f8f0239ebee6955e0a971a028d20467024bf4ea9ff55a42a"
+    },
+    "physicalHashesMatchOffer": true,
+    "actualLoadedAdapterOrHookOrder": "NOT_VERIFIED_NOT_ADOPTED",
+    "installedStoreQualification": "npm-cache SDK bytes only; no adapter Nix-store/source mapping proven"
+  },
+  "productConsumer": {
+    "qaRepoHead": "200387122ca450d6387f033949423114a270b96c",
+    "tuple": "T8-native-semantic-repair-2e0a7baa85d9",
+    "sourceRoot": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-native-semantic-repair/execution-source",
+    "sourceManifestSha256": "2e0a7baa85d9e9d6d331301e4713636734915e2358f937c482cb129903d2f6d2",
+    "inputManifestSha256": "483c208446905b50039247fb98cadd0c6b2663a791388d3a2a2fa27ebdeb3a1f",
+    "sourcePackage": {"name": "@earendil-works/pi-coding-agent", "version": "1.0.4", "path": "packages/coding-agent/package.json", "sha256": "2e5dfb3a0abc2f698acc09a077653382e9de03a75d3696c7c392827a41c7292b"},
+    "sourceIdentities": {
+      "packages/coding-agent/src/experimental/durable/runtime.ts": "c08a826aad001b5024c15d55f7c249b85488adcf2922470e34d6834605873c5c",
+      "packages/coding-agent/src/experimental/durable/harness-setup.ts": "513aade1a209ec0bfff9290153b9649294cdfbea5756cbdb8d656eadbbed953f",
+      "packages/durable/src/storage/sqlite/node.ts": "d3f058870a0a016359a64767fcfa33946c1e0f38b6ff5b7cf076eae5a0f78786",
+      "packages/durable/src/storage/sqlite/storage.ts": "8d785bdfc19b33dc66191e86f350354e38cc781c83885dca9f43e3d2044cfeb3",
+      "packages/durable/src/storage/sqlite/migrations.ts": "df78a6a5bb39b237f98f348c4b37e19bc7aa1a3d253b5b5d34b12746800f8f61"
+    },
+    "sourceMapping": "exact frozen T8 manifest, not QA Git HEAD or SDK version-label equivalence",
+    "compiledStore": null,
+    "compiledLauncher": null,
+    "compiledStatus": "NOT_COMPILED_IN_EXISTING_QUALIFIED_CHECK",
+    "backend": "native Harness/SQLite through openNodeSqliteStorage; not ordinary SessionManager JSONL/gzip",
+    "schemaCodec": "hash-bound sqlite migrations.ts and storage.ts: JSON.stringify/JSON.parse SQL records with native numeric identities",
+    "equivalence": "NON_EQUIVALENT",
+    "counterexample": "runtime.ts:17 imports native SQLite; harness-setup.ts:56-86 refuses ordinary extension policy before evaluation; storage.ts:60-63 JSON record codec is not producer JSONL+private SHA gzip storage"
+  },
+  "eventHookOrder": {
+    "producerRequired": ["tool_result per-ID before message_end", "all payload finalizers before retention at message_end", "retention before request-only context-lean restoration/thinning", "SessionManager.appendMessage->_appendEntry->_persist", "persist/reopen/branch/native writing-disabled resume preserves old prefixes"],
+    "consumerActualLoadedHandlers": "NOT_EXECUTED_NOT_BOUND",
+    "consumerFinalizerRetentionContextLeanOrder": "NOT_EXECUTED_NON_EQUIVALENT",
+    "hiddenStructuredFieldsAndOriginalMessageFailureSemantics": "NOT_EXECUTED_FOR_CONSUMER",
+    "nativeExtensionRefusalIsParity": false
+  },
+  "existingCheckStage": {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python specs/1007-t5-qa/normalize-bound-publication.py --contract specs/1007-t5-qa/T8-PUBLICATION-CONTRACT.json --evidence specs/1007-t5-qa/evidence/t8-continuation-1709/publication-check",
+    "actualExit": 78,
+    "resultPath": "evidence/t8-continuation-1709/publication-check/result.json",
+    "resultSha256": "9f11b325dd86b8b8a94d9b5aaf45a7e0bddde33a67367bc3feecaf20e0ba1190",
+    "originalPublicationSha256": "041bf4a19974e210a45a82a39c3d233d50ed5eb4b962d90561c4ed2c1392ef45",
+    "r5Falsifier": "NOT_EXECUTED_NO_EQUIVALENT_CONSUMER_STORE_OR_HOOK_BINDING",
+    "newTestExecutions": 0,
+    "compiledAcceptance": "NOT_EXECUTED"
+  },
+  "loadedGrowth": {"acceptance": "UNACCEPTED", "reclaimB": 0, "consumerTotalAllocationB": null, "consumerTotalStatus": "NOT_MEASURED_NOT_ZERO", "producerTotalAllocationBTransferred": false},
+  "noTransfer": ["T8 exports by symbol name", "older tuple/shared-host/SQLite by version label", "producer JSONL synthetic evidence as consumer compiled/store proof", "native CI as installed ordering/adoption proof"],
+  "mutations": {"SDKAccountModelChanges": 0, "newTestsCompilersPanes": 0, "productionMergeLiveHistory": 0, "msOrchMsBuildInterruptions": 0},
+  "deliveryTarget": "home:w2N:pK / portfolio-disk",
+  "delivery": {"submissionExit": 0, "nativeResponseType": "agent_prompted", "receipt": "delivery.json", "receiverReadOrAdoptionProven": false, "interruptKeysSent": false, "waitOrPoll": false},
+  "reply": "one-off source-only receipt pointer, not recurring instructions"
+}

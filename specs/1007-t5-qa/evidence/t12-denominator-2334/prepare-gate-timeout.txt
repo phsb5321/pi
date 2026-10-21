@@ -1,0 +1,4 @@
+Tool invocation: ordinary resourceTier=small, timeout=30s. Payload started prepare-t12-gate.py, intended to run project-gate.py only if preparation succeeded.
+Actual tool return: Command timed out after 30 seconds.
+Owned follow-up at 07/10/2026 23:56:01 BRT: prepare-gate.log existed and was empty; no PROJECT-GATE.T12.json, prepare-gate.exit, product-gate-boundary output or exit existed. No product gate execution is inferred. No synthetic subprocess exit recorded.
+Remedy: prepare from small source/result/partition metadata; hash large static graph in bounded chunks instead of loading its complete object again. No admitted resource/cap/unit change, product compile or old matrix rerun.

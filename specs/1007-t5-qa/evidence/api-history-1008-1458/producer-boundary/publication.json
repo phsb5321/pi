@@ -1,0 +1,194 @@
+{
+  "InvocationID": "fe4f83387e6f4ff9971218da3cccf4af",
+  "accepted_maps_inventory": null,
+  "accepted_native_inventory": null,
+  "accepted_runtime_inventory": null,
+  "actual_empty_type_js": {
+    "bytes": 44,
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/execution-source/packages/agent/dist/types.js",
+    "sha256": "01ae2a5b120382f9a648ced7ee8507493a134f216d100fc61600c6c9738235d2"
+  },
+  "actual_partial_dist_manifest": {
+    "bytes": 618296,
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/evidence/attempt-1/dist-manifest.json",
+    "sha256": "84fc786a85daa3bafcc9236f148858ba838b71d4551711b1d755e017b6a321a9"
+  },
+  "authorization": {
+    "bytes": 5397,
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/authorization.json",
+    "sha256": "0fb2c5cec4903abfc865d99968b589591a5be7c561ba0e8640251c3ac1b61259"
+  },
+  "automatic_retry": false,
+  "catalogue": 43,
+  "cgroup": "/user.slice/user-1000.slice/user@1000.service/herdr.slice/herdr-jobs.slice/desktop-job-slot.service",
+  "claims": {
+    "compiled_production_main": false,
+    "full_root_check": true,
+    "native_bridge_assets": false,
+    "optin_build": false,
+    "ordinary_offline_build": true,
+    "packaged_compiled_host": false
+  },
+  "clock": "08/10/2026 15:11:16 -0300",
+  "compiled_acceptance": false,
+  "compiled_consumers_must_not_launch": true,
+  "conditional_events_remaining": 1,
+  "counts": {
+    "build_package_typechecker_commands": [
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "npm run check:model-data && tsc -p tsconfig.build.json && shx rm -rf dist/providers/data && shx cp -r src/providers/data dist/providers/data",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json",
+      "tsc -p tsconfig.build.json && shx chmod +x dist/cli.js dist/rpc-entry.js && npm run copy-assets"
+    ],
+    "build_package_typechecker_invocations_this_event": 13,
+    "compiler_events_this_wave": 1,
+    "count_proof": "Prior2/2 + shipping1/1 preserved,total3; fresh MAX2 wave, one actual payload here; no automatic second event. Root browser-smoke follows successful tsc; TS diagnostics prove failed tsc. Sequential successful package build confirms printed tsc commands executed. Opt-in uses existing esbuild only. Raw logs retained.",
+    "new_wave_actual_events": 1,
+    "new_wave_limit": 2,
+    "old_wave_actual_events": 2,
+    "old_wave_limit": 2,
+    "optin_bundle_build_this_event": 1,
+    "ordinary_offline_build_this_event": 1,
+    "previous_actual_total": 3,
+    "printed_build_typechecker_command_count": 13,
+    "root_typechecker_invocations_this_event": 1,
+    "shipping_wave_actual_events": 1,
+    "shipping_wave_limit": 1,
+    "total_actual_events": 4
+  },
+  "current_resource_grant": null,
+  "entries": 2030,
+  "envelope": {
+    "bytes": 1655,
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/evidence/attempt-1/envelope.json",
+    "sha256": "a99b754ab9e893fa60541131d09d37a5f1d7e79e14fb477abf2b839d0a22a80a"
+  },
+  "event": "attempt-1",
+  "event_result": {
+    "bytes": 672395,
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/evidence/attempt-1/result.json",
+    "sha256": "5fbd5c8e4463982f0a212a98988eb4317570db8728f385a07694fa7c4543f60f"
+  },
+  "extracted_package_inventory": null,
+  "failed_map": {
+    "bytes": 22044,
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/execution-source/packages/agent/dist/types.js.map",
+    "sha256": "69e4637660532a242a07930dd44ac6291d20172d9804f73288ff040c6c2e23f7"
+  },
+  "frozen_originals_preserved": true,
+  "input_manifest": {
+    "bytes": 206441,
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/evidence/attempt-1-before-input-manifest.json",
+    "sha256": "3483768249791e88ef4bfaaae73ecc3be384b7a5e948d43eda2d0f1531a546f3"
+  },
+  "input_sha256": "3483768249791e88ef4bfaaae73ecc3be384b7a5e948d43eda2d0f1531a546f3",
+  "links": 273,
+  "ordinary_dist_manifest": {
+    "bytes": 596630,
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/evidence/attempt-1/ordinary-dist-manifest.json",
+    "sha256": "050174e29cf0de4a285931cd324696be9008c3e5eb1900bd0580bb926a700b22"
+  },
+  "partial_dist_bytes": 55014148,
+  "partial_dist_rows": 2885,
+  "partial_dist_status": "PRODUCED_UNACCEPTED_NOT_A_CONSUMER_RUNTIME",
+  "publication_class": "FAILED_PARTIAL_COMPILED_NOT_ACCEPTED",
+  "qualification": {
+    "bytes": 16294,
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/evidence/attempt-1/qualification.json",
+    "sha256": "af952626dccad3b2f582c437479fb5974e78570c6f62a1be3b5c577d27a2ef96"
+  },
+  "quality_memory_fullPi": "NOT_ACCEPTED",
+  "raw_evidence_inventory": {
+    "bytes": 28635,
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/evidence/failed-optin-checkpoint/raw-evidence-inventory.json",
+    "sha256": "3edcb3098d816a0be6f6be20440d05914101455fe3f5a08f0412f78db4fdf161"
+  },
+  "repair_candidate": {
+    "actual_smallest_check": "NOT_EXECUTED_ADMISSION_REFUSED",
+    "compiler_event_consumed": false,
+    "control_refusal": {
+      "bytes": 1368,
+      "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444-map-repair/evidence/empty-type-map-admission-refusal.log",
+      "sha256": "9f038241592b6c1dbde6c620b263dbbfae613c853bccf4fefecf87316c47429d"
+    },
+    "root": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444-map-repair",
+    "shared_root_path": "scripts/shared-tty-source-maps.mjs",
+    "status": "UNQUALIFIED_UNFROZEN"
+  },
+  "source": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/execution-source",
+  "source_manifest": {
+    "bytes": 469270,
+    "path": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/evidence/attempt-1-before-source-manifest.json",
+    "sha256": "c60ad0ff14551d1f2e0714d9168ed3a2ac534d3991c725c8087da165038ef96d"
+  },
+  "source_sha256": "c60ad0ff14551d1f2e0714d9168ed3a2ac534d3991c725c8087da165038ef96d",
+  "stages": {
+    "build": {
+      "argv": [
+        "npm",
+        "run",
+        "build:offline"
+      ],
+      "bounded_stop": null,
+      "exit": 0,
+      "full_log": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/evidence/attempt-1/build-offline.log",
+      "seconds": 41.093219366972335
+    },
+    "check": {
+      "argv": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "bounded_stop": null,
+      "exit": 0,
+      "full_log": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/evidence/attempt-1/check.log",
+      "seconds": 72.18468592001591
+    },
+    "compiled_acceptance": null,
+    "optin": {
+      "argv": [
+        "npm",
+        "--prefix",
+        "packages/coding-agent",
+        "run",
+        "build:shared-tty"
+      ],
+      "bounded_stop": null,
+      "exit": 1,
+      "full_log": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/evidence/attempt-1/build-shared-tty.log",
+      "seconds": 5.146053745003883
+    },
+    "ordinary_host_negative": {
+      "argv": [
+        "/run/current-system/sw/bin/python3",
+        "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/check-artifact.py"
+      ],
+      "bounded_stop": null,
+      "exit": 78,
+      "full_log": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/evidence/attempt-1/ordinary-host-negative.log",
+      "seconds": 0.13264371099648997
+    },
+    "source_regressions": {
+      "argv": [
+        "/run/current-system/sw/bin/python3",
+        "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/source-tests.py"
+      ],
+      "bounded_stop": null,
+      "exit": 0,
+      "full_log": "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1008-execution-1444/evidence/attempt-1/source-regressions.log",
+      "seconds": 4.963394760969095
+    }
+  },
+  "status": "blocked-actual-optin-map-failure-repair-check-admission-refused",
+  "tuple": "T16-execution-1444-c60ad0ff1455"
+}

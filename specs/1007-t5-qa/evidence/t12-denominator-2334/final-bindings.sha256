@@ -1,0 +1,16 @@
+1938058ba15f85bf55effe27d623fa86d1df689f2a4632a7964987138be4af7c  specs/1007-t5-qa/source-denominator.mjs
+e145e89cd2bd899176549e78005b94ef3bcffa89a9fe640693709fbbd80fa3e3  specs/1007-t5-qa/build-t12-denominator.mjs
+3ac9597d397603381e339fc64c43dcdda3a3acea860b5e46d28caa383dda49d5  specs/1007-t5-qa/test-map-denominator.mjs
+6767bb766f8856d0b24c84ac6b037f2f2205f90ab447a05181200c162abb73e6  specs/1007-t5-qa/bind-release-lines.py
+5ff761bcce66f0719ad9c555b572e7b7146d0eb600eafcc6f093f75635fb7224  specs/1007-t5-qa/prepare-t12-gate.py
+0da02dca639e69c2bf6fb21b08e0061464dd7535885a695aeae8c6c3993066b0  specs/1007-t5-qa/PROJECT-GATE.T12.json
+d3d6f02c039d851fbd7e77f1556ba5d22add825fd37f023a9d695aca580b562b  specs/1007-t5-qa/SOURCE-DENOMINATOR.md
+bc568914361d7b5f524675da7aaee64a39bb19282167648e71c12295a4ad14ea  specs/1007-t5-qa/README.md
+b7d0d28324568873000798c15a1086741020d32da10233648c8b2aec224824cf  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t12-denominator-2334/RECEIPT.md
+8cf0e5fa6da714fa3eafabf88378b7cdf2974cdfb88c04f2e5d5c1750b8768d0  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t12-denominator-2334/checkpoint.json
+780bb75b0ae3e8c975cfa829a247fcac96c80a76cba32baf29132749f75df188  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t12-denominator-2334/current-producer-admission.receipt.json
+658824c3631676fbc9cdc7be33594cb24e5821f9bc05a0bb6e00d7ad1e6b0303  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t12-denominator-2334/current-producer-owner.README.md
+7eca4b472fd45b6647889e0ebc3f274ca7437af6a6a9182a23c10ea5cddc6f37  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t12-denominator-2334/prepare-gate-resume-1008.log
+28ad15a58fde2208e54b320b0196b268f72fdac2cb1fb945315b848b878e8e21  /home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t12-denominator-2334/product-gate-boundary-resume-1008/result.json
+bcd3dacfd99a8ad8ecf2234b2811a5ff5d7743e015dbce45d08c3d642b0d28fc  /home/notroot/Documents/Notes-1007-memory-sound-resume/1. Projects/Memory-Sound Program/PROJECT-EXECUTION-STANDARD.md
+07653052315fa1b83a6f4cc8f1e5d0af0ff987eb75926ba5d377f13aa9b1e74e  /home/notroot/Documents/Notes/1. Projects/Memory-Sound Program/evidence/execution-wave-2026-10-06/qa/RECEIPT.md

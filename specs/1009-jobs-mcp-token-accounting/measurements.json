@@ -1,0 +1,62 @@
+{
+  "measurement": "jobs-mcp token-accounting claims (a) and (b)",
+  "seat": "ms-qa / side-projects:w28 (transcript identity)",
+  "pickup_clock_brt": "09/10/2026 17:31",
+  "method": "measured against live pi runtime + on-disk job records; no fixture theater",
+
+  "PREMISE_FINDING": {
+    "claim": "pi sessions declare a jobs MCP server (mcp__jobs__job_submit/job_wait/job_pool_status/job_status/job_list) with exposure codemode in all four ~/.pi agent dirs",
+    "verdict": "NOT PRESENT — the jobs MCP server is not installed or wired in this environment",
+    "evidence": [
+      "all four ~/.pi/{agent,agent-gpt-a,agent-gpt-b,agent-gpt-c}/mcp.json are byte-identical (sha256 696424e78720479f...) and declare ONLY browser-fleet (exposure:codemode); no jobs server",
+      "live codemode ALL_TOOLS registry = 18 nested tools = 12 builtins + 6 mcp__browser_fleet__*; ZERO mcp__jobs__* (anyJobsToolAnywhere=false)",
+      "grep job_submit|job_wait|job_pool_status across pi package source: no hits (jobs server is not a pi built-in)",
+      "~/.jcode/mcp.json = search_vault/cua_repl/node_repl; ~/.cursor/mcp.json = {}; no jobs server anywhere; no jobs-mcp binary in nix store or PATH",
+      "the mcp__jobs tool names appear only in ~/.claude/skills/codemode/SKILL.md (prose/contract), not as an installed server"
+    ],
+    "consequence": "The literal measurements the directive requested — (1) declared-tool tokens with/without THE JOBS server connected, (2) exact byte size of A JOB_WAIT RESULT — cannot be performed against the jobs server. Claim (a)'s mechanism is measured against the one real connected codemode-exposed server (browser-fleet); claim (b)'s raw-record side is measured against pi's real job-queue records, but a live job_wait result is unobtainable."
+  },
+
+  "claim_a_codemode_keeps_schemas_out_of_model_visible_declarations": {
+    "measured_against": "mcp__browser_fleet (the actually-connected codemode-exposed server)",
+    "tools_measured": 6,
+    "full_declaration_bytes_total": 1952,
+    "prose_per_turn_bytes__in_codemode_listing": 650,
+    "schema_kept_out_bytes": 1302,
+    "schema_kept_out_approx_tokens": 326,
+    "full_declaration_approx_tokens": 488,
+    "token_heuristic": "tokens ≈ bytes/4 (approx); bytes are exact",
+    "proof_of_absence": {
+      "model_visible_top_level_tools": ["read","bash","edit","write","remote_bash","AskClaude","search_vault","get_note","todo","delegate_subscription","zai_web_search","zai_web_reader","codemode"],
+      "any_browser_fleet_tool_top_level": false,
+      "note": "the 6 mcp__browser_fleet__* tools are reachable only via codemode's nested registry (describeTool) at runtime; none is a top-level model-declared function, so their 1302-byte input schemas are absent from the per-turn model-visible tool declarations"
+    },
+    "before_after_per_turn": {
+      "after__codemode_exposure__actual": "schemas excluded; +650 B prose listing only",
+      "before__if_exposure_direct": "full 1952 B declarations (incl 1302 B schemas) would be in the per-turn declarations",
+      "delta_saved_by_codemode_bytes": 1302
+    },
+    "verdict": "claim (a) SUPPORTED by mechanism (schemas absent from model-visible declarations). NOT measured against the jobs server (absent)."
+  },
+
+  "claim_b_job_wait_returns_filtered_result_not_raw_record": {
+    "raw_record_source": "~/.local/state/desktop-job-queue/jobs/*.json",
+    "completed_records_measured": 578,
+    "full_record_fields_union": ["args","attempts","class","command","created_at","cwd","exit","finished_at","id","idempotency_key","log","not_before","note","pid","project","refusals","slot","started_at","state","timeout_seconds","ttl_seconds"],
+    "sum_full_record_bytes": 498765,
+    "sum_kept_record_fields_bytes__exit_log": 48184,
+    "FILTERING_DELTA_bytes_metadata_dropped": 450581,
+    "mean_filtering_delta_bytes_per_record": 779.6,
+    "log_tail_content_bytes_job_wait_adds__separate": 483114,
+    "biggest_dropped_field": {"name": "args", "total_bytes": 223161, "what": "the full command+script payload"},
+    "other_dropped_fields": ["class","command","created_at","cwd","finished_at","id","idempotency_key","pid","project","slot","started_at","state","timeout_seconds","ttl_seconds","refusals","not_before","attempts"],
+    "job_wait_documented_keepset": ["exit code","log path","note","optional log tail"],
+    "honesty_caveat": "The raw-record side is fully measured. The exact live job_wait RESULT byte size is UNMEASURABLE here because the mcp__jobs server is absent (no job_wait tool). The keep-set side is the documented job_wait contract applied to real record values; log_tail is content job_wait ADDS from the log file (separate from record metadata); 'note' is server-generated (unmeasurable). The measured FILTERING_DELTA is the record metadata job_wait does not return.",
+    "verdict": "claim (b) raw-record side SUPPORTED (record carries 21 metadata fields incl. args/pid/idempotency_key that the documented keep-set excludes). Exact job_wait-result-vs-record byte delta cannot be completed without invoking job_wait (server absent)."
+  },
+
+  "FALSIFIERS": {
+    "claim_a": "To DISPROVE 'codemode keeps tool schemas OUT of model-visible declarations': inspect the actual request `tools` array pi sends to the model while a server has exposure=codemode, and find a codemode-exposed tool's full JSON inputSchema present there (or the tool declared as a top-level function carrying its schema). Presence => claim (a) false. Current run: the 6 browser-fleet schemas (1302 B) are absent from top-level declarations (any_browser_fleet_tool_top_level=false) => claim holds.",
+    "claim_b": "To DISPROVE 'job_wait returns only a filtered result, never the raw job record': capture a real job_wait result that contains ANY raw-record-only field (args, pid, idempotency_key, slot, created_at/started_at/finished_at, command, cwd, state, ttl_seconds, timeout_seconds, class, project, id) or that is byte-identical to / contains the full raw record. Presence of any such field => claim (b) false. Current run: real records DO carry these fields (args=223161 B etc.), excluded from the documented keep-set => claim holds as far as measurable."
+  }
+}

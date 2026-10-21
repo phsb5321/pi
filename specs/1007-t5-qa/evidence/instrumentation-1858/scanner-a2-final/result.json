@@ -1,0 +1,82 @@
+{
+  "status": "FAKE_TOKEN_LAUNCHER_QUALIFICATION_PASS",
+  "checks": [
+    "all raw/base64 token chunk boundaries redact before log persistence",
+    "truncated token prefixes at EOF redact",
+    "duplicate credential rejected before launch",
+    "log-open failure closes fd without child launch",
+    "actual launcher/JVM fd inheritance + redaction + cleanup: pass",
+    "actual launcher/JVM fd inheritance + redaction + cleanup: fail",
+    "actual launcher/JVM fd inheritance + redaction + cleanup: timeout"
+  ],
+  "runs": [
+    {
+      "mode": "pass",
+      "scopeEnforcement": "Caller must enforce compiled PASS and exact isolated project",
+      "timedOut": false,
+      "exit": 0,
+      "argv": [
+        "/nix/store/zd52304wjfbvr63lfs2w7nqywqv7zvz2-sonar-scanner-cli-8.1.0.6389/bin/sonar-scanner",
+        "-Dproject.settings=/proc/self/fd/3",
+        "-h"
+      ],
+      "seconds": 0.9872637719963677,
+      "fdClosed": true,
+      "childReaped": true
+    },
+    {
+      "mode": "fail",
+      "scopeEnforcement": "Caller must enforce compiled PASS and exact isolated project",
+      "timedOut": false,
+      "exit": 23,
+      "argv": [
+        "/nix/store/zd52304wjfbvr63lfs2w7nqywqv7zvz2-sonar-scanner-cli-8.1.0.6389/bin/sonar-scanner",
+        "-Dproject.settings=/proc/self/fd/3",
+        "-h"
+      ],
+      "seconds": 0.2960890080430545,
+      "fdClosed": true,
+      "childReaped": true
+    },
+    {
+      "mode": "timeout",
+      "scopeEnforcement": "Caller must enforce compiled PASS and exact isolated project",
+      "timedOut": true,
+      "exit": -9,
+      "argv": [
+        "/nix/store/zd52304wjfbvr63lfs2w7nqywqv7zvz2-sonar-scanner-cli-8.1.0.6389/bin/sonar-scanner",
+        "-Dproject.settings=/proc/self/fd/3",
+        "-h"
+      ],
+      "seconds": 3.0120000400347635,
+      "fdClosed": true,
+      "childReaped": true
+    }
+  ],
+  "compileCommands": [
+    [
+      "/nix/store/ij5q131fzyqw8wh76y9nrj5jl45zviqw-openjdk-21.0.12+8/bin/javac",
+      "-J-Xmx64m",
+      "-J-XX:ActiveProcessorCount=1",
+      "-d",
+      "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/instrumentation-1858/scanner-a2-final/classes",
+      "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/FdProbe.java"
+    ],
+    [
+      "/nix/store/ij5q131fzyqw8wh76y9nrj5jl45zviqw-openjdk-21.0.12+8/bin/jar",
+      "-J-Xmx64m",
+      "-J-XX:ActiveProcessorCount=1",
+      "cfm",
+      "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/instrumentation-1858/scanner-a2-final/probe.jar",
+      "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/instrumentation-1858/scanner-a2-final/MANIFEST.MF",
+      "-C",
+      "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/instrumentation-1858/scanner-a2-final/classes",
+      "."
+    ]
+  ],
+  "realTokensFetched": 0,
+  "remoteAnalyses": 0,
+  "scannerMode": "help-only",
+  "productCompilerEvents": 0,
+  "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/herdr.slice/herdr-jobs.slice/herdr-jobs-small.slice/desktop-job-small-3.service\n"
+}

@@ -1,0 +1,43 @@
+{
+  "schema": "memory-sound-real-quality-execution/1",
+  "originalPreparation": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/PROJECT-GATE.T15.API-HISTORY.json",
+    "sha256": "31c1c9e7fcb0dbf35defd645678a4f9d8a1916e43908232a438566a9d1f9e6c1"
+  },
+  "sourceIdentity": {
+    "tuple": "T15-native-nested-type-repair-c60ad0ff1455",
+    "sourceSha256": "c60ad0ff14551d1f2e0714d9168ed3a2ac534d3991c725c8087da165038ef96d",
+    "inputSha256": "a7da1f25fd1bcdf327c12b5cbee52cee7abe793d4550d10363370d3045cc9ef7"
+  },
+  "node": {
+    "path": "/nix/store/2gd4h12irmnanhg33md2rpjygrsj5ypb-nodejs-slim-22.23.2/bin/node",
+    "sha256": "1c986b3913f4f67a25d7085750654fca847a28bf015913636294614b4443ff4f"
+  },
+  "mapInventory": null,
+  "candidateScm": null,
+  "coverageCapture": null,
+  "instrumentFiles": {
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/quality-entry.py": "0ec936adc1c82aac07e22873fe51bcffd27f6ac39a2904aaa4e650ca3b6ef065",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/quality-execution.py": "7fd2289825a930546963d617f581a2b93751a72b25d6a3ce1c737298bfe69ed9",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/quality-sonar.py": "1b592873f309309523b19c9563f98644cff8026ebda8a94f8b64dcc569091d4b",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/quality-coverage.mjs": "55205ffc534e5ca7ffa56927458e876aeb24c2808897fb0989e07ddcbec17dcf",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/scanner-fd.py": "e56990c084b2176adb2a434fb91d8838c7c2ea8feb1531c922e16419fd4bd90b",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/source-map-coverage.mjs": "f2cd72afc683f4b6974ba44cee1538468e6f7c5aab4edf813e421e51f3770f6b",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/source-denominator.mjs": "1938058ba15f85bf55effe27d623fa86d1df689f2a4632a7964987138be4af7c",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/incremental-source-binding.mjs": "a7138378b82027e4ffcebe9df63e3b0b47335513a8dd45093acd0c29afebe76d",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/artifact-entry.py": "1e6dab4b961997246310531f893e2007007e380ea12478aae246e731790ff8f3",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/project-gate.py": "6a077b03c76566f2113a95985f43f3ce5adfb8a25aabf9defae41818051ebd3b",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/api-history.py": "4935be3c17cd8ba5163c236ca14caa500ab84c9ff9f096f60c1d378f87b0ab8d",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/focused-rich-pty.py": "2c5d5ebab0f6107447f44dbe4dcbbc331b2006967a76da0bb16a92719eb77894",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/rich-host.mjs": "498f9df07f0d2964a6ef41f2d988ff3eb138b6d9db60cab5e6b60620c149b791",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1006-composed-qa/sonar-readback.py": "241bb5c658d040fc86572e812550ddc1ce695e6492fd6cc3a46443b6dde570ed",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/api-history-reuse/matched-memory-allocation.py": "a468cc4d0bab0e5e8dd2674802c726bd0212d34f0b21baa48abc8f3229dba028",
+    "/nix/store/rvc5bdlips64617figwb7zdgvv47c5x7-code-slop-gate-0.1.0/libexec/code-slop-gate/jscpd-snapshot-compare.js": "df5ae6f7f098b8d981a995b8f888e06ff2c200435c8f43fbb2ed083cf86def38"
+  },
+  "secretEntry": "sonar-pi-memory-sound-qa",
+  "project": "phsb5321_pi-memory-sound-qa",
+  "sourceConditionScopeChanged": false,
+  "captureCampaign": "reuse one actual accepting focused+API campaign V8, all native Node PIDs required; no product rerun",
+  "scannerSubmitted": false,
+  "realExecutionVerified": false
+}

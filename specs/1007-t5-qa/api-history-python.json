@@ -1,0 +1,8 @@
+{
+  "version": "3.14.7",
+  "binary": {
+    "path": "/nix/store/qh015vy6jn3g15hn4ymb2yy9s4w7ras9-python3-3.14.7-env/bin/python3.14",
+    "sha256": "71dcb2f744bf70a81b65bdc45cda5d299a81842d47ca642b7079b5450f483988"
+  },
+  "implementation": "cpython"
+}

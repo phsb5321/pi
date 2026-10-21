@@ -1,0 +1,34 @@
+{
+  "status": "T12_MAP_DENOMINATOR_CONTRACT_FIXTURE_PASS",
+  "checks": [
+    "actual composed producer fixture maps bind complete eligible/changed source graph",
+    "never-executed source conditions retained as zero census, not observed coverage",
+    "omitted eligible source rejected",
+    "wrong source hash rejected",
+    "wrong source root rejected",
+    "unexecuted output omission rejected"
+  ],
+  "count": 6,
+  "fixture": true,
+  "fixtureInventorySha256": "9d758e5e2ac243b44105eb8368308b9f85551f07c5e6bcf3dcc4b826c3778575",
+  "accepted": {
+    "status": "SOURCE_MAP_DENOMINATOR_BOUND_NOT_OBSERVED_COVERAGE",
+    "eligiblePaths": [
+      "packages/coding-agent/src/core/logic.ts",
+      "packages/coding-agent/src/experimental/durable/never.ts",
+      "packages/coding-agent/src/experimental/durable/shared-tty-host.ts"
+    ],
+    "changedPaths": [
+      "packages/coding-agent/src/experimental/durable/never.ts",
+      "packages/coding-agent/src/experimental/durable/shared-tty-host.ts"
+    ],
+    "sourceConditions": 4,
+    "observedCoverage": false,
+    "ACED": false
+  },
+  "productCompilerRuns": 0,
+  "oldMatrixReruns": 0,
+  "sourceRuntimeImports": 0,
+  "observedCoverage": false,
+  "ACED": false
+}

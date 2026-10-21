@@ -1,0 +1,58 @@
+{
+  "status": "EXECUTABLE_PREPARATION_PRODUCT_BLOCKED",
+  "manifest": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/PROJECT-GATE.T15.API-HISTORY.json",
+    "sha256": "31c1c9e7fcb0dbf35defd645678a4f9d8a1916e43908232a438566a9d1f9e6c1"
+  },
+  "originalManifest": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/PROJECT-GATE.T15.json",
+    "sha256": "7692ff4f53022ca65490dcf1755f0ee7a3c2884bb5b08e79450afc5b5c2a333d"
+  },
+  "contract": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/API-HISTORY.json",
+    "sha256": "7de345b97b8712cbbe36a3be5b29376179e3f0a0203a02c6fa1d42cf51fd9d0b"
+  },
+  "boundaryResult": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/api-history-1008-1458/boundary-result.json",
+    "sha256": "95820d03169f0e5bf192b501b6ad56c709884153c85ee30b32c5e2417edf5463"
+  },
+  "boundaryExecutor": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/api-history-1008-1458/boundary-tested-api-history.py",
+    "sha256": "05127cd7713450fd97127b8f3c6dd099871b9a428dcda2fb08fc26b0e1af4d14"
+  },
+  "currentExecutor": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/api-history.py",
+    "sha256": "85d9a32f6770c29f625d78b74e93cff40e5183188a9c5568b91f904ea9c48504"
+  },
+  "boundaryPositiveProduct": false,
+  "currentCompiledPathVerified": false,
+  "boundaryReruns": 0,
+  "producerSnapshot": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/api-history-1008-1458/producer-boundary/publication.json",
+    "sha256": "b856b08f4ce56d83906017ef472dbef14d382791d07aeb82a3168ddca5664f7b"
+  },
+  "producerResult": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/api-history-1008-1458/producer-boundary/result.json",
+    "sha256": "5fbd5c8e4463982f0a212a98988eb4317570db8728f385a07694fa7c4543f60f"
+  },
+  "productHostLaunched": false,
+  "compilerInvocations": 0,
+  "ACED": false,
+  "preservedEligibleSources": 929,
+  "actualProducerEventsTotal": 4,
+  "clock_brt": "08/10/2026 15:24:24 -0300",
+  "sealInvocationID": "e687b9ce16604434828fd44d8b9b7315",
+  "sealCgroup": "0::/user.slice/user-1000.slice/user@1000.service/herdr.slice/herdr-jobs.slice/herdr-jobs-small.slice/desktop-job-small-4.service\n",
+  "tools": {
+    "python": {
+      "version": "3.14.7 (main, Aug  5 2026, 10:29:49) [GCC 15.3.0]",
+      "path": "/nix/store/qh015vy6jn3g15hn4ymb2yy9s4w7ras9-python3-3.14.7-env/bin/python3.14",
+      "sha256": "71dcb2f744bf70a81b65bdc45cda5d299a81842d47ca642b7079b5450f483988"
+    },
+    "node": {
+      "version": "v22.23.2",
+      "path": "/nix/store/2gd4h12irmnanhg33md2rpjygrsj5ypb-nodejs-slim-22.23.2/bin/node",
+      "sha256": "1c986b3913f4f67a25d7085750654fca847a28bf015913636294614b4443ff4f"
+    }
+  }
+}

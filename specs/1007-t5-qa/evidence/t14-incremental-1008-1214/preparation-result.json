@@ -1,0 +1,34 @@
+{
+  "status": "T14_INCREMENTAL_RELEASE_PARTITION_AND_GATE_PREPARED",
+  "identity": {
+    "tuple": "T14-native-nested-policy-7c2021ac9f3c",
+    "sourceSha256": "7c2021ac9f3c1465767f868f2c391d3e21a83544902b6882e339ae3187743517",
+    "inputSha256": "7833c614065c0aa6966d751453e7dd445b040db44bb6f5a495851678c73b6976"
+  },
+  "recensused": 5,
+  "retained": 924,
+  "eligible": 929,
+  "changedRelativeToRelease": 62,
+  "conditions": 58079,
+  "changedLines": 6002,
+  "potentialNewConditionSlots": 1250,
+  "inheritedReleaseFiles": 57,
+  "newReleaseBlobCount": 3,
+  "sourceGraph": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t14-incremental-1008-1214/source-a1/incremental-source-condition-graph.json",
+    "sha256": "0a145e6ee1e923154480ef0d77e61ef80d5aad6e110436dd7e2fad61961bcbd1"
+  },
+  "partition": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/evidence/t14-incremental-1008-1214/release-relative-partition.json",
+    "sha256": "df5c83ec3479b86a4590afc00fbcf2cae54be75737f7c52efabde1c2fad90043"
+  },
+  "manifest": {
+    "path": "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/PROJECT-GATE.T14.json",
+    "sha256": "73f6f59f6aefaa6e50c5b52d09ee272d816e1071c5b9b1fdf8738010e86b0dd2"
+  },
+  "outputSha256": null,
+  "runtimeSha256": null,
+  "publication": null,
+  "observedCoverage": false,
+  "ACED": false
+}

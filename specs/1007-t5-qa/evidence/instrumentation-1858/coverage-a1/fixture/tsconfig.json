@@ -1,0 +1,1 @@
+{"compilerOptions":{"module":"ES2022","target":"ES2022","sourceMap":true,"inlineSources":true,"types":[],"outDir":"dist"},"files":["covered.ts","unexecuted.ts"]}

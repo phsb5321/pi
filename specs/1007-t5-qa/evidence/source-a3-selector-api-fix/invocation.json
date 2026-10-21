@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "node",
+    "--v8-pool-size=1",
+    "--max-old-space-size=192",
+    "--experimental-strip-types",
+    "--import",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/qa-loader.mjs",
+    "--import",
+    "/home/notroot/Documents/Code/pi-upstream-1006-collapse-compose/specs/1007-catalog-materialize/execution-source/packages/coding-agent/src/experimental/source-resolver.ts",
+    "/home/notroot/Documents/Code/pi-upstream-005-shared-isolation/specs/1007-t5-qa/rich-host.mjs"
+  ],
+  "mode": "source",
+  "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/herdr.slice/herdr-jobs.slice/herdr-jobs-small.slice/desktop-job-small-1.service\n",
+  "workerPid": 3,
+  "started": 1791380267.6023326,
+  "threadLimits": {
+    "UV_THREADPOOL_SIZE": 1,
+    "OMP_NUM_THREADS": 1,
+    "v8Pool": 1
+  },
+  "deadlineSeconds": 90
+}

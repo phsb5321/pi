@@ -1,0 +1,11 @@
+Final multi-output controls / actual T6-publication rejection / readiness-final-check submission:
+Tool requested timeout45s, resourceTier=small.
+No payload executed. Actual tool result exit74:
+
+desktop-job-run: small pool unavailable (deadline); nothing executed; wait included in caller timeout
+desktop-job-run: queue-status lane=small-pool waited=30s budget=30s observations=last-admission-probe | desktop-job-small-1.service[not-observed] | desktop-job-small-2.service[not-observed] | desktop-job-small-3.service[not-observed] | desktop-job-small-4.service[not-observed]
+desktop-job-run: long monitor/poll waits belong OUTSIDE the job unit (timer / outside-execution lease / offhost allocation); a sleeping payload holds its slot for its whole lease
+
+A subsequent narrow final control/custody submission (timeout30s, small) was also refused before payload: waited30s/budget30s, all four small units not-observed, exit74. No control/receipt/native check ran in either refused submission. Both requests were ordinary tool admissions; no unit acquisition/inside-payload wait occurred.
+
+No manual acquisition/cap/launcher change or in-payload wait. No final18-control/native/quality/index pass is inferred. Earlier16-control runs remain independently preserved. Source-only T6 producer receipt was directly read with file tools, not executed as a product. No absent command-output/log/result is fabricated.

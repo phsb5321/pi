@@ -1,0 +1,5 @@
+{"type":"ready","sessionId":"pane-two","tty":"/dev/pts/82","pid":6,"columns":110,"rows":31}
+{"type":"ready","sessionId":"pane-one","tty":"/dev/pts/81","pid":6,"columns":90,"rows":26}
+{"type":"resized","sessionId":"pane-one","tty":"/dev/pts/81","pid":6,"columns":73,"rows":35}
+{"type":"closed","sessionId":"pane-one","tty":"/dev/pts/81","pid":6,"columns":73,"rows":35}
+{"type":"ready","sessionId":"pane-one","tty":"/dev/pts/83","pid":6,"columns":80,"rows":24}

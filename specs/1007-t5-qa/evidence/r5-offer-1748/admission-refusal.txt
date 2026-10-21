@@ -1,0 +1,4 @@
+Read-only help/source metadata submission before payload:
+desktop-job-run: small pool unavailable (deadline); nothing executed; wait included in caller timeout
+desktop-job-run: queue-status lane=small-pool waited=20s budget=20s observations=last-admission-probe | desktop-job-small-1.service[not-observed] | desktop-job-small-2.service[not-observed] | desktop-job-small-3.service[not-observed] | desktop-job-small-4.service[not-observed]
+Command exited with code74. No workload/test/compiler/recipient write ran in that submission.
