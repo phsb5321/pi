@@ -1,5 +1,6 @@
 import { type Component, Loader, type TUI, truncateToWidth } from "@earendil-works/pi-tui";
 import type { WorkingIndicatorOptions } from "../../../core/extensions/index.ts";
+import { resolveWorkingIndicatorOptions } from "../status-line/animation-policy.ts";
 import { theme } from "../theme/theme.ts";
 import { CountdownTimer } from "./countdown-timer.ts";
 import { keyText } from "./keybinding-hints.ts";
@@ -17,7 +18,7 @@ export class StatusIndicator extends Loader {
 		message: string,
 		indicator?: WorkingIndicatorOptions,
 	) {
-		super(ui, spinnerColorFn, messageColorFn, message, indicator);
+		super(ui, spinnerColorFn, messageColorFn, message, resolveWorkingIndicatorOptions(indicator));
 		this.kind = kind;
 	}
 

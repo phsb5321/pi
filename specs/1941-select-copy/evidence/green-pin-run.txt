@@ -1,0 +1,41 @@
+TAP version 13
+# Subtest: windowed-selection copy equality
+    # Subtest: copies exactly the highlighted glyphs after the windowing dropped their caches
+    ok 1 - copies exactly the highlighted glyphs after the windowing dropped their caches
+      ---
+      duration_ms: 161.772763
+      type: 'test'
+      ...
+    # Subtest: copies exactly the glyphs painted at highlight time across a long drag into windowed rows
+    ok 2 - copies exactly the glyphs painted at highlight time across a long drag into windowed rows
+      ---
+      duration_ms: 131.525835
+      type: 'test'
+      ...
+    # Subtest: resolves word granularity from real glyphs on a windowed row
+    ok 3 - resolves word granularity from real glyphs on a windowed row
+      ---
+      duration_ms: 136.168616
+      type: 'test'
+      ...
+    # Subtest: honors the fullscreen copy policy: no copy on select when disabled, explicit copy still works
+    ok 4 - honors the fullscreen copy policy: no copy on select when disabled, explicit copy still works
+      ---
+      duration_ms: 90.2475
+      type: 'test'
+      ...
+    1..4
+ok 1 - windowed-selection copy equality
+  ---
+  duration_ms: 522.020428
+  type: 'suite'
+  ...
+1..1
+# tests 4
+# suites 1
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1124.082007

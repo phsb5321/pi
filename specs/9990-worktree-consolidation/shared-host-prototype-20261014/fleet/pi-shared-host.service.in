@@ -1,0 +1,13 @@
+[Unit]
+Description=pi shared-host daemon (EXPERIMENTAL, per-seat)
+Documentation=file://__REPO__/packages/coding-agent/src/experimental/durable/README.md
+
+[Service]
+ExecStart=/run/current-system/sw/bin/node --experimental-strip-types __REPO__/packages/coding-agent/src/experimental/durable/shared-host-daemon.ts --socket %t/pi-shared-host/host.sock --root %h/.pi/agent/shared-host --max-sessions 8
+RuntimeDirectory=pi-shared-host
+RuntimeDirectoryMode=0700
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

@@ -1,6 +1,21 @@
 # Changelog
 
-## [Unreleased]
+## [1.1.0] - 2026-10-07
+
+## [1.0.4] - 2026-10-05
+
+## [1.0.3] - 2026-10-05
+
+## [1.0.2] - 2026-10-04
+
+## [1.0.1] - 2026-10-03
+
+### Added
+
+- `client-attach` headless attach driver (`attachSession`/`attachSessions`,
+  per-attachment service transports, detach semantics) and the real
+  `ThinClient` leg (`createThinClient`/`createSessionInvoke`) for the
+  shared-host canary seam. Default OFF; synthetic-only.
 
 ## [1.0.0] - 2026-10-01
 
