@@ -126,7 +126,7 @@ import { getChangelogPath, getNewEntries, normalizeChangelogLinks, parseChangelo
 import { copyToClipboard, readClipboardFilePaths, readClipboardText } from "../../utils/clipboard.ts";
 import { extensionForImageMimeType, readClipboardImage } from "../../utils/clipboard-image.ts";
 import { parseGitUrl } from "../../utils/git.ts";
-import { ensurePngTranscoder } from "../../utils/image-convert.ts";
+import { armPngTranscoder } from "../../utils/image-convert.ts";
 import { getCwdRelativePath } from "../../utils/paths.ts";
 import { getPiUserAgent } from "../../utils/pi-user-agent.ts";
 import { killTrackedDetachedChildren } from "../../utils/shell.ts";
@@ -478,6 +478,8 @@ export class InteractiveMode {
 	private keybindings: KeybindingsManager;
 	private version: string;
 	private isInitialized = false;
+	private pngTranscoderDisposer: (() => void) | undefined;
+	private pngTranscoderRepaint: (() => void) | undefined;
 	private onInputCallback?: (text: string) => void;
 	private pendingUserInputs: string[] = [];
 	private activeStatusIndicator: StatusIndicator | undefined = undefined;
@@ -881,6 +883,7 @@ export class InteractiveMode {
 	}
 
 	private stopInteractiveTui(fullscreenExitOutput: FullscreenExitOutput): void {
+		this.disposePngTranscoder();
 		if (this.renderer.mode === "fullscreen" && fullscreenExitOutput === "transcript") {
 			while (this.renderer.hasOverlayEntries) this.renderer.hideOverlay();
 			this.switchTuiMode("regular", false, false);
@@ -2043,12 +2046,23 @@ export class InteractiveMode {
 		this.transcriptScrollView?.setScrollbar(this.settingsManager.getFullscreenScrollbar());
 	}
 
-	/** Lets extension images use the PNG transcoder; tool results register it themselves. */
+	/** Extension images load the PNG transcoder on demand; tool results can still request it directly. */
 	private ensurePngTranscoder(): void {
-		ensurePngTranscoder(() => {
+		if (getCapabilities().images !== "kitty") {
+			this.disposePngTranscoder();
+			return;
+		}
+		this.pngTranscoderRepaint ??= () => {
 			this.ui.invalidate();
 			this.ui.requestRender();
-		});
+		};
+		this.pngTranscoderDisposer ??= armPngTranscoder(this.pngTranscoderRepaint);
+	}
+
+	private disposePngTranscoder(): void {
+		this.pngTranscoderDisposer?.();
+		this.pngTranscoderDisposer = undefined;
+		this.pngTranscoderRepaint = undefined;
 	}
 
 	private applyRuntimeSettings(): void {

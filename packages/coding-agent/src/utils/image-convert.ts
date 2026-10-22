@@ -69,6 +69,52 @@ export async function loadPngTranscoder(): Promise<ImageTranscoder | undefined> 
 
 let pngTranscoderLoad: Promise<boolean> | undefined;
 let pngTranscoderRegistered = false;
+let pngTranscoderArmed = false;
+let pngTranscoderUnavailable = false;
+const pngRepaints = new Set<{ active: boolean; ready: () => void }>();
+
+function initializePngTranscoder(): Promise<boolean> {
+	pngTranscoderLoad ??= loadPngTranscoder().then((transcoder) => {
+		if (!transcoder) {
+			pngTranscoderUnavailable = true;
+			for (const repaint of pngRepaints) repaint.active = false;
+			pngRepaints.clear();
+			return false;
+		}
+		setImageTranscoder(transcoder);
+		pngTranscoderRegistered = true;
+		for (const repaint of pngRepaints) {
+			void Promise.resolve().then(() => {
+				if (!repaint.active) return;
+				repaint.active = false;
+				repaint.ready();
+			});
+		}
+		pngRepaints.clear();
+		return true;
+	});
+	return pngTranscoderLoad;
+}
+
+/** Arm cold Kitty conversion without loading Photon; the caller owns the repaint disposer. */
+export function armPngTranscoder(onRegistered: () => void): () => void {
+	if (pngTranscoderRegistered || pngTranscoderUnavailable || getCapabilities().images !== "kitty") {
+		return () => undefined;
+	}
+	if (!pngTranscoderArmed && !pngTranscoderLoad) {
+		setImageTranscoder(() => {
+			void initializePngTranscoder();
+			return null;
+		});
+		pngTranscoderArmed = true;
+	}
+	const repaint = { active: true, ready: onRegistered };
+	pngRepaints.add(repaint);
+	return () => {
+		repaint.active = false;
+		pngRepaints.delete(repaint);
+	};
+}
 
 /**
  * On Kitty-protocol terminals, register photon as pi-tui's image transcoder so non-PNG images render.
@@ -77,13 +123,7 @@ let pngTranscoderRegistered = false;
  */
 export function ensurePngTranscoder(onRegistered: () => void): void {
 	if (pngTranscoderRegistered || getCapabilities().images !== "kitty") return;
-	pngTranscoderLoad ??= loadPngTranscoder().then((transcoder) => {
-		if (!transcoder) return false;
-		setImageTranscoder(transcoder);
-		pngTranscoderRegistered = true;
-		return true;
-	});
-	void pngTranscoderLoad.then((registered) => {
+	void initializePngTranscoder().then((registered) => {
 		if (registered) onRegistered();
 	});
 }
