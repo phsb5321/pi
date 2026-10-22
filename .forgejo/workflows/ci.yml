@@ -1,0 +1,114 @@
+# FORGEJO IS THE CI-OF-RECORD for phsb5321/pi.
+# Why this exists: GitHub Actions dispatch is billing-blocked for this account
+# (every run a startup_failure before a runner is assigned). Forgejo runs the
+# same gates on the fleet's self-hosted runner (gitea-runner-server on
+# Nix.Server) and the status bridge posts each verdict back to GitHub as a
+# commit status, so GitHub checks reflect truth without billing.
+# Pattern provenance: pedro/web-automation (first end-to-end, 20/09/2026),
+# pedro/gpu-media-toolkit (status bridge, 12/10/2026), pedro/COC_BOT (8 gates,
+# 11/10/2026). Ported from .github/workflows/ci.yml (dormant reference).
+# Deltas vs the GitHub copy: docker lane via runner label ubuntu-latest, no
+# setup-node npm cache (runner cache backend off), bridge step appended,
+# push trigger widened to all branches so PR head branches can fire gates
+# without a Forgejo PR.
+name: ci
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  build-check-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev fd-find ripgrep
+          sudo ln -s $(which fdfind) /usr/local/bin/fd
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build
+        run: npm run build
+
+      - name: Check
+        run: npm run check
+
+      - name: Build the pi-env daemon
+        run: npm run build:daemon --workspace packages/env
+
+      - name: Test
+        run: npm test
+
+      - name: "Status bridge → GitHub (context: build-check-test)"
+        if: always()
+        continue-on-error: true # bridge failure ≠ gate failure; a stuck PENDING status on GitHub is the real signal
+        env:
+          GH_STATUS_TOKEN: ${{ secrets.GH_STATUS_TOKEN }}
+          GH_REPO: phsb5321/pi
+          GH_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          STATUS_CONTEXT: build-check-test
+          STATUS_STATE: ${{ job.status }}
+          STATUS_DESC: forgejo ci (${{ github.sha }})
+          STATUS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash scripts/forgejo-gh-status.sh
+
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Regenerate model catalog
+        run: |
+          npm ci --ignore-scripts
+          node packages/ai/scripts/generate-models.ts
+
+      - name: Verify catalog is clean
+        run: git diff --exit-code -- packages/ai/src/models.generated.ts
+
+      - name: "Status bridge → GitHub (context: generate)"
+        if: always()
+        continue-on-error: true
+        env:
+          GH_STATUS_TOKEN: ${{ secrets.GH_STATUS_TOKEN }}
+          GH_REPO: phsb5321/pi
+          GH_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          STATUS_CONTEXT: generate
+          STATUS_STATE: ${{ job.status }}
+          STATUS_DESC: forgejo model-catalog (${{ github.sha }})
+          STATUS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash scripts/forgejo-gh-status.sh
