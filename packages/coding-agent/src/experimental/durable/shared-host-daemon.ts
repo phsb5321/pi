@@ -57,6 +57,7 @@ import { getAgentDir } from "../../config.ts";
 import { ModelRuntime } from "../../core/model-runtime.ts";
 import { createExperimentalServerServices } from "../services/server.ts";
 import type { SessionSummary } from "../services/sessions.ts";
+import { configureDurableExtensionPaths } from "./durable-extensions.ts";
 import {
 	createSharedHostResidency,
 	type SharedHostResidency,
@@ -252,6 +253,9 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 	let root = defaultSharedHostRoot();
 	let maxSessions = 8;
 	let faux = false;
+	// Fleet extension parity: repeatable --extension paths are forwarded to the
+	// durable extension host (agentDir/extensions is discovered regardless).
+	const extensionPaths: string[] = [];
 	// TEST-ONLY: seed the faux queue with one real read-tool round-trip against
 	// this file (engine executes the read tool; the echo step reports it).
 	let scriptedRead: string | undefined;
@@ -261,9 +265,12 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 		else if (flag === "--root") root = argv[++index] ?? root;
 		else if (flag === "--max-sessions") maxSessions = Number(argv[++index] ?? maxSessions);
 		else if (flag === "--faux") faux = true;
+		else if (flag === "--extension") extensionPaths.push(argv[++index] ?? "");
 		else if (flag === "--scripted-read") scriptedRead = argv[++index];
 		else throw new Error(`Unknown shared-host-daemon flag: ${flag}`);
 	}
+	if (extensionPaths.some((path) => path.length === 0)) throw new Error("--extension requires a path");
+	if (extensionPaths.length > 0) configureDurableExtensionPaths(extensionPaths);
 	if (!Number.isInteger(maxSessions) || maxSessions < 1) throw new Error("--max-sessions must be a positive integer");
 	if (scriptedRead !== undefined && !faux) throw new Error("--scripted-read requires --faux (test-only wiring)");
 	const scriptedSteps = scriptedRead
