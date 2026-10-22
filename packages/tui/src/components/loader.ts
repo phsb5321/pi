@@ -1,3 +1,4 @@
+import { getStatusLinePolicy } from "../status-line.ts";
 import type { TUI } from "../tui.ts";
 import { Text } from "./text.ts";
 
@@ -11,14 +12,13 @@ export interface LoaderIndicatorOptions {
 }
 
 const DEFAULT_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-const DEFAULT_INTERVAL_MS = 80;
 
 /**
  * Loader component that updates with an optional spinning animation.
  */
 export class Loader extends Text {
 	private frames = [...DEFAULT_FRAMES];
-	private intervalMs = DEFAULT_INTERVAL_MS;
+	private intervalMs = getStatusLinePolicy().spinnerTickMs;
 	private currentFrame = 0;
 	private intervalId: NodeJS.Timeout | null = null;
 	private ui: TUI | null = null;
@@ -71,7 +71,8 @@ export class Loader extends Text {
 	setIndicator(indicator?: LoaderIndicatorOptions): void {
 		this.renderIndicatorVerbatim = indicator?.renderVerbatim ?? indicator !== undefined;
 		this.frames = indicator?.frames !== undefined ? [...indicator.frames] : [...DEFAULT_FRAMES];
-		this.intervalMs = indicator?.intervalMs && indicator.intervalMs > 0 ? indicator.intervalMs : DEFAULT_INTERVAL_MS;
+		this.intervalMs =
+			indicator?.intervalMs && indicator.intervalMs > 0 ? indicator.intervalMs : getStatusLinePolicy().spinnerTickMs;
 		this.currentFrame = 0;
 		this.start();
 	}
