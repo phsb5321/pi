@@ -29,6 +29,11 @@ export class Text extends MemoizedRender implements Component {
 		this.dropRenderCache();
 	}
 
+	setPaddingX(paddingX: number): void {
+		this.paddingX = paddingX;
+		this.invalidate();
+	}
+
 	invalidate(): void {
 		this.dropRenderCache();
 	}

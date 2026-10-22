@@ -72,6 +72,36 @@ function isPrintableAscii(str: string): boolean {
 	return true;
 }
 
+type TextWalkEvent = { kind: "ansi"; code: string } | { kind: "tab" } | { kind: "run"; text: string };
+
+/**
+ * Walk `text` as ANSI / tab / visible-run events in one pass. Shared by the
+ * truncate walks (and any future consumer) so the ANSI/tab/segment-dispatch
+ * skeleton exists once. `visit` returning `false` stops the walk early.
+ */
+function walkText(text: string, visit: (event: TextWalkEvent) => boolean | undefined): void {
+	let i = 0;
+	while (i < text.length) {
+		const ansi = extractAnsiCode(text, i);
+		if (ansi) {
+			if (visit({ kind: "ansi", code: ansi.code }) === false) return;
+			i += ansi.length;
+			continue;
+		}
+		if (text[i] === "\t") {
+			if (visit({ kind: "tab" }) === false) return;
+			i++;
+			continue;
+		}
+		let end = i;
+		while (end < text.length && text[end] !== "\t" && !extractAnsiCode(text, end)) {
+			end++;
+		}
+		if (visit({ kind: "run", text: text.slice(i, end) }) === false) return;
+		i = end;
+	}
+}
+
 function truncateFragmentToWidth(text: string, maxWidth: number): { text: string; width: number } {
 	if (maxWidth <= 0 || text.length === 0) {
 		return { text: "", width: 0 };
@@ -100,45 +130,26 @@ function truncateFragmentToWidth(text: string, maxWidth: number): { text: string
 
 	let result = "";
 	let width = 0;
-	let i = 0;
 	let pendingAnsi = "";
 
-	while (i < text.length) {
-		const ansi = extractAnsiCode(text, i);
-		if (ansi) {
-			pendingAnsi += ansi.code;
-			i += ansi.length;
-			continue;
+	walkText(text, (event) => {
+		if (event.kind === "ansi") {
+			pendingAnsi += event.code;
+			return;
 		}
-
-		if (text[i] === "\t") {
-			if (width + 3 > maxWidth) {
-				break;
-			}
+		if (event.kind === "tab") {
+			if (width + 3 > maxWidth) return false;
 			if (pendingAnsi) {
 				result += pendingAnsi;
 				pendingAnsi = "";
 			}
 			result += "\t";
 			width += 3;
-			i++;
-			continue;
+			return;
 		}
-
-		let end = i;
-		while (end < text.length && text[end] !== "\t") {
-			const nextAnsi = extractAnsiCode(text, end);
-			if (nextAnsi) {
-				break;
-			}
-			end++;
-		}
-
-		for (const { segment } of graphemeSegmenter.segment(text.slice(i, end))) {
+		for (const { segment } of graphemeSegmenter.segment(event.text)) {
 			const w = graphemeWidth(segment);
-			if (width + w > maxWidth) {
-				return { text: result, width };
-			}
+			if (width + w > maxWidth) return false;
 			if (pendingAnsi) {
 				result += pendingAnsi;
 				pendingAnsi = "";
@@ -146,8 +157,7 @@ function truncateFragmentToWidth(text: string, maxWidth: number): { text: string
 			result += segment;
 			width += w;
 		}
-		i = end;
-	}
+	});
 
 	return { text: result, width };
 }
@@ -265,31 +275,9 @@ export function visibleWidth(str: string): number {
 		return cached;
 	}
 
-	// Normalize: tabs to 3 spaces, strip ANSI escape codes
-	let clean = str;
-	if (str.includes("\t")) {
-		clean = clean.replace(/\t/g, "   ");
-	}
-	let escapeIndex = clean.indexOf("\x1b");
-	if (escapeIndex !== -1) {
-		// Strip supported ANSI/OSC/APC escape sequences in one pass.
-		// This covers CSI styling/cursor codes, OSC hyperlinks and prompt markers,
-		// and APC sequences like CURSOR_MARKER.
-		let stripped = "";
-		let copyFrom = 0;
-		while (escapeIndex !== -1) {
-			const length = ansiCodeLength(clean, escapeIndex);
-			if (length > 0) {
-				stripped += clean.slice(copyFrom, escapeIndex);
-				escapeIndex += length;
-				copyFrom = escapeIndex;
-			} else {
-				escapeIndex++;
-			}
-			escapeIndex = clean.indexOf("\x1b", escapeIndex);
-		}
-		clean = stripped + clean.slice(copyFrom);
-	}
+	// Normalize: tabs to 3 spaces, then strip ANSI/OSC/APC sequences via the
+	// single shared implementation (same walk, same unknown-ESC preservation).
+	const clean = stripTerminalSequences(str.includes("\t") ? str.replace(/\t/g, "   ") : str);
 
 	// Calculate width
 	let width = 0;
@@ -312,18 +300,22 @@ export function visibleWidth(str: string): number {
 /** Remove ANSI, OSC, and APC control sequences while preserving visible text. */
 export function stripTerminalSequences(str: string): string {
 	if (!str.includes("\x1b")) return str;
-	let result = "";
-	let i = 0;
-	while (i < str.length) {
-		const ansi = extractAnsiCode(str, i);
-		if (ansi) {
-			i += ansi.length;
-			continue;
+	let stripped = "";
+	let copyFrom = 0;
+	let i = str.indexOf("\x1b");
+	while (i !== -1) {
+		const length = ansiCodeLength(str, i);
+		if (length > 0) {
+			stripped += str.slice(copyFrom, i);
+			i += length;
+			copyFrom = i;
+		} else {
+			// Unknown escape: keep the byte as visible text and rescan after it.
+			i++;
 		}
-		result += str[i];
-		i++;
+		i = str.indexOf("\x1b", i);
 	}
-	return result;
+	return stripped + str.slice(copyFrom);
 }
 
 interface GraphemeCellRange {
@@ -1182,16 +1174,12 @@ export function truncateToWidth(
 		}
 		exhaustedInput = !overflowed;
 	} else {
-		let i = 0;
-		while (i < text.length) {
-			const ansi = extractAnsiCode(text, i);
-			if (ansi) {
-				pendingAnsi += ansi.code;
-				i += ansi.length;
-				continue;
+		walkText(text, (event) => {
+			if (event.kind === "ansi") {
+				pendingAnsi += event.code;
+				return;
 			}
-
-			if (text[i] === "\t") {
+			if (event.kind === "tab") {
 				if (keepContiguousPrefix && keptWidth + 3 <= targetWidth) {
 					if (pendingAnsi) {
 						result += pendingAnsi;
@@ -1206,22 +1194,11 @@ export function truncateToWidth(
 				visibleSoFar += 3;
 				if (visibleSoFar > maxWidth) {
 					overflowed = true;
-					break;
+					return false;
 				}
-				i++;
-				continue;
+				return;
 			}
-
-			let end = i;
-			while (end < text.length && text[end] !== "\t") {
-				const nextAnsi = extractAnsiCode(text, end);
-				if (nextAnsi) {
-					break;
-				}
-				end++;
-			}
-
-			for (const { segment } of graphemeSegmenter.segment(text.slice(i, end))) {
+			for (const { segment } of graphemeSegmenter.segment(event.text)) {
 				const width = graphemeWidth(segment);
 				if (keepContiguousPrefix && keptWidth + width <= targetWidth) {
 					if (pendingAnsi) {
@@ -1238,15 +1215,11 @@ export function truncateToWidth(
 				visibleSoFar += width;
 				if (visibleSoFar > maxWidth) {
 					overflowed = true;
-					break;
+					return false;
 				}
 			}
-			if (overflowed) {
-				break;
-			}
-			i = end;
-		}
-		exhaustedInput = i >= text.length;
+		});
+		exhaustedInput = !overflowed;
 	}
 
 	if (!overflowed && exhaustedInput) {
