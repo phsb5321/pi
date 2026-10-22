@@ -1,4 +1,4 @@
-import { type Component, Loader, type TUI, truncateToWidth } from "@earendil-works/pi-tui";
+import { type Component, Loader, type LoaderIndicatorOptions, type TUI, truncateToWidth } from "@earendil-works/pi-tui";
 import type { WorkingIndicatorOptions } from "../../../core/extensions/index.ts";
 import { resolveWorkingIndicatorOptions } from "../status-line/animation-policy.ts";
 import { theme } from "../theme/theme.ts";
@@ -20,6 +20,10 @@ export class StatusIndicator extends Loader {
 	) {
 		super(ui, spinnerColorFn, messageColorFn, message, resolveWorkingIndicatorOptions(indicator));
 		this.kind = kind;
+	}
+
+	override setIndicator(indicator?: LoaderIndicatorOptions): void {
+		super.setIndicator(indicator === undefined ? resolveWorkingIndicatorOptions() : indicator);
 	}
 
 	renderInBorder(width: number): string {

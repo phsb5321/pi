@@ -36,6 +36,7 @@ export class ToolExecutionComponent extends Container {
 	private selfRenderHeight = 0;
 	private callRendererComponent?: Component;
 	private resultRendererComponent?: Component;
+	private renderCachesEvicted = false;
 	private rendererState: any = {};
 	private imageComponents: Image[] = [];
 	/** Inputs of imageComponents, so updateDisplay can reuse images and keep their converted PNG data. */
@@ -145,6 +146,14 @@ export class ToolExecutionComponent extends Container {
 	evictRenderCaches(): void {
 		this.callRendererComponent = undefined;
 		this.resultRendererComponent = undefined;
+		// Reuse fields are not the only owners: render containers still hold the components.
+		// Keep the fallback Text attached, but release its regenerable formatted content.
+		this.contentText.setText("");
+		if (this.hasRendererDefinition()) {
+			this.contentBox.clear();
+			this.selfRenderContainer.clear();
+		}
+		this.renderCachesEvicted = true;
 		// imageSources must stay in lockstep with imageComponents (both are dropped together):
 		// updateDisplay reuses previousImages[index] when previousSources[index] matches, so
 		// clearing only the components would reuse a dropped Image as undefined.
@@ -250,6 +259,9 @@ export class ToolExecutionComponent extends Container {
 	}
 
 	override render(width: number): string[] {
+		if (this.renderCachesEvicted) {
+			this.updateDisplay();
+		}
 		if (this.hideComponent) {
 			return [];
 		}
@@ -293,6 +305,7 @@ export class ToolExecutionComponent extends Container {
 	}
 
 	private updateDisplay(): void {
+		this.renderCachesEvicted = false;
 		const bgFn = this.isPartial
 			? (text: string) => theme.bg("toolPendingBg", text)
 			: this.result?.isError
