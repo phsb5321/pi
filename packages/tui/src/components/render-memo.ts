@@ -25,6 +25,13 @@ export class RenderMemo {
 		this.lines = undefined;
 	}
 
+	/** Leave cold measurement stubs intact until this component actually enters the paint window. */
+	prepareForPaint(): boolean {
+		if (this.lines !== undefined || this.text === undefined) return false;
+		this.text = undefined;
+		return true;
+	}
+
 	clear(): void {
 		this.text = undefined;
 		this.width = undefined;
@@ -40,5 +47,10 @@ export abstract class MemoizedRender {
 	/** Free the rendered lines, keeping height/blankness; render() stubs until the next real render. */
 	dropRenderedLines(): void {
 		this.renderMemo.drop();
+	}
+
+	/** Force one source render only when a dropped memo is needed for visible paint. */
+	prepareRenderedLinesForPaint(): boolean {
+		return this.renderMemo.prepareForPaint();
 	}
 }
