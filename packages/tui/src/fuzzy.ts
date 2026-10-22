@@ -9,10 +9,7 @@ export interface FuzzyMatch {
 	score: number;
 }
 
-export function fuzzyMatch(query: string, text: string): FuzzyMatch {
-	const queryLower = query.toLowerCase();
-	const textLower = text.toLowerCase();
-
+function fuzzyMatchLowered(queryLower: string, textLower: string): FuzzyMatch {
 	const matchQuery = (normalizedQuery: string): FuzzyMatch => {
 		if (normalizedQuery.length === 0) {
 			return { matches: true, score: 0 };
@@ -93,6 +90,11 @@ export function fuzzyMatch(query: string, text: string): FuzzyMatch {
 	return { matches: true, score: swappedMatch.score + 5 };
 }
 
+/** Case-insensitive fuzzy match; folds case once per call. */
+export function fuzzyMatch(query: string, text: string): FuzzyMatch {
+	return fuzzyMatchLowered(query.toLowerCase(), text.toLowerCase());
+}
+
 /**
  * Filter and sort items by fuzzy match quality (best matches first).
  * Supports whitespace- and slash-separated tokens: all tokens must match.
@@ -105,7 +107,8 @@ export function fuzzyFilter<T>(items: T[], query: string, getText: (item: T) => 
 	const tokens = query
 		.trim()
 		.split(/[\s/]+/)
-		.filter((t) => t.length > 0);
+		.filter((t) => t.length > 0)
+		.map((t) => t.toLowerCase());
 
 	if (tokens.length === 0) {
 		return items;
@@ -114,12 +117,12 @@ export function fuzzyFilter<T>(items: T[], query: string, getText: (item: T) => 
 	const results: { item: T; totalScore: number }[] = [];
 
 	for (const item of items) {
-		const text = getText(item);
+		const textLower = getText(item).toLowerCase();
 		let totalScore = 0;
 		let allMatch = true;
 
 		for (const token of tokens) {
-			const match = fuzzyMatch(token, text);
+			const match = fuzzyMatchLowered(token, textLower);
 			if (match.matches) {
 				totalScore += match.score;
 			} else {

@@ -37,6 +37,10 @@
 - Fixed non-PNG images rendering as nothing on Kitty-protocol terminals: without a registered transcoder, or when conversion fails, `Image` now shows its text fallback ([#10292](https://github.com/earendil-works/pi/issues/10292))
 - Fixed fullscreen Kitty images collapsing to a one-row strip after scrolling in WezTerm ([#10319](https://github.com/earendil-works/pi/issues/10319)).
 
+### Fixed
+
+- Fold autocomplete item text once per filter operation to reduce allocations while preserving fuzzy-match scores and ordering.
+
 ## [1.0.0] - 2026-10-01
 
 ### Added
