@@ -509,3 +509,18 @@ GO/NO-GO), then implementation per the same binding rules 1–3.
   identical, conformance green — claim uncertainty, not code risk).
   Re-aggregation run assigned p3 after its A/W6 tables; cross-day
   methodology = paired same-session arms, drift cancels in-delta.
+
+## TARGET RE-SCOPE (ROOT-SHARED-NODE-1120, 04/10 11:19 — supersedes 43→≤4)
+
+**Primary Pi objective: shared Node instances with orders-of-magnitude
+lower total fleet RAM. Aim = 100x; the ≤4 GiB / 10x bar is LABELLED
+INTERMEDIATE ONLY. No unmeasured savings ever claimed.** Target shape:
+shared host + thin/lazy presentations + on-demand durable context — NOT
+process-per-seat tuning as the final solution. Measured-evidence rule
+unchanged (PSS+SwapPss whole tree, idle + active peak + marginal slope;
+count EVERY daemon/client/worker). STOP/reconnect/stream/tool/session
+isolation gates preserved. Accepted source publishes normally (PR flow);
+a REVERSIBLE live canary is staged (default OFF). Offhost W3 run
+preserved; heavy jobs serialized; no desktop waves, no paid resources.
+Portfolio coordination: portfolio-pi (home:w2N:p2) prioritizes; portfolio-
+loops (home:w2N:p5) owns loop orchestration.
