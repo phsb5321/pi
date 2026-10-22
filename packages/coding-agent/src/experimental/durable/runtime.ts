@@ -17,6 +17,7 @@ import {
 import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
 import { ModelRuntime } from "../../core/model-runtime.ts";
 import { SettingsManager } from "../../core/settings-manager.ts";
+import { createDurableExtensionScope, type DurableExtensionScope } from "./durable-extensions.ts";
 import {
 	configureHarnessHttp,
 	createCodingRegistry,
@@ -237,6 +238,7 @@ export async function openDurable(options: OpenDurableOptions = {}): Promise<Ope
 		};
 		const watchAnswer = (submission: Submission): void => {
 			void submission.wait(context).then((settled) => {
+				void extensionScope?.agentSettled(settled.reason === "aborted");
 				if (settled.status === "unanswered" && settled.reason !== "aborted") {
 					notice(
 						"error",
@@ -252,9 +254,19 @@ export async function openDurable(options: OpenDurableOptions = {}): Promise<Ope
 				throw new Error(ref === undefined ? "No model selected" : "Current model is unavailable");
 			return model;
 		};
+		let extensionScope: DurableExtensionScope | undefined;
+		const applyModel = async (ref: ModelRef): Promise<void> => {
+			const model = modelRuntime.getModel(ref.provider, ref.modelId);
+			if (model === undefined) throw new Error(`Unknown model: ${ref.provider}/${ref.modelId}`);
+			const thinking: ModelThinkingLevel = agentOf(state.conversation).thinkingLevel ?? "off";
+			await current.configure({ model: ref, thinkingLevel: clampThinkingLevel(model, thinking) }, context);
+		};
 		const controller: DurableController = {
 			submit: (text, whenBusy) =>
-				command(async () => watchAnswer(await current.submit({ type: "input", content: text, whenBusy }, context))),
+				command(async () => {
+					await extensionScope?.agentStarted();
+					watchAnswer(await current.submit({ type: "input", content: text, whenBusy }, context));
+				}),
 			compact: (instructions) =>
 				command(async () => {
 					const id = await current.compact(instructions, context);
@@ -298,8 +310,13 @@ export async function openDurable(options: OpenDurableOptions = {}): Promise<Ope
 				command(async () => {
 					const model = modelRuntime.getModel(ref.provider, ref.modelId);
 					if (model === undefined) throw new Error(`Unknown model: ${ref.provider}/${ref.modelId}`);
-					const thinking: ModelThinkingLevel = agentOf(state.conversation).thinkingLevel ?? "off";
-					await current.configure({ model: ref, thinkingLevel: clampThinkingLevel(model, thinking) }, context);
+					const previousRef = agentOf(state.conversation).model;
+					const previousModel =
+						previousRef === undefined
+							? undefined
+							: modelRuntime.getModel(previousRef.provider, previousRef.modelId);
+					await applyModel(ref);
+					await extensionScope?.modelSelected(model, previousModel, "set");
 				}),
 			toggleTasks: () =>
 				command(async () => {
@@ -331,6 +348,29 @@ export async function openDurable(options: OpenDurableOptions = {}): Promise<Ope
 			notice("warning", `Saved model is unavailable: ${saved.provider}/${saved.modelId}`);
 		}
 		if (initial?.fallbackMessage !== undefined) notice("info", initial.fallbackMessage);
+		// Fleet extension parity (gate 2): load the seat's extensions once per
+		// process and forward the hooks the durable runtime can honor. A load
+		// failure is a warning, never a failed session open.
+		extensionScope = await createDurableExtensionScope({
+			notice,
+			applyModel: (model) => applyModel({ provider: model.provider, modelId: model.id }),
+			currentModel: () => {
+				const ref = agentOf(state.conversation).model;
+				return ref === undefined ? undefined : modelRuntime.getModel(ref.provider, ref.modelId);
+			},
+			currentThinkingLevel: () => {
+				const level = agentOf(state.conversation).thinkingLevel;
+				return level === undefined || level === "off" ? undefined : level;
+			},
+			conversationMessages: () => (state.conversation.entries ?? []).flatMap((entry) => entry.model ?? []),
+			isIdle: () => true,
+			sessionId: () => location.id,
+			sessionFile: () => location.directory,
+			cwd: location.cwd,
+			modelRegistry: modelRuntime,
+			settings: () => settings,
+		});
+		await extensionScope?.sessionStarted(location.created ? "new" : "resume");
 		// The task panel starts open; /tasks hides it.
 		await controller.toggleTasks();
 		// Recovered work from an interrupted turn continues now.
