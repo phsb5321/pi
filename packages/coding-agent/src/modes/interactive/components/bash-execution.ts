@@ -27,6 +27,8 @@ export class BashExecutionComponent extends Container {
 	/** `dim` marks `!!` commands, whose output is excluded from the model context. */
 	private readonly colorKey: "dim" | "bashMode";
 	private outputPad: number;
+	/** Collapsed preview visual lines for one width; regenerable from outputLines, dropped when settled. */
+	private previewCache?: { width: number; lines: string[] };
 
 	constructor(command: string, ui: TUI, excludeFromContext = false, outputPad = 1) {
 		super();
@@ -118,8 +120,9 @@ export class BashExecutionComponent extends Container {
 		const previewLogicalLines = availableLines.slice(-PREVIEW_LINES);
 		const hiddenLineCount = availableLines.length - previewLogicalLines.length;
 
-		// Rebuild content container
+		// Rebuild content container (the preview depends on outputPad and expanded state, so it is rebuilt too)
 		this.contentContainer.clear();
+		this.previewCache = undefined;
 
 		// Command header
 		const header = new Text(theme.fg(this.colorKey, theme.bold(`$ ${this.command}`)), this.outputPad, 0);
@@ -135,20 +138,16 @@ export class BashExecutionComponent extends Container {
 				// Use shared visual truncation utility with width-aware caching
 				const styledOutput = previewLogicalLines.map((line) => theme.fg("muted", line)).join("\n");
 				const styledInput = `\n${styledOutput}`;
-				let cachedWidth: number | undefined;
-				let cachedLines: string[] | undefined;
 				this.contentContainer.addChild({
 					render: (width: number) => {
-						if (cachedLines === undefined || cachedWidth !== width) {
+						if (this.previewCache === undefined || this.previewCache.width !== width) {
 							const result = truncateToVisualLines(styledInput, PREVIEW_LINES, width, this.outputPad);
-							cachedLines = result.visualLines;
-							cachedWidth = width;
+							this.previewCache = { width, lines: result.visualLines };
 						}
-						return cachedLines ?? [];
+						return this.previewCache.lines;
 					},
 					invalidate: () => {
-						cachedWidth = undefined;
-						cachedLines = undefined;
+						this.previewCache = undefined;
 					},
 				});
 			}
@@ -189,6 +188,14 @@ export class BashExecutionComponent extends Container {
 				this.contentContainer.addChild(new Text(`\n${statusParts.join("\n")}`, this.outputPad, 0));
 			}
 		}
+	}
+
+	/**
+	 * Settled-point eviction: drop the collapsed preview lines. The next render rebuilds them
+	 * identically from outputLines.
+	 */
+	evictRenderCaches(): void {
+		this.previewCache = undefined;
 	}
 
 	/**

@@ -2390,7 +2390,9 @@ export class InteractiveMode {
 
 	private evictRenderCaches(): void {
 		const visit = (component: Component): void => {
-			if (component instanceof ToolExecutionComponent) component.evictRenderCaches();
+			if (component instanceof ToolExecutionComponent || component instanceof BashExecutionComponent) {
+				component.evictRenderCaches();
+			}
 			if (component instanceof Container) {
 				for (const child of component.children) visit(child);
 			}
