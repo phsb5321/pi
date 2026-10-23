@@ -73,8 +73,8 @@ describe("Together models", () => {
 		});
 
 		const minimax = getModel("together", "MiniMaxAI/MiniMax-M3");
-		expect(minimax.thinkingLevelMap).toEqual({ off: null, minimal: null, low: null, medium: null });
-		expect(minimax.compat?.thinkingFormat).toBeUndefined();
+		expect(minimax.thinkingLevelMap).toEqual({ minimal: null, low: null, medium: null });
+		expect(minimax.compat?.thinkingFormat).toBe("together");
 		expect(minimax.compat?.supportsReasoningEffort).toBe(false);
 	});
 
