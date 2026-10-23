@@ -61,6 +61,8 @@ export class ToolExecutionComponent extends Container {
 		durationMs?: number;
 	};
 	private hideComponent = false;
+	/** Set by evictRenderCaches: the renderer subtree was dropped and must be rebuilt before the next paint. */
+	private renderPending = false;
 
 	constructor(
 		toolName: string,
@@ -150,6 +152,11 @@ export class ToolExecutionComponent extends Container {
 		// clearing only the components would reuse a dropped Image as undefined.
 		this.imageSources = [];
 		this.clearImageChildren();
+		// The renderer subtrees hold the rendered lines and source text; dropping only the
+		// references above left them reachable from the child tree. Rebuild on the next paint.
+		this.contentBox.clear();
+		this.selfRenderContainer.clear();
+		this.renderPending = true;
 	}
 
 	private clearImageChildren(): void {
@@ -250,6 +257,10 @@ export class ToolExecutionComponent extends Container {
 	}
 
 	override render(width: number): string[] {
+		if (this.renderPending) {
+			this.renderPending = false;
+			this.updateDisplay();
+		}
 		if (this.hideComponent) {
 			return [];
 		}

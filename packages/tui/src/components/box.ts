@@ -57,6 +57,9 @@ export class Box implements Component {
 
 	private invalidateCache(): void {
 		this.cache = undefined;
+		// The mouse layout pins the child components of the last render; drop it with the cache so
+		// a removed or cleared child is not kept alive or hit-tested through a stale layout.
+		this.mouseLayout = undefined;
 	}
 
 	private matchCache(width: number, childLines: string[], bgSample: string | undefined): boolean {
