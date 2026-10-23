@@ -70,6 +70,17 @@ jobs:
         run: |
           { echo "::: Check"; npm run check; } 2>&1 | tee -a "$CI_LOG"
 
+      - name: Install Rust (rustup)
+        # GitHub's hosted runners ship rustup; the Forgejo act image does not
+        # (build:daemon failed with "cargo: not found"). Install bare rustup and
+        # let packages/env/daemon/rust-toolchain.toml pick the pinned toolchain.
+        run: |
+          {
+            echo "::: Install Rust (rustup)"
+            command -v cargo || curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
+            echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          } 2>&1 | tee -a "$CI_LOG"
+
       - name: Build the pi-env daemon
         run: |
           { echo "::: Build the pi-env daemon"; npm run build:daemon --workspace packages/env; } 2>&1 | tee -a "$CI_LOG"
