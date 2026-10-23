@@ -94,10 +94,12 @@ describe("getSupportedThinkingLevels", () => {
 		expect(getSupportedThinkingLevels(model!)).toEqual(["off", "high", "max"]);
 	});
 
-	it("supports only max thinking for OpenCode Go Kimi K3", () => {
+	it("uses the pinned catalog level set for OpenCode Go Kimi K3", () => {
+		// Pinned snapshot (23/10/2026) declares no thinkingLevelMap for opencode-go/kimi-k3,
+		// so the generator default applies. The earlier max-only map came from an older feed.
 		const model = getModel("opencode-go", "kimi-k3");
 		expect(model).toBeDefined();
-		expect(getSupportedThinkingLevels(model!)).toEqual(["max"]);
+		expect(getSupportedThinkingLevels(model!)).toEqual(["off", "minimal", "low", "medium", "high"]);
 	});
 
 	it("excludes thinking off for Moonshot Kimi K2.7 Code models", () => {
