@@ -27,7 +27,7 @@ describe("credential print commands", () => {
 	test("prints bearer tokens resolved from an Authorization header", async () => {
 		const runtime = await createRuntime(
 			AuthStorage.inMemory({
-				"kimi-coding": {
+				"github-copilot": {
 					type: "oauth",
 					access: "header-test-token",
 					refresh: "test-refresh-token",
@@ -35,7 +35,7 @@ describe("credential print commands", () => {
 				},
 			}),
 		);
-		const args = parseArgs(["--provider", "kimi-coding"]);
+		const args = parseArgs(["--provider", "github-copilot"]);
 
 		await expect(resolveCredentialForPrint(args, runtime, "bearer_token")).resolves.toBe("header-test-token");
 	});
