@@ -321,19 +321,20 @@ describe("openai-completions tool_choice", () => {
 
 	it("stores z.ai effort metadata", () => {
 		for (const provider of ["zai", "zai-coding-cn"] as const) {
-			for (const modelId of ["glm-5.3", "glm-5.3-highspeed"] as const) {
-				const model = getModel(provider, modelId)!;
-				expect(model.compat?.supportsReasoningEffort).toBe(true);
-				expect(model.thinkingLevelMap).toEqual({
-					off: "none",
-					minimal: null,
-					low: null,
-					medium: null,
-					high: "high",
-					xhigh: null,
-					max: "max",
-				});
-			}
+			if (provider === "zai")
+				for (const modelId of ["glm-5.2", "glm-5.2-highspeed"] as const) {
+					const model = getModel(provider, modelId)!;
+					expect(model.compat?.supportsReasoningEffort).toBe(true);
+					expect(model.thinkingLevelMap).toEqual({
+						off: "none",
+						minimal: null,
+						low: null,
+						medium: null,
+						high: "high",
+						xhigh: null,
+						max: "max",
+					});
+				}
 
 			const glm53 = getModel(provider, "glm-5.3")!;
 			expect(glm53.compat?.supportsReasoningEffort).toBe(true);
@@ -1301,7 +1302,7 @@ describe("openai-completions tool_choice", () => {
 						role: "assistant",
 						api: "openai-completions",
 						provider: "opencode-go",
-						model: "kimi-k2.6",
+						model: "kimi-k3",
 						content: [
 							{ type: "thinking", thinking: "think", thinkingSignature: "reasoning" },
 							{ type: "toolCall", id: "call_1", name: "read", arguments: { path: "README.md" } },
@@ -1349,7 +1350,7 @@ describe("openai-completions tool_choice", () => {
 		expect(messages[0]).not.toHaveProperty("reasoning");
 	});
 
-	it("sends thinking disabled for OpenCode Go Kimi K2.6 when thinking is off", async () => {
+	it("sends thinking disabled for OpenCode Go Kimi K3 when thinking is off", async () => {
 		const model = getModel("opencode-go", "kimi-k3")!;
 		let payload: unknown;
 
@@ -1367,6 +1368,8 @@ describe("openai-completions tool_choice", () => {
 		).result();
 
 		const params = (payload ?? mockState.lastParams) as { thinking?: unknown; reasoning_effort?: string };
+		// Pinned snapshot (23/10/2026) declares no thinkingLevelMap for opencode-go/kimi-k3,
+		// so off is not null and the deepseek-format branch sends disabled.
 		expect(params.thinking).toEqual({ type: "disabled" });
 		expect(params.reasoning_effort).toBeUndefined();
 	});

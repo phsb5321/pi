@@ -447,8 +447,10 @@ const OPENCODE_OPENAI_COMPLETIONS_LONG_CACHE_RETENTION_UNSUPPORTED_MODELS = new 
 	"opencode:deepseek-v4-pro",
 	"opencode:kimi-k2.5",
 	"opencode:kimi-k2.6",
+	"opencode:kimi-k3",
 	"opencode:minimax-m2.7",
 	"opencode-go:kimi-k2.6",
+	"opencode-go:kimi-k3",
 ]);
 
 // GitHub's "Models with extended capabilities" table lists these Copilot models as supporting
@@ -1996,6 +1998,16 @@ async function loadModelsDevData(): Promise<Model<any>[]> {
 					// OpenCode Kimi K2.6 accepts Anthropic-style thinking objects
 					// and rejects string thinking values or combined reasoning_effort.
 					compat = { ...(compat ?? {}), thinkingFormat: "deepseek", supportsReasoningEffort: false };
+				}
+				if (variant.provider === "opencode-go" && modelId === "kimi-k3") {
+					// OpenCode Go Kimi K3 takes the same Anthropic-style thinking objects as K2.6
+					// and needs reasoning_content replayed on assistant turns.
+					compat = {
+						...(compat ?? {}),
+						thinkingFormat: "deepseek",
+						supportsReasoningEffort: false,
+						requiresReasoningContentOnAssistantMessages: true,
+					};
 				}
 
 				// Fix known mismatches between models.dev npm data and actual
