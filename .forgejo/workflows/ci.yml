@@ -58,6 +58,10 @@ jobs:
             # Pinned fd: jammy's fd-find 8.3.1 lacks --no-require-git, which pi's find tool passes.
             curl -fsSL https://github.com/sharkdp/fd/releases/download/v10.5.0/fd-v10.5.0-x86_64-unknown-linux-musl.tar.gz | sudo tar -xz -C /usr/local/bin --strip-components=1 --wildcards '*/fd'
             fd --version
+            # sshd refuses to start as root without its privilege-separation directory
+            # ("Missing privilege separation directory: /run/sshd"); packages/env/test/ssh.test.ts
+            # runs a disposable sshd. GitHub's hosted runners have it, this container does not.
+            sudo mkdir -p /run/sshd
           } 2>&1 | tee -a "$CI_LOG"
 
       - name: Install dependencies
