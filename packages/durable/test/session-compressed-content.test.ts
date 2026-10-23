@@ -32,7 +32,7 @@ describe("W1 compressed conversation state", () => {
 			compress: vi.fn(nodeLosslessCodec.compress),
 			decompress: vi.fn(nodeLosslessCodec.decompress),
 		};
-		const session = createSession(new MemoryStorage(), codec);
+		const session = createSession(new MemoryStorage(), { documentCodec: codec });
 		const ids: ConversationId[] = [];
 		for (let i = 0; i < 140; i++) ids.push(await createNote(session, `note ${i} `.repeat(50)));
 		// A later commit settles older documents past the working window.
@@ -45,7 +45,7 @@ describe("W1 compressed conversation state", () => {
 	});
 
 	it("does not resurrect a retired document from settled backing", async () => {
-		const session = new SessionImpl(new MemoryStorage(), nodeLosslessCodec);
+		const session = new SessionImpl(new MemoryStorage(), Date.now, nodeLosslessCodec);
 		const rootId = await createNote(session, "original");
 		for (let i = 0; i < 140; i++) await createNote(session, `filler ${i}`);
 		await session.commit((tx) => tx.retireDoc(NoteDoc, rootId), context);
@@ -65,7 +65,7 @@ describe("W1 compressed conversation state", () => {
 			},
 			decompress: nodeLosslessCodec.decompress,
 		};
-		const session = new SessionImpl(new MemoryStorage(), codec);
+		const session = new SessionImpl(new MemoryStorage(), Date.now, codec);
 		const id = await createNote(session, "watched-marker");
 		const first = (await session.watchDoc(NoteDoc, id, context))!;
 		const second = (await session.watchDoc(NoteDoc, id, context))!;
@@ -81,7 +81,7 @@ describe("W1 compressed conversation state", () => {
 	});
 
 	it("escapes no backing references on document promotion (identity probe)", async () => {
-		const session = new SessionImpl(new MemoryStorage(), nodeLosslessCodec);
+		const session = new SessionImpl(new MemoryStorage(), Date.now, nodeLosslessCodec);
 		const rootId = await createNote(session, "original");
 		for (let i = 0; i < 70; i++) await createNote(session, `filler ${i}`);
 		// The root's document has settled; materialize it and mutate the returned object.
