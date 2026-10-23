@@ -72,12 +72,16 @@ jobs:
 
       - name: Install Rust (rustup)
         # GitHub's hosted runners ship rustup; the Forgejo act image does not
-        # (build:daemon failed with "cargo: not found"). Install bare rustup and
-        # let packages/env/daemon/rust-toolchain.toml pick the pinned toolchain.
+        # (build:daemon failed with "cargo: not found"). build:daemon runs cargo
+        # from packages/env with --manifest-path, and rustup resolves
+        # rust-toolchain.toml from the working directory, not the manifest, so
+        # the pin is not seen there: install the pinned channel as the default.
         run: |
           {
             echo "::: Install Rust (rustup)"
-            command -v cargo || curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
+            toolchain=$(sed -n 's/^channel = "\(.*\)"$/\1/p' packages/env/daemon/rust-toolchain.toml)
+            test -n "$toolchain"
+            command -v cargo || curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain "$toolchain"
             echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           } 2>&1 | tee -a "$CI_LOG"
 
