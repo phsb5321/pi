@@ -31,6 +31,13 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: read
+    env:
+      # Every step tees into this file so a failure can be read from GitHub
+      # (failure-log step); Forgejo job logs need a browser login.
+      CI_LOG: /tmp/forgejo-ci-steps.log
+    defaults:
+      run:
+        shell: bash -eo pipefail {0}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -44,21 +51,39 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev fd-find ripgrep
-          sudo ln -s $(which fdfind) /usr/local/bin/fd
+          {
+            echo "::: Install system dependencies"
+            sudo apt-get update
+            sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev fd-find ripgrep
+            sudo ln -s $(which fdfind) /usr/local/bin/fd
+          } 2>&1 | tee -a "$CI_LOG"
 
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: |
+          { echo "::: Install dependencies"; npm ci --ignore-scripts; } 2>&1 | tee -a "$CI_LOG"
 
       - name: Build
-        run: npm run build:offline
+        run: |
+          { echo "::: Build"; npm run build:offline; } 2>&1 | tee -a "$CI_LOG"
 
       - name: Check
-        run: npm run check
+        run: |
+          { echo "::: Check"; npm run check; } 2>&1 | tee -a "$CI_LOG"
 
       - name: Test
-        run: npm test
+        run: |
+          { echo "::: Test"; npm test; } 2>&1 | tee -a "$CI_LOG"
+
+      - name: Failure log → GitHub commit comment
+        if: failure()
+        continue-on-error: true
+        env:
+          GH_STATUS_TOKEN: ${{ secrets.GH_STATUS_TOKEN }}
+          GH_REPO: phsb5321/pi
+          GH_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          LOG_TITLE: "forgejo build-check-test failed"
+          LOG_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash scripts/forgejo-gh-failure-log.sh
 
       - name: "Status bridge → GitHub (context: build-check-test)"
         if: always()
