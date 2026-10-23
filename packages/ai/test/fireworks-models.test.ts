@@ -18,34 +18,34 @@ afterEach(() => {
 });
 
 describe("Fireworks models", () => {
-	it("registers the default Kimi K2.6 model via Anthropic-compatible Messages API", () => {
+	it("registers the Kimi K3 model via OpenAI-compatible Completions API", () => {
 		const model = getModel("fireworks", "accounts/fireworks/models/kimi-k3");
 
 		expect(model).toBeDefined();
-		expect(model.api).toBe("anthropic-messages");
+		expect(model.api).toBe("openai-completions");
 		expect(model.provider).toBe("fireworks");
-		expect(model.baseUrl).toBe("https://api.fireworks.ai/inference");
+		expect(model.baseUrl).toBe("https://api.fireworks.ai/inference/v1");
 		expect(model.reasoning).toBe(true);
 		expect(model.input).toEqual(["text", "image"]);
-		expect(model.contextWindow).toBe(262000);
-		expect(model.maxTokens).toBe(262000);
+		expect(model.contextWindow).toBe(1048576);
+		expect(model.maxTokens).toBe(131072);
 		expect(model.cost).toEqual({
-			input: 0.95,
-			output: 4,
-			cacheRead: 0.16,
+			input: 3,
+			output: 15,
+			cacheRead: 0.3,
 			cacheWrite: 0,
 		});
 	});
 
-	it("registers the Fire Pass turbo router model", () => {
+	it("registers the Fire Pass fast router model", () => {
 		const model = getModels("fireworks").find(
-			(candidate) => candidate.id.startsWith("accounts/fireworks/routers/") && candidate.id.endsWith("-turbo"),
+			(candidate) => candidate.id.startsWith("accounts/fireworks/routers/") && candidate.id.endsWith("-fast"),
 		);
 
 		expect(model).toBeDefined();
 		expect(model?.api).toBe("anthropic-messages");
 		expect(model?.baseUrl).toBe("https://api.fireworks.ai/inference");
-		expect(model?.input).toEqual(["text", "image"]);
+		expect(model?.input).toEqual(["text"]);
 	});
 
 	it("aligns GLM 5.2 Fast with GLM 5.2's OpenAI-compatible config", () => {

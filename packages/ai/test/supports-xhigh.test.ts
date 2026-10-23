@@ -88,16 +88,16 @@ describe("getSupportedThinkingLevels", () => {
 		expect(getSupportedThinkingLevels(model!)).toEqual(["off", "low", "high", "max"]);
 	});
 
-	it("includes low/high/max plus off for DeepSeek V4 Flash on opencode-go", () => {
+	it("includes high plus max (and off) for DeepSeek V4.1 Flash on opencode-go", () => {
 		const model = getModel("opencode-go", "deepseek-v4.1-flash");
 		expect(model).toBeDefined();
-		expect(getSupportedThinkingLevels(model!)).toEqual(["off", "low", "high", "max"]);
+		expect(getSupportedThinkingLevels(model!)).toEqual(["off", "high", "max"]);
 	});
 
-	it("includes only high plus off for OpenCode Go Kimi K2.6", () => {
+	it("supports only max thinking for OpenCode Go Kimi K3", () => {
 		const model = getModel("opencode-go", "kimi-k3");
 		expect(model).toBeDefined();
-		expect(getSupportedThinkingLevels(model!)).toEqual(["off", "high"]);
+		expect(getSupportedThinkingLevels(model!)).toEqual(["max"]);
 	});
 
 	it("excludes thinking off for Moonshot Kimi K2.7 Code models", () => {

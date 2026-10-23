@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 describe("Together models", () => {
-	it("registers the default Kimi K2.6 model via OpenAI-compatible Chat Completions API", () => {
+	it("registers the Kimi K3 model via OpenAI-compatible Chat Completions API", () => {
 		const model = getModel("together", "moonshotai/Kimi-K3");
 
 		expect(model).toBeDefined();
@@ -23,12 +23,12 @@ describe("Together models", () => {
 		expect(model.reasoning).toBe(true);
 		expect(model.thinkingLevelMap).toEqual({ minimal: null, low: null, medium: null });
 		expect(model.input).toEqual(["text", "image"]);
-		expect(model.contextWindow).toBe(262144);
-		expect(model.maxTokens).toBe(131000);
+		expect(model.contextWindow).toBe(1048576);
+		expect(model.maxTokens).toBe(131072);
 		expect(model.cost).toEqual({
-			input: 1.2,
-			output: 4.5,
-			cacheRead: 0.2,
+			input: 3,
+			output: 15,
+			cacheRead: 0.3,
 			cacheWrite: 0,
 		});
 		expect(model.compat).toEqual({
@@ -63,17 +63,15 @@ describe("Together models", () => {
 			minimal: null,
 			low: null,
 			medium: null,
-			high: "high",
-			xhigh: null,
 		});
 		expect(deepSeekV4.compat).toMatchObject({
-			supportsReasoningEffort: true,
+			supportsReasoningEffort: false,
 			thinkingFormat: "together",
 		});
 
 		const minimax = getModel("together", "MiniMaxAI/MiniMax-M3");
-		expect(minimax.thinkingLevelMap).toEqual({ off: null, minimal: null, low: null, medium: null });
-		expect(minimax.compat?.thinkingFormat).toBeUndefined();
+		expect(minimax.thinkingLevelMap).toEqual({ minimal: null, low: null, medium: null });
+		expect(minimax.compat?.thinkingFormat).toBe("together");
 		expect(minimax.compat?.supportsReasoningEffort).toBe(false);
 	});
 

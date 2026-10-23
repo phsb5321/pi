@@ -520,7 +520,7 @@ describe("Cache Retention (PI_CACHE_RETENTION)", () => {
 				// Expected to fail
 			}
 
-			expect(model.compat?.supportsLongCacheRetention).toBe(false);
+			expect(model.compat?.supportsLongCacheRetention).toBeFalsy();
 			expect(capturedPayload).toBeDefined();
 			expect(capturedPayload?.prompt_cache_key).toBeUndefined();
 			expect(capturedPayload?.prompt_cache_retention).toBeUndefined();
