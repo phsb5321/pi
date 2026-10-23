@@ -1,7 +1,8 @@
 import type * as ChildProcess from "node:child_process";
+import { spawnSync } from "node:child_process";
 import type * as Fs from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ensureTool, getLatestVersion, type ToolStatus } from "../src/utils/tools-manager.ts";
+import { ensureTool, getLatestVersion, getToolPath, type ToolStatus } from "../src/utils/tools-manager.ts";
 
 const originalOffline = process.env.PI_OFFLINE;
 
@@ -138,5 +139,43 @@ describe("ensureTool", () => {
 				message: "Failed to download fd: fetch failed: connect ETIMEDOUT 140.82.113.3:443",
 			},
 		]);
+	});
+});
+
+describe("getToolPath", () => {
+	// Simulate `<cmd> --version` for the commands on PATH; anything else is missing.
+	function systemVersions(versions: Record<string, string>): void {
+		vi.mocked(spawnSync).mockImplementation(((cmd: string) =>
+			cmd in versions
+				? { error: undefined, stdout: Buffer.from(`${versions[cmd]}\n`) }
+				: { error: new Error("not found") }) as unknown as typeof spawnSync);
+	}
+
+	afterEach(() => {
+		vi.mocked(spawnSync).mockImplementation((() => ({
+			error: new Error("not found"),
+		})) as unknown as typeof spawnSync);
+	});
+
+	it("skips a system fd older than 8.7.0, which rejects --no-require-git", () => {
+		systemVersions({ fd: "fd 8.3.1" });
+		expect(getToolPath("fd")).toBeNull();
+	});
+
+	it("uses a system fd that supports every flag the tools pass", () => {
+		systemVersions({ fd: "fd 8.7.0" });
+		expect(getToolPath("fd")).toBe("fd");
+		systemVersions({ fd: "fd 10.2.0" });
+		expect(getToolPath("fd")).toBe("fd");
+	});
+
+	it("falls through to a newer fdfind when fd is too old", () => {
+		systemVersions({ fd: "fd 8.6.0", fdfind: "fdfind 9.0.0" });
+		expect(getToolPath("fd")).toBe("fdfind");
+	});
+
+	it("keeps a system binary whose version it cannot parse", () => {
+		systemVersions({ fd: "fd (custom build)" });
+		expect(getToolPath("fd")).toBe("fd");
 	});
 });
