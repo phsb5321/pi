@@ -64,15 +64,17 @@ describe("Together models", () => {
 			minimal: null,
 			low: null,
 			medium: null,
+			high: "high",
+			xhigh: null,
 		});
 		expect(deepSeekV4.compat).toMatchObject({
-			supportsReasoningEffort: false,
+			supportsReasoningEffort: true,
 			thinkingFormat: "together",
 		});
 
-		const minimax = getModel("together", "MiniMaxAI/MiniMax-M2.7");
-		expect(minimax.thinkingLevelMap).toEqual({ off: null, minimal: null, low: null, medium: null });
-		expect(minimax.compat?.thinkingFormat).toBeUndefined();
+		const minimax = getModel("together", "MiniMaxAI/MiniMax-M3");
+		expect(minimax.thinkingLevelMap).toEqual({ minimal: null, low: null, medium: null });
+		expect(minimax.compat?.thinkingFormat).toBe("together");
 		expect(minimax.compat?.supportsReasoningEffort).toBe(false);
 	});
 
