@@ -1302,7 +1302,7 @@ describe("openai-completions tool_choice", () => {
 						role: "assistant",
 						api: "openai-completions",
 						provider: "opencode-go",
-						model: "kimi-k2.6",
+						model: "kimi-k3",
 						content: [
 							{ type: "thinking", thinking: "think", thinkingSignature: "reasoning" },
 							{ type: "toolCall", id: "call_1", name: "read", arguments: { path: "README.md" } },
@@ -1350,7 +1350,7 @@ describe("openai-completions tool_choice", () => {
 		expect(messages[0]).not.toHaveProperty("reasoning");
 	});
 
-	it("sends thinking disabled for OpenCode Go Kimi K2.6 when thinking is off", async () => {
+	it("omits thinking payload for OpenCode Go Kimi K3 when thinking is off (catalog: off unsupported)", async () => {
 		const model = getModel("opencode-go", "kimi-k3")!;
 		let payload: unknown;
 
@@ -1368,7 +1368,9 @@ describe("openai-completions tool_choice", () => {
 		).result();
 
 		const params = (payload ?? mockState.lastParams) as { thinking?: unknown; reasoning_effort?: string };
-		expect(params.thinking).toEqual({ type: "disabled" });
+		// Catalog thinkingLevelMap.off is null for opencode-go/kimi-k3: off is not offered,
+		// so no disabled payload is sent (pinned catalog, 23/10/2026).
+		expect(params.thinking).toBeUndefined();
 		expect(params.reasoning_effort).toBeUndefined();
 	});
 
