@@ -54,8 +54,10 @@ jobs:
           {
             echo "::: Install system dependencies"
             sudo apt-get update
-            sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev fd-find ripgrep
-            sudo ln -s $(which fdfind) /usr/local/bin/fd
+            sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev ripgrep
+            # Pinned fd: jammy's fd-find 8.3.1 lacks --no-require-git, which pi's find tool passes.
+            curl -fsSL https://github.com/sharkdp/fd/releases/download/v10.5.0/fd-v10.5.0-x86_64-unknown-linux-musl.tar.gz | sudo tar -xz -C /usr/local/bin --strip-components=1 --wildcards '*/fd'
+            fd --version
           } 2>&1 | tee -a "$CI_LOG"
 
       - name: Install dependencies
