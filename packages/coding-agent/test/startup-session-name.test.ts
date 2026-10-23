@@ -82,9 +82,11 @@ async function runCli(args: string[], dirs: CliDirs): Promise<CliResult> {
 	});
 
 	return new Promise((resolvePromise, reject) => {
+		// A safety net, not a budget: a cold start transforms coding-agent from source,
+		// which exceeded 10 s on the loaded CI runner. Stay inside the 30 s test timeout.
 		const timeout = setTimeout(() => {
 			child.kill("SIGKILL");
-		}, 10_000);
+		}, 25_000);
 		child.on("error", (error) => {
 			clearTimeout(timeout);
 			reject(error);

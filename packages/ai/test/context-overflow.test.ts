@@ -734,7 +734,10 @@ describe("Context overflow error handling", () => {
 	let llamaCppRunning = false;
 	if (!process.env.PI_NO_LOCAL_LLM) {
 		try {
-			execSync("curl -s --max-time 1 http://localhost:8081/health > /dev/null", { stdio: "ignore" });
+			// Something else may listen on :8081 (CI jobs share the host network), so require a
+			// llama.cpp-specific endpoint rather than any non-404 answer.
+			const props = execSync("curl -s --max-time 1 http://localhost:8081/props", { encoding: "utf8" });
+			if (!props.includes("default_generation_settings")) throw new Error("not llama.cpp");
 			const probeStatus = execSync(
 				'curl -s --max-time 1 -o /dev/null -w \'%{http_code}\' -X POST http://localhost:8081/v1/completions -H \'content-type: application/json\' -d \'{"model":"local-model","prompt":"ping","max_tokens":1}\'',
 				{ encoding: "utf8" },
