@@ -96,6 +96,11 @@ jobs:
           { echo "::: Build the pi-env daemon"; npm run build:daemon --workspace packages/env; } 2>&1 | tee -a "$CI_LOG"
 
       - name: Test
+        # PI_NO_LOCAL_LLM: the local llama.cpp/ollama probes hit localhost:8081 and
+        # the runner host listens there, so the probe passes and the test runs
+        # against an unrelated service. The runner has no local LLM to test.
+        env:
+          PI_NO_LOCAL_LLM: "1"
         run: |
           { echo "::: Test"; npm test; } 2>&1 | tee -a "$CI_LOG"
 
