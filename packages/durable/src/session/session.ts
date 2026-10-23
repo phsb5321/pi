@@ -51,7 +51,10 @@ import { type LoadedDocument, Transaction, type TransactionHost, type Transactio
 const WORKING_DOCUMENT_WINDOW = 64;
 
 /** Open a Session kernel over one storage backend. `now` is the wall clock for task times; default `Date.now`. */
-export function createSession(storage: Storage, options?: { readonly now?: () => number; readonly documentCodec?: LosslessCodec }): Session {
+export function createSession(
+	storage: Storage,
+	options?: { readonly now?: () => number; readonly documentCodec?: LosslessCodec },
+): Session {
 	return new SessionImpl(storage, options?.now, options?.documentCodec);
 }
 
