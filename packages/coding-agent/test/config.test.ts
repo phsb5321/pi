@@ -439,7 +439,8 @@ describe("detectInstallMethod", () => {
 		});
 	});
 
-	test("does not self-update when npm install path is not writable", () => {
+	// root bypasses file permissions, so a permission-denied path cannot be set up (CI containers run as root).
+	test.skipIf(process.getuid?.() === 0)("does not self-update when npm install path is not writable", () => {
 		const { packageDir } = createNpmPrefixInstall();
 		chmodSync(packageDir, 0o500);
 
