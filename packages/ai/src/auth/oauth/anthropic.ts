@@ -18,6 +18,17 @@ const CALLBACK_HOST = getProviderEnvValue("PI_OAUTH_CALLBACK_HOST") || "127.0.0.
 // Preferred so the port can be forwarded into containers or over SSH. Anthropic accepts any loopback port,
 // so login falls back to a free port when this one cannot be bound (#10571).
 const CALLBACK_PORT = 53692;
+// PI_OAUTH_CALLBACK_PORT overrides only the preferred port. Login still falls back to a free port, and the redirect
+// advertises the port that actually bound, so tests can use a port they own instead of 53692.
+function callbackPreferredPort(): number {
+	const value = getProviderEnvValue("PI_OAUTH_CALLBACK_PORT");
+	if (value === undefined || value === "") return CALLBACK_PORT;
+	const port = Number(value);
+	if (!Number.isInteger(port) || port < 0 || port > 65535) {
+		throw new Error(`PI_OAUTH_CALLBACK_PORT must be an integer 0-65535, got "${value}"`);
+	}
+	return port;
+}
 const CALLBACK_PATH = "/callback";
 const REDIRECT_URI = `http://localhost:${CALLBACK_PORT}${CALLBACK_PATH}`;
 const COPY_CODE_REDIRECT_URI = "https://platform.claude.com/oauth/code/callback";
@@ -151,7 +162,7 @@ async function loginAnthropic(interaction: ProviderAuthInteraction): Promise<OAu
 			signal: interaction.signal,
 		});
 	// Without a callback server, login continues with the pasted redirect URL.
-	const callback = await startCallbackServer(CALLBACK_PORT)
+	const callback = await startCallbackServer(callbackPreferredPort())
 		.catch(() => startCallbackServer(0))
 		.catch(() => undefined);
 	const redirectUri = callback?.redirectUri ?? REDIRECT_URI;
