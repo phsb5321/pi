@@ -454,6 +454,12 @@ export class DefaultResourceLoader implements ResourceLoader {
 			: this.mergePaths(cliEnabledExtensions, enabledExtensions);
 
 		const extensionsResult = await this.loadFinalExtensionSet(extensionPaths, preTrustExtensions);
+		for (const unresolved of cliExtensionPaths.unresolvedSources ?? []) {
+			extensionsResult.errors.push({
+				path: unresolved.source,
+				error: `Extension source not available: ${unresolved.source} (${unresolved.reason})`,
+			});
+		}
 		for (const p of this.additionalExtensionPaths) {
 			if (isLocalPath(p)) {
 				const resolved = this.resolveResourcePath(p);
@@ -557,6 +563,12 @@ export class DefaultResourceLoader implements ResourceLoader {
 			? cliEnabledExtensions
 			: this.mergePaths(cliEnabledExtensions, enabledExtensions);
 		const extensionsResult = await loadExtensionsCached(extensionPaths, this.cwd, this.eventBus);
+		for (const unresolved of cliExtensionPaths.unresolvedSources ?? []) {
+			extensionsResult.errors.push({
+				path: unresolved.source,
+				error: `Extension source not available: ${unresolved.source} (${unresolved.reason})`,
+			});
+		}
 		if (!options.includeInlineFactories) {
 			return extensionsResult;
 		}
