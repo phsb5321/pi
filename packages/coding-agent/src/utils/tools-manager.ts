@@ -22,6 +22,8 @@ interface ToolConfig {
 	repo: string; // GitHub repo (e.g., "sharkdp/fd")
 	binaryName: string; // Name of the binary inside the archive
 	systemBinaryNames?: string[]; // Alternative system command names to try before downloading
+	// Oldest system binary we can drive; an older one is skipped so the managed download is used instead.
+	minSystemVersion?: string;
 	tagPrefix: string; // Prefix for tags (e.g., "v" for v1.0.0, "" for 1.0.0)
 	getAssetName: (version: string, plat: string, architecture: string) => string | null;
 }
@@ -32,6 +34,9 @@ const TOOLS: Record<string, ToolConfig> = {
 		repo: "sharkdp/fd",
 		binaryName: "fd",
 		systemBinaryNames: ["fd", "fdfind"],
+		// The find tool passes --no-require-git (fd 8.7.0). Distro packages are often older
+		// (Ubuntu 22.04 ships 8.3, Debian 12 ships 8.6) and reject that flag on every call.
+		minSystemVersion: "8.7.0",
 		tagPrefix: "v",
 		getAssetName: (version, plat, architecture) => {
 			if (plat === "darwin") {
@@ -68,12 +73,25 @@ const TOOLS: Record<string, ToolConfig> = {
 	},
 };
 
-// Check if a command exists in PATH by trying to run it
-function commandExists(cmd: string): boolean {
+function isOlderVersion(version: string, minimum: string): boolean {
+	const a = version.split(".").map(Number);
+	const b = minimum.split(".").map(Number);
+	for (let i = 0; i < Math.max(a.length, b.length); i++) {
+		if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) < (b[i] ?? 0);
+	}
+	return false;
+}
+
+// Check if a command exists in PATH by trying to run it, and that it is new enough
+function commandExists(cmd: string, minVersion?: string): boolean {
 	try {
 		const result = spawnSync(cmd, ["--version"], { stdio: "pipe" });
 		// Check for ENOENT error (command not found)
-		return result.error === undefined || result.error === null;
+		if (result.error !== undefined && result.error !== null) return false;
+		if (!minVersion) return true;
+		// An unrecognised version string does not reject a binary that runs.
+		const version = /(\d+\.\d+\.\d+)/.exec(String(result.stdout ?? ""))?.[1];
+		return version === undefined || !isOlderVersion(version, minVersion);
 	} catch {
 		return false;
 	}
@@ -93,7 +111,7 @@ export function getToolPath(tool: "fd" | "rg"): string | null {
 	// Check system PATH - if found, just return the command name (it's in PATH)
 	const systemBinaryNames = config.systemBinaryNames ?? [config.binaryName];
 	for (const systemBinaryName of systemBinaryNames) {
-		if (commandExists(systemBinaryName)) {
+		if (commandExists(systemBinaryName, config.minSystemVersion)) {
 			return systemBinaryName;
 		}
 	}
