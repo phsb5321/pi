@@ -37,15 +37,19 @@ function couldBeEmoji(segment: string): boolean {
 }
 
 // Regexes for character classification (same as string-width library)
-const zeroWidthRegex = /^(?:\p{Default_Ignorable_Code_Point}|\p{Control}|\p{Mark}|\p{Surrogate})+$/v;
-const leadingNonPrintingRegex = /^[\p{Default_Ignorable_Code_Point}\p{Control}\p{Format}\p{Mark}\p{Surrogate}]+/v;
-const nonPrintingCharRegex = /^(?:\p{Default_Ignorable_Code_Point}|\p{Control}|\p{Format}|\p{Mark}|\p{Surrogate})$/v;
-const markCharRegex = /^\p{Mark}$/v;
+// `u` flag throughout: the `v` flag needs an ES2024 target, and these classes only use binary properties.
+const zeroWidthRegex = /^(?:\p{Default_Ignorable_Code_Point}|\p{Control}|\p{Mark}|\p{Surrogate})+$/u;
+const leadingNonPrintingRegex = /^[\p{Default_Ignorable_Code_Point}\p{Control}\p{Format}\p{Mark}\p{Surrogate}]+/u;
+const nonPrintingCharRegex = /^(?:\p{Default_Ignorable_Code_Point}|\p{Control}|\p{Format}|\p{Mark}|\p{Surrogate})$/u;
+const markCharRegex = /^\p{Mark}$/u;
 // Marks that terminals allocate cells for when attached to a base character.
 // This includes Unicode spacing marks and non-spacing exceptions in legacy wcwidth tables.
 const terminalSpacingMarkRegex =
-	/^(?:[\p{Spacing_Mark}--[\u1734\u302E\u302F]]|[\u065F\u0F7F\u102B\u102C\u1031\u1033-\u1035\u1038\u103A-\u103E])+$/v;
-const rgiEmojiRegex = /^\p{RGI_Emoji}$/v;
+	/^(?:(?![\u1734\u302E\u302F])\p{Spacing_Mark}|[\u065F\u0F7F\u102B\u102C\u1031\u1033-\u1035\u1038\u103A-\u103E])+$/u;
+// `\p{RGI_Emoji}` is a property of strings, valid only with the `v` flag. The pattern is passed as a string because a
+// regex literal with `v` fails tsc's ES2024 target check; Node 22 supports `v`.
+const RGI_EMOJI_PATTERN = "^\\p{RGI_Emoji}$";
+const rgiEmojiRegex = new RegExp(RGI_EMOJI_PATTERN, "v");
 
 // Cache for non-ASCII strings
 const WIDTH_CACHE_SIZE = 512;
