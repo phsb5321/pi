@@ -11,6 +11,8 @@ type RenderCache = {
 /**
  * Box component - a container that applies padding and background to all children
  */
+type DroppableRender = { dropRenderedLines?: () => void };
+
 export class Box implements Component {
 	children: Component[] = [];
 	private paddingX: number;
@@ -57,6 +59,14 @@ export class Box implements Component {
 
 	private invalidateCache(): void {
 		this.cache = undefined;
+	}
+
+	/** Free this box's cached line copies and those of its subtree (windowed eviction). The next
+	 * render recomputes from the children, which return cold stubs until they paint again. */
+	dropRenderedLines(): void {
+		this.invalidateCache();
+		this.mouseLayout = undefined;
+		for (const child of this.children) (child as DroppableRender).dropRenderedLines?.();
 	}
 
 	private matchCache(width: number, childLines: string[], bgSample: string | undefined): boolean {
