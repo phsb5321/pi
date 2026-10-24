@@ -36,9 +36,12 @@ function getJsonBody(init?: RequestInit): Record<string, string> {
 describe.sequential("Anthropic OAuth", () => {
 	afterEach(() => {
 		vi.unstubAllGlobals();
+		vi.unstubAllEnvs();
 	});
 
 	it("keeps the localhost redirect_uri for manual callback login", async () => {
+		// The registered redirect stays on 53692; only the listener binds an ephemeral port, so parallel runs do not collide.
+		vi.stubEnv("PI_OAUTH_CALLBACK_BIND_PORT", "0");
 		let authUrl = "";
 		const fetchMock = vi.fn(async (input: unknown, init?: RequestInit): Promise<Response> => {
 			expect(getUrl(input)).toBe("https://platform.claude.com/v1/oauth/token");

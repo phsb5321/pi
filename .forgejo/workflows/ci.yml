@@ -73,6 +73,14 @@ jobs:
           { echo "::: Check"; npm run check; } 2>&1 | tee -a "$CI_LOG"
 
       - name: Test
+        # PI_NO_LOCAL_LLM: the local llama.cpp/ollama probes hit localhost:8081 and
+        # the runner host listens there, so the probe passes and the test runs
+        # against an unrelated service. The runner has no local LLM to test.
+        # VITEST_MAX_WORKERS: uncapped defaults oversubscribe the shared runner
+        # (pthread_create under the cgroup task cap; cold-activation timeouts).
+        env:
+          PI_NO_LOCAL_LLM: "1"
+          VITEST_MAX_WORKERS: "2"
         run: |
           { echo "::: Test"; npm test; } 2>&1 | tee -a "$CI_LOG"
 

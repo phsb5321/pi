@@ -22,13 +22,19 @@ set -eu
 
 [ -s "$CI_LOG" ] || { echo "forgejo-gh-failure-log: no log at $CI_LOG" >&2; exit 0; }
 
-# GitHub caps comment bodies at 65536 characters; keep the tail, where the
-# failure is, with room for the heading.
-body=$(LOG_TAIL="$(tail -c 60000 "$CI_LOG")" node -e '
-const { LOG_TITLE = "Forgejo job failed", LOG_URL = "", LOG_TAIL } = process.env;
+# A failure early in a long step scrolls out of any fixed tail, so lead with
+# every failure-marker line from the WHOLE log (step headers included, to show
+# where each one happened), then the tail. GitHub caps comment bodies at 65536
+# characters: 15 kB of summary + 45 kB of tail leaves room for the heading.
+summary=$(sed -E 's/\x1b\[[0-9;?]*[a-zA-Z]//g' "$CI_LOG" \
+  | grep -nE '^::: | FAIL |^not ok|✖|npm error (path|workspace)|^::error |Error: |exited with code|ERR!' \
+  | head -c 15000 || true)
+body=$(LOG_SUMMARY="$summary" LOG_TAIL="$(tail -c 45000 "$CI_LOG")" node -e '
+const { LOG_TITLE = "Forgejo job failed", LOG_URL = "", LOG_SUMMARY = "", LOG_TAIL } = process.env;
 const fence = "~~~~";
+const block = (text) => `${fence}\n${text.replaceAll(fence, "~~~")}\n${fence}\n`;
 process.stdout.write(JSON.stringify({
-	body: `${LOG_TITLE}${LOG_URL ? ` — ${LOG_URL}` : ""}\n\nLast 60 kB of step output:\n\n${fence}\n${LOG_TAIL.replaceAll(fence, "~~~")}\n${fence}\n`,
+	body: `${LOG_TITLE}${LOG_URL ? ` — ${LOG_URL}` : ""}\n\nFailure markers from the whole log (line: text):\n\n${block(LOG_SUMMARY || "(none matched)")}\nLast 45 kB of step output:\n\n${block(LOG_TAIL)}`,
 }));
 ')
 
