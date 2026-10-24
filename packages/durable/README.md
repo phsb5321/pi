@@ -77,6 +77,17 @@ Every async call takes a Chord `Context`, which carries cancellation. `BACKGROUN
 
 ## Concepts
 
+Settled-document compression is optional. Node callers can import `nodeLosslessCodec` from
+`@earendil-works/pi-durable/storage/compressed-content/node` and pass it as
+`documentCodec` in the `Harness.open()` options, or as the second argument to
+`createSession()`. Without a codec, the existing plain document cache is unchanged.
+With one, documents outside the 64-document working window settle into lossless
+backing; actively watched documents remain live until all observers detach.
+This bounds the unobserved materialized window, not total process memory: storage,
+active observers, and compressed backing still consume memory. Brotli uses quality
+1 to limit synchronous compression latency. Measure the workload before enabling
+this option in a long-running process; existing sessions are not migrated.
+
 - **Harness**: one open storage plus the machinery that runs agents on it. All changes go through one line of atomic commits, and nothing is shown before its commit is stored.
 - **Conversation**: a transcript. `root()` creates the root conversation on first use; you can create more and fork them. A `Conversation` handle holds no state; compare handles by `id`.
 - **Entry**: one immutable transcript record, such as a user message (`pi.user`), a model response (`pi.assistant`), a tool result (`pi.tool-result`), a system prompt change (`pi.system`), a reset (`pi.reset`), or your own kind. The model sees the entries from the newest reset onward.
