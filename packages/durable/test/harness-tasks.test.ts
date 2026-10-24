@@ -223,6 +223,7 @@ describe("task phases", () => {
 					expect(task.memos).toEqual({ choice: "a", toString: "own" });
 					await runtime.commit(async (tx) => {
 						progressSeen = [...(await tx.doc(Progress, task.id)).lines];
+						return undefined;
 					}, ctx);
 					await runtime.commit(async (tx, current) => {
 						const entry = await tx.appendEntry(current.conversationId, { kind: "answer", model: [user("done")] });
@@ -565,7 +566,7 @@ describe("task runtime", () => {
 		await flush();
 		expect(delivered).toEqual([]);
 		const runtime = captured!;
-		await expect(runtime.commit(() => {}, context)).rejects.toThrow("invocation has ended");
+		await expect(runtime.commit(() => undefined, context)).rejects.toThrow("invocation has ended");
 		await expect(runtime.memo("x", context)).rejects.toThrow("invocation has ended");
 		await expect(runtime.memo("x", 1, context)).rejects.toThrow("invocation has ended");
 		await expect(runtime.sleep(0, context)).rejects.toThrow("invocation has ended");

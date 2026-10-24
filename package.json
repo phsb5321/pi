@@ -17,8 +17,9 @@
 		"build:native:darwin": "npm --prefix packages/tui run build:native:darwin",
 		"build:native:linux": "npm --prefix packages/tui run build:native:linux",
 		"build:native:win32": "npm --prefix packages/tui run build:native:win32",
-		"check": "biome check --write --error-on-warnings . && npm run check:pinned-deps && npm run check:runtime-deps && npm run check:ts-imports && npm run check:entry-graphs && npm run check:install-lock:coding-agent && tsc --noEmit --singleThreaded --checkers 1 && npm run check:browser-smoke",
+		"check": "biome check --write --error-on-warnings . && npm run check:pinned-deps && npm run check:runtime-deps && npm run check:ts-imports && npm run check:entry-graphs && npm run check:install-lock:coding-agent && tsc --noEmit --singleThreaded --checkers 1 && npm run check:tsc-5 && npm run check:browser-smoke",
 		"check:browser-smoke": "node scripts/check-browser-smoke.mjs",
+		"check:tsc-5": "NODE_OPTIONS=--max-old-space-size=4096 node node_modules/typescript-5/bin/tsc -p tsconfig.json --noEmit",
 		"check:pinned-deps": "node scripts/check-pinned-deps.mjs",
 		"check:runtime-deps": "node scripts/check-runtime-deps.mjs",
 		"check:package-install": "node scripts/check-package-install.mjs",
@@ -63,6 +64,7 @@
 		"pnpm": "11.15.1",
 		"shx": "0.3.4",
 		"typescript": "7.0.2",
+		"typescript-5": "npm:typescript@5.9.3",
 		"yaml": "2.9.0"
 	},
 	"engines": {
