@@ -15,7 +15,7 @@ for f in glob.glob(os.path.join(sys.argv[1], "*.jsonl")):
         d = json.loads(line)
         rows.setdefault((mode, d["turn"], tree), []).append(d)
 
-for mode in ["session", "session-nocompact", "render"]:
+for mode in ["session", "session-nocompact", "render", "tui"]:
     for turn in [50, 100, 200]:
         b, h = rows.get((mode, turn, "base"), []), rows.get((mode, turn, "head"), [])
         if not b or not h:
