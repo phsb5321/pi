@@ -1,8 +1,9 @@
 /**
- * Fullscreen (viewport) TUI memory bench (9989-mem-bench, w6).
+ * Fullscreen (viewport) TUI memory bench (9989-mem-bench).
  *
  * Usage (from packages/coding-agent, after `npm run build:offline` at the repo root):
  *   node --experimental-strip-types --expose-gc test/mem-bench/tui-bench.ts <turns> <out.jsonl>
+ *   BENCH_SNAPSHOT_DIR=<dir> node ... tui-bench.ts <turns> <out.jsonl>   # also V8 heap snapshots
  *
  * Drives the real fullscreen TUI (createInteractiveTui -> TuiAltScreen, the viewport layout in
  * packages/tui/src/layout.ts) against a VirtualTerminal, the same way test/interactive-tui.test.ts
@@ -11,12 +12,15 @@
  * the top (old messages re-materialise) and back to the bottom (they leave the paint window).
  *
  * Not covered: the full InteractiveMode controller (needs an AgentSessionRuntime host); the
- * session event wiring is therefore replaced by direct component insertion.
+ * session event wiring is replaced by direct component insertion.
  *
- * Checkpoints (turn 50/100/200): gc() twice, then rss and heapUsed, one JSON line each.
+ * Checkpoints (turn 50/100/200): gc() twice, then process.memoryUsage() fields, one JSON line each.
+ * With BENCH_SNAPSHOT_DIR set, a V8 heap snapshot is written after gc() at each checkpoint, and
+ * the per-space heap breakdown at the last one.
  */
-import { appendFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { getHeapSpaceStatistics, writeHeapSnapshot } from "node:v8";
 import { Container } from "@earendil-works/pi-tui";
 import { VirtualTerminal } from "../../../tui/test/virtual-terminal.ts";
 import { BashExecutionComponent } from "../../src/modes/interactive/components/bash-execution.ts";
@@ -29,18 +33,54 @@ if (!outFile || !Number.isFinite(TURNS) || TURNS < 1) throw new Error("usage: tu
 const gc = globalThis.gc;
 if (typeof gc !== "function") throw new Error("run with --expose-gc");
 
+const SNAPSHOT_DIR = process.env.BENCH_SNAPSHOT_DIR;
+if (SNAPSHOT_DIR) mkdirSync(SNAPSHOT_DIR, { recursive: true });
 const CHECKPOINTS = new Set([50, 100, 200, TURNS].filter((t) => t <= TURNS));
 const LINE = `${"x".repeat(99)}\n`; // 100 bytes per line, 500 lines = 50 KB per result
 const OUTPUT = LINE.repeat(500);
+const mb = (n: number) => +(n / 1048576).toFixed(1);
+
+// Linux only: split RSS into anonymous (malloc and V8 pages) and file-backed (binary, shared libs).
+function smapsRollup(): Record<string, number> {
+	try {
+		const out: Record<string, number> = {};
+		for (const line of readFileSync("/proc/self/smaps_rollup", "utf8").split("\n")) {
+			const m = /^(Rss|Anonymous|Private_Dirty|Shared_Clean|Private_Clean|Shared_Dirty):\s+(\d+)\s+kB/.exec(line);
+			if (m) out[`${m[1]}MB`] = +(Number(m[2]) / 1024).toFixed(1);
+		}
+		return out;
+	} catch {
+		return {};
+	}
+}
 
 function checkpoint(turn: number, extra: Record<string, unknown>): void {
 	gc();
 	gc();
 	const m = process.memoryUsage();
-	appendFileSync(
-		outFile,
-		`${JSON.stringify({ mode: "tui", turn, rssMB: +(m.rss / 1048576).toFixed(1), heapUsedMB: +(m.heapUsed / 1048576).toFixed(1), ...extra })}\n`,
-	);
+	const line: Record<string, unknown> = {
+		mode: "tui",
+		turn,
+		rssMB: mb(m.rss),
+		heapTotalMB: mb(m.heapTotal),
+		heapUsedMB: mb(m.heapUsed),
+		externalMB: mb(m.external),
+		arrayBuffersMB: mb(m.arrayBuffers),
+		nonHeapMB: mb(m.rss - m.heapTotal - m.external),
+		smaps: smapsRollup(),
+		...extra,
+	};
+	if (SNAPSHOT_DIR) {
+		line.snapshot = writeHeapSnapshot(`${SNAPSHOT_DIR}/t${turn}.heapsnapshot`);
+		if (turn === TURNS) {
+			line.spaces = getHeapSpaceStatistics().map((s) => ({
+				space: s.space_name,
+				sizeMB: mb(s.space_size),
+				usedMB: mb(s.space_used_size),
+			}));
+		}
+	}
+	appendFileSync(outFile, `${JSON.stringify(line)}\n`);
 }
 
 writeFileSync(outFile, "");
