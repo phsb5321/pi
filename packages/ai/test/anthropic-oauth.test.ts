@@ -35,12 +35,24 @@ function getJsonBody(init?: RequestInit): Record<string, string> {
 	return JSON.parse(init.body) as Record<string, string>;
 }
 
+// Ports come from the OS, not from 53692, so parallel runs on one host do not collide.
+async function freePort(): Promise<number> {
+	const server = createServer();
+	await listen(server, 0);
+	const { port } = server.address() as { port: number };
+	await new Promise<void>((resolve) => server.close(() => resolve()));
+	return port;
+}
+
 describe.sequential("Anthropic OAuth", () => {
 	afterEach(() => {
 		vi.unstubAllGlobals();
+		vi.unstubAllEnvs();
 	});
 
 	it("keeps the localhost redirect_uri for manual callback login", async () => {
+		const port = await freePort();
+		vi.stubEnv("PI_OAUTH_CALLBACK_PORT", String(port));
 		let authUrl = "";
 		const fetchMock = vi.fn(async (input: unknown, init?: RequestInit): Promise<Response> => {
 			expect(getUrl(input)).toBe("https://platform.claude.com/v1/oauth/token");
@@ -48,7 +60,7 @@ describe.sequential("Anthropic OAuth", () => {
 			const body = getJsonBody(init);
 			expect(body.grant_type).toBe("authorization_code");
 			expect(body.code).toBe("manual-code");
-			expect(body.redirect_uri).toBe("http://localhost:53692/callback");
+			expect(body.redirect_uri).toBe(`http://localhost:${port}/callback`);
 			return jsonResponse({
 				access_token: "access-token",
 				refresh_token: "refresh-token",
@@ -223,14 +235,16 @@ describe.sequential("Anthropic OAuth", () => {
 	// #10571
 	it("falls back to a free callback port when the preferred port cannot be bound", async () => {
 		const blocker = createServer();
-		await listen(blocker, 53692);
+		await listen(blocker, 0);
+		const { port: preferred } = blocker.address() as { port: number };
+		vi.stubEnv("PI_OAUTH_CALLBACK_PORT", String(preferred));
 		try {
 			const login = await loginThroughBrowserCallback();
 			const redirectUri = new URL(login.redirectUri);
 
 			expect(redirectUri.hostname).toBe("localhost");
 			expect(redirectUri.pathname).toBe("/callback");
-			expect(redirectUri.port).not.toBe("53692");
+			expect(redirectUri.port).not.toBe(String(preferred));
 			expect(login.credential.access).toBe("access");
 			expect(login.exchangedRedirectUri).toBe(login.redirectUri);
 			expect(login.pageStatus).toBe(200);
