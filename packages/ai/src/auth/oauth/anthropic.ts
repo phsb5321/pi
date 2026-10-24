@@ -30,6 +30,7 @@ const CLIENT_ID = decode("OWQxYzI1MGEtZTYxYi00NGQ5LTg4ZWQtNTk0NGQxOTYyZjVl");
 const AUTHORIZE_URL = "https://claude.ai/oauth/authorize";
 const TOKEN_URL = "https://platform.claude.com/v1/oauth/token";
 const CALLBACK_HOST = getProviderEnvValue("PI_OAUTH_CALLBACK_HOST") || "127.0.0.1";
+// The registered redirect URI. Anthropic sends the browser here, so the listener must be on this port for real logins.
 const CALLBACK_PORT = 53692;
 const CALLBACK_PATH = "/callback";
 const REDIRECT_URI = `http://localhost:${CALLBACK_PORT}${CALLBACK_PATH}`;
@@ -96,6 +97,20 @@ function formatErrorDetails(error: unknown): string {
 	return String(error);
 }
 
+/**
+ * Port the listener binds. Defaults to the registered port. `PI_OAUTH_CALLBACK_BIND_PORT` overrides only the bind so
+ * tests can use an ephemeral port (0); the advertised redirect URI is unchanged. Setting it in production breaks login.
+ */
+function callbackBindPort(): number {
+	const value = getProviderEnvValue("PI_OAUTH_CALLBACK_BIND_PORT");
+	if (value === undefined || value === "") return CALLBACK_PORT;
+	const port = Number(value);
+	if (!Number.isInteger(port) || port < 0 || port > 65535) {
+		throw new Error(`PI_OAUTH_CALLBACK_BIND_PORT must be an integer 0-65535, got "${value}"`);
+	}
+	return port;
+}
+
 async function startCallbackServer(expectedState: string): Promise<CallbackServerInfo> {
 	const { createServer } = await getNodeApis();
 
@@ -154,7 +169,7 @@ async function startCallbackServer(expectedState: string): Promise<CallbackServe
 			reject(err);
 		});
 
-		server.listen(CALLBACK_PORT, CALLBACK_HOST, () => {
+		server.listen(callbackBindPort(), CALLBACK_HOST, () => {
 			resolve({
 				server,
 				redirectUri: REDIRECT_URI,
