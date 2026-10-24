@@ -64,6 +64,9 @@ export class Image implements Component {
 
 	private cachedLines?: string[];
 	private cachedWidth?: number;
+	/** Row count and width of the sequence freed by dropRenderedLines; stubs answer measurement. */
+	private droppedRows?: number;
+	private droppedWidth?: number;
 
 	constructor(
 		base64Data: string,
@@ -90,9 +93,32 @@ export class Image implements Component {
 		this.cachedWidth = undefined;
 	}
 
+	/** Free the rendered sequence (it embeds the full payload) at windowed eviction. Layout measures
+	 * every child on each pass, so until paint needs the image again, render() answers with stub rows
+	 * of the same height instead of re-encoding the payload (see prepareRenderedLinesForPaint). */
+	dropRenderedLines(): void {
+		if (this.cachedLines && this.cachedWidth !== undefined) {
+			this.droppedRows = this.cachedLines.length;
+			this.droppedWidth = this.cachedWidth;
+		}
+		this.cachedLines = undefined;
+		this.cachedWidth = undefined;
+	}
+
+	/** Paint needs real lines for a dropped image: report once so layout re-renders it. */
+	prepareRenderedLinesForPaint(): boolean {
+		if (this.droppedRows === undefined) return false;
+		this.droppedRows = undefined;
+		this.droppedWidth = undefined;
+		return true;
+	}
+
 	render(width: number): string[] {
 		if (this.cachedLines && this.cachedWidth === width) {
 			return this.cachedLines;
+		}
+		if (this.droppedRows !== undefined && this.droppedWidth === width) {
+			return Array.from({ length: this.droppedRows }, (_, row) => (row === 0 ? "\u0000" : ""));
 		}
 
 		const maxWidth = Math.max(1, Math.min(width - 2, this.options.maxWidthCells ?? 60));
