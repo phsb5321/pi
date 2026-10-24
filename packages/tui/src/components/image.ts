@@ -103,6 +103,10 @@ export class Image implements Component {
 		}
 		this.cachedLines = undefined;
 		this.cachedWidth = undefined;
+		// The converted PNG is held here and in the transcode cache. Release both: paint transcodes
+		// again for visible images only, which keeps the cache's 32-entry bound off offscreen history.
+		this.pngData = undefined;
+		if (this.base64Data) pngCache.delete(this.base64Data);
 	}
 
 	/** Paint needs real lines for a dropped image: report once so layout re-renders it. */
