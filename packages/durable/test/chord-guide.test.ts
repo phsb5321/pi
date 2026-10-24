@@ -226,6 +226,7 @@ async function appendJobOutput(
 		const draft = await tx.doc(JobOutputDoc, runtime.taskId);
 		draft.stdout = (draft.stdout + chunk).slice(-50_000);
 		draft.chunks += 1;
+		return undefined;
 	}, context);
 }
 async function observeJob(
