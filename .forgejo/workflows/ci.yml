@@ -101,6 +101,10 @@ jobs:
         # against an unrelated service. The runner has no local LLM to test.
         env:
           PI_NO_LOCAL_LLM: "1"
+          # Bound vitest workers on the shared runner. Uncapped defaults (~cores) run the coding-agent
+          # package with dozens of concurrent forks; the cold-activation test (experimental-remote-runtime)
+          # then loses its 10 s budget to CPU contention. Capped at 2: 906 files, 2762 tests, 0 failed, 4 min.
+          VITEST_MAX_WORKERS: "2"
         run: |
           { echo "::: Test"; npm test; } 2>&1 | tee -a "$CI_LOG"
 
