@@ -31,8 +31,10 @@ export interface StatusAnimationPolicy {
 }
 
 /**
- * P2 variant: 2 Hz spinner (a calm 5 s rotation) instead of the Loader
- * default 80 ms (12.5 Hz). Measured against the P5-ANIM lineage before
+ * P2 variant: 2 Hz spinner (a calm 5 s rotation). The generic Loader default
+ * is the tui status-line policy cadence (`spinnerTickMs`, 500 ms since #18), so
+ * this value is equal to it by default, but it is owned here and stays put if
+ * that seam is reconfigured. Measured against the P5-ANIM lineage before
  * landing (specs/1942-statusline-anim/evidence/).
  */
 export const DEFAULT_STATUS_ANIMATION_POLICY: StatusAnimationPolicy = {
