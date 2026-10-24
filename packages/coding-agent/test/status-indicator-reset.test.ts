@@ -1,5 +1,5 @@
 import type { TUI } from "@earendil-works/pi-tui";
-import { Loader } from "@earendil-works/pi-tui";
+import { configureStatusLinePolicy, DEFAULT_STATUS_LINE_POLICY, Loader } from "@earendil-works/pi-tui";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { StatusIndicator, WorkingStatusIndicator } from "../src/modes/interactive/components/status-indicator.ts";
 import { DEFAULT_STATUS_ANIMATION_POLICY } from "../src/modes/interactive/status-line/animation-policy.ts";
@@ -90,6 +90,10 @@ describe("status indicator override reset", () => {
 	});
 
 	it("does not change the generic Loader default", () => {
+		// The Loader default is the tui status-line policy cadence (#18), not the
+		// status-indicator policy. Pin it to 80 ms so a leak of the 500 ms working
+		// policy into the Loader would show up as a mismatch.
+		configureStatusLinePolicy({ spinnerTickMs: 80 });
 		initTheme("dark");
 		vi.useFakeTimers();
 		const interval = vi.spyOn(globalThis, "setInterval");
@@ -103,6 +107,7 @@ describe("status indicator override reset", () => {
 			expect(interval).toHaveBeenLastCalledWith(expect.any(Function), 80);
 		} finally {
 			loader.stop();
+			configureStatusLinePolicy({ ...DEFAULT_STATUS_LINE_POLICY });
 		}
 		expect(vi.getTimerCount()).toBe(0);
 	});
