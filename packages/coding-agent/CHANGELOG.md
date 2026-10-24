@@ -22,6 +22,10 @@
 - Added Claude Haiku 5.5 (`anthropic/claude-haiku-5-5`), with adaptive thinking up to `xhigh`/`max` effort and prompt caching on Bedrock
 - Added native llama.cpp decision models: Julia-1, Laya, Kev, lev, and OpenJev served by llama.cpp 0.6.0 or later are listed only as classifiers through `/v1/systemone` instead of as chat models (see [Classification](docs/llama-cpp.md#classification)) ([#10382](https://github.com/earendil-works/pi/pull/10382))
 
+### Fixed
+
+- API key and provider header commands now resolve asynchronously, keeping terminal input responsive while credential helpers wait. Session deletion also invokes the trash helper asynchronously with bounded output and a timeout.
+
 ### Changed
 
 - Changed `outputPad` to also apply to `!` command output, tool output, and summary blocks ([#9946](https://github.com/earendil-works/pi/issues/9946), [#10557](https://github.com/earendil-works/pi/pull/10557) by [@rwachtler](https://github.com/rwachtler))
