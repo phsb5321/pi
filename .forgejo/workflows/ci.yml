@@ -1,0 +1,166 @@
+# FORGEJO IS THE CI-OF-RECORD for phsb5321/pi.
+# Why this exists: GitHub Actions dispatch is billing-blocked for this account
+# (every run a startup_failure before a runner is assigned). Forgejo runs the
+# same gates on the fleet's self-hosted runner (gitea-runner-server on
+# Nix.Server) and the status bridge posts each verdict back to GitHub as a
+# commit status, so GitHub checks reflect truth without billing.
+# Pattern provenance: pedro/web-automation (first end-to-end, 20/09/2026),
+# pedro/gpu-media-toolkit (status bridge, 12/10/2026), pedro/COC_BOT (8 gates,
+# 11/10/2026). Ported from .github/workflows/ci.yml (dormant reference).
+# Deltas vs the GitHub copy: docker lane via runner label ubuntu-latest, no
+# setup-node npm cache (runner cache backend off), bridge step appended,
+# push trigger widened to all branches so PR head branches can fire gates
+# without a Forgejo PR.
+name: ci
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  build-check-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      # Every step below tees into this file so a failure can be read from
+      # GitHub (see the failure-log step); Forgejo job logs need a browser login.
+      CI_LOG: /tmp/forgejo-ci-steps.log
+    defaults:
+      run:
+        shell: bash -eo pipefail {0}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Install system dependencies
+        run: |
+          {
+            echo "::: Install system dependencies"
+            sudo apt-get update
+            sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev ripgrep
+            # Pinned fd: jammy's fd-find 8.3.1 lacks --no-require-git, which pi's find tool passes.
+            curl -fsSL https://github.com/sharkdp/fd/releases/download/v10.5.0/fd-v10.5.0-x86_64-unknown-linux-musl.tar.gz | sudo tar -xz -C /usr/local/bin --strip-components=1 --wildcards '*/fd'
+            fd --version
+            # sshd refuses to start as root without its privilege-separation directory
+            # ("Missing privilege separation directory: /run/sshd"); packages/env/test/ssh.test.ts
+            # runs a disposable sshd. GitHub's hosted runners have it, this container does not.
+            sudo mkdir -p /run/sshd
+          } 2>&1 | tee -a "$CI_LOG"
+
+      - name: Install dependencies
+        run: |
+          { echo "::: Install dependencies"; npm ci --ignore-scripts; } 2>&1 | tee -a "$CI_LOG"
+
+      - name: Build
+        run: |
+          { echo "::: Build"; npm run build:offline; } 2>&1 | tee -a "$CI_LOG"
+
+      - name: Check
+        run: |
+          { echo "::: Check"; npm run check; } 2>&1 | tee -a "$CI_LOG"
+
+      - name: Install Rust (rustup)
+        # GitHub's hosted runners ship rustup; the Forgejo act image does not
+        # (build:daemon failed with "cargo: not found"). build:daemon runs cargo
+        # from packages/env with --manifest-path, and rustup resolves
+        # rust-toolchain.toml from the working directory, not the manifest, so
+        # the pin is not seen there: install the pinned channel as the default.
+        run: |
+          {
+            echo "::: Install Rust (rustup)"
+            toolchain=$(sed -n 's/^channel = "\(.*\)"$/\1/p' packages/env/daemon/rust-toolchain.toml)
+            test -n "$toolchain"
+            command -v cargo || curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain "$toolchain"
+            echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          } 2>&1 | tee -a "$CI_LOG"
+
+      - name: Build the pi-env daemon
+        run: |
+          { echo "::: Build the pi-env daemon"; npm run build:daemon --workspace packages/env; } 2>&1 | tee -a "$CI_LOG"
+
+      - name: Test
+        # PI_NO_LOCAL_LLM: the local llama.cpp/ollama probes hit localhost:8081 and
+        # the runner host listens there, so the probe passes and the test runs
+        # against an unrelated service. The runner has no local LLM to test.
+        env:
+          PI_NO_LOCAL_LLM: "1"
+        run: |
+          { echo "::: Test"; npm test; } 2>&1 | tee -a "$CI_LOG"
+
+      - name: Failure log → GitHub commit comment
+        if: failure()
+        continue-on-error: true
+        env:
+          GH_STATUS_TOKEN: ${{ secrets.GH_STATUS_TOKEN }}
+          GH_REPO: phsb5321/pi
+          GH_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          LOG_TITLE: "forgejo build-check-test failed"
+          LOG_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash scripts/forgejo-gh-failure-log.sh
+
+      - name: "Status bridge → GitHub (context: build-check-test)"
+        if: always()
+        continue-on-error: true # bridge failure ≠ gate failure; a stuck PENDING status on GitHub is the real signal
+        env:
+          GH_STATUS_TOKEN: ${{ secrets.GH_STATUS_TOKEN }}
+          GH_REPO: phsb5321/pi
+          GH_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          STATUS_CONTEXT: build-check-test
+          STATUS_STATE: ${{ job.status }}
+          STATUS_DESC: forgejo ci (${{ github.sha }})
+          STATUS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash scripts/forgejo-gh-status.sh
+
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Regenerate model catalog
+        run: |
+          npm ci --ignore-scripts
+          node packages/ai/scripts/generate-models.ts
+
+      - name: Verify catalog is clean
+        run: git diff --exit-code -- packages/ai/src/models.generated.ts
+
+      - name: "Status bridge → GitHub (context: generate)"
+        if: always()
+        continue-on-error: true
+        env:
+          GH_STATUS_TOKEN: ${{ secrets.GH_STATUS_TOKEN }}
+          GH_REPO: phsb5321/pi
+          GH_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          STATUS_CONTEXT: generate
+          STATUS_STATE: ${{ job.status }}
+          STATUS_DESC: forgejo model-catalog (${{ github.sha }})
+          STATUS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash scripts/forgejo-gh-status.sh

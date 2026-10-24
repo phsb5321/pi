@@ -55,7 +55,7 @@ async function freePort(): Promise<number> {
 	});
 }
 
-async function waitForPort(port: number): Promise<void> {
+async function waitForPort(port: number, log: () => string): Promise<void> {
 	for (let attempt = 0; attempt < 100; attempt++) {
 		const open = await new Promise<boolean>((resolve) => {
 			const socket = new Socket();
@@ -65,7 +65,7 @@ async function waitForPort(port: number): Promise<void> {
 		if (open) return;
 		await new Promise((resolve) => setTimeout(resolve, 50));
 	}
-	throw new Error("sshd did not start");
+	throw new Error(`sshd did not start${log().trim() ? `: ${log().trim()}` : ""}`);
 }
 
 // A disposable sshd on localhost with its own host key, client key and home directory.
@@ -97,8 +97,13 @@ describe.skipIf(sshd === undefined)("SSH bootstrap", () => {
 			].join("\n"),
 		);
 		writeFileSync(join(root, "ssh_config"), "");
-		server = spawn(sshd!, ["-D", "-e", "-f", join(root, "sshd_config")], { stdio: "ignore" });
-		await waitForPort(port);
+		// -e sends sshd's own diagnostics to stderr; keep them for the startup error.
+		let sshdLog = "";
+		server = spawn(sshd!, ["-D", "-e", "-f", join(root, "sshd_config")], { stdio: ["ignore", "ignore", "pipe"] });
+		server.stderr?.on("data", (chunk) => {
+			sshdLog += chunk;
+		});
+		await waitForPort(port, () => sshdLog);
 		target = {
 			host: "127.0.0.1",
 			port,

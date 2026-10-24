@@ -120,4 +120,4 @@ it("converges across randomized prepared revisions", () => {
 			expectAliasFree(tracker.value);
 		}
 	}
-});
+}, 30_000); // 100 seeds take ~3.3 s locally; the 5 s default left too little headroom on CI.
