@@ -103,7 +103,10 @@ function translateBox(box: LayoutBox, deltaY: number): void {
  * re-renders from source). */
 const EVICT_MARGIN_ROWS = 64;
 
-type DroppableRender = { dropRenderedLines?: () => void };
+type DroppableRender = {
+	dropRenderedLines?: () => void;
+	prepareRenderedLinesForPaint?: () => boolean;
+};
 
 function dropBoxRenderCache(box: LayoutBox): void {
 	(box.component as DroppableRender).dropRenderedLines?.();
@@ -356,6 +359,15 @@ function paintBox(box: LayoutBox, screen: string[], totalWidth: number): void {
 		const offset = box.lineOffset ?? 0;
 		const firstRow = Math.max(box.rect.y, box.clip.y, 0);
 		const lastRow = Math.min(box.rect.y + box.rect.height, box.clip.y + box.clip.height, screen.length);
+		// Measurement may return blankness stubs for evicted components. Only boxes with
+		// visible cells rematerialize from source; offscreen history stays dropped.
+		if (
+			firstRow < lastRow &&
+			box.clip.width > 0 &&
+			(box.component as DroppableRender).prepareRenderedLinesForPaint?.()
+		) {
+			box.lines = box.component.render(box.rect.width);
+		}
 		for (let row = firstRow; row < lastRow; row++) {
 			const sourceLine = box.lines[offset + row - box.rect.y];
 			if (sourceLine === undefined) continue;
