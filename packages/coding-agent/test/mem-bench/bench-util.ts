@@ -2,7 +2,7 @@
  * Shared helpers for the mem-bench drivers (tui-bench.ts, interactive-bench.ts). Linux /proc only;
  * other platforms get empty results.
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 
 export const mb = (n: number): number => +(n / 1048576).toFixed(1);
 
@@ -111,6 +111,7 @@ export function memRecord(mode: string, turn: number, extra: Record<string, unkn
 		arrayBuffersMB: mb(m.arrayBuffers),
 		nonHeapMB: mb(m.rss - m.heapTotal - m.external),
 		smaps: smapsRollup(),
+		threads: threadCount(),
 		...(process.env.BENCH_MAPS ? { mappings: mappingBuckets() } : {}),
 		...extra,
 	};
@@ -158,4 +159,27 @@ export function parseBenchArgs(
 	const gcFn = globalThis.gc;
 	if (typeof gcFn !== "function") throw new Error("run with --expose-gc");
 	return { turns, outFile, gc: gcFn, checkpoints: new Set([...defaultCheckpoints, turns].filter((t) => t <= turns)) };
+}
+
+/**
+ * BENCH_SMAPS_DUMP=<prefix>: write the full /proc/self/smaps to <prefix>.t<turn> at each checkpoint.
+ * Pair it with an strace run under `setarch -R` (ASLR off) so the addresses match.
+ */
+export function dumpSmaps(turn: number): void {
+	const prefix = process.env.BENCH_SMAPS_DUMP;
+	if (!prefix) return;
+	try {
+		writeFileSync(`${prefix}.t${turn}`, readFileSync("/proc/self/smaps"));
+	} catch {
+		// not Linux
+	}
+}
+
+/** Live thread count from /proc/self/task (libuv pool, V8 workers, main). */
+export function threadCount(): number {
+	try {
+		return readdirSync("/proc/self/task").length;
+	} catch {
+		return 0;
+	}
 }

@@ -21,7 +21,7 @@ import type { AgentSessionRuntime } from "../../src/core/agent-session-runtime.t
 import { InteractiveMode } from "../../src/modes/interactive/interactive-mode.ts";
 import { initTheme } from "../../src/modes/interactive/theme/theme.ts";
 import { createHarness } from "../suite/harness.ts";
-import { memRecord, parseBenchArgs, scrollSweep } from "./bench-util.ts";
+import { dumpSmaps, memRecord, parseBenchArgs, scrollSweep } from "./bench-util.ts";
 
 if (!process.env.PI_OFFLINE) throw new Error("set PI_OFFLINE=1 (no network in the bench)");
 
@@ -47,6 +47,7 @@ function commandFor(turn: number): string {
 function checkpoint(turn: number): void {
 	gc();
 	gc();
+	dumpSmaps(turn);
 	// Proof the real event path ran: chat children created by InteractiveMode's subscription, and
 	// the bash tool result the faux model asked for (last toolResult text length, bytes).
 	const chat = (mode as unknown as { chatContainer: { children: unknown[] } }).chatContainer;
