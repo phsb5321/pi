@@ -26,8 +26,9 @@ const [turnsArg, outFile] = process.argv.slice(2);
 const TURNS = Number(turnsArg ?? 200);
 if (!outFile || !Number.isFinite(TURNS) || TURNS < 1)
 	throw new Error("usage: interactive-bench.ts <turns> <out.jsonl>");
-const gc = globalThis.gc;
-if (typeof gc !== "function") throw new Error("run with --expose-gc");
+const gcFn = globalThis.gc;
+if (typeof gcFn !== "function") throw new Error("run with --expose-gc");
+const gc: () => void = gcFn;
 if (!process.env.PI_OFFLINE) throw new Error("set PI_OFFLINE=1 (no network in the bench)");
 
 const CHECKPOINTS = new Set([50, 100, 200, TURNS].filter((t) => t <= TURNS));
@@ -89,6 +90,10 @@ const runtime = {
 const terminal = new VirtualTerminal(120, 40);
 const mode = new InteractiveMode(runtime, { terminal, tuiMode: "fullscreen" });
 await mode.init();
+// Fullscreen scroll controls live on the alt-screen TUI that InteractiveMode drives (its `ui` is private).
+const screen = (
+	mode as unknown as { ui: { scrollBy(lines: number): void; scrollToTop(): void; scrollToBottom(): void } }
+).ui;
 await terminal.waitForRender();
 
 for (let i = 0; i < TURNS; i++) {
@@ -102,13 +107,13 @@ for (let i = 0; i < TURNS; i++) {
 	harness.events.length = 0;
 	await terminal.waitForRender();
 	for (let p = 0; p < 3; p++) {
-		mode.ui.scrollBy(-terminal.rows);
+		screen.scrollBy(-terminal.rows);
 		await terminal.waitForRender();
 	}
 	if (i % 10 === 9) {
-		mode.ui.scrollToTop();
+		screen.scrollToTop();
 		await terminal.waitForRender();
-		mode.ui.scrollToBottom();
+		screen.scrollToBottom();
 		await terminal.waitForRender();
 	}
 	if (CHECKPOINTS.has(i + 1)) checkpoint(i + 1);
