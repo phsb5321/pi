@@ -35,12 +35,35 @@ function formatShellCall(args: { command?: string; timeout?: number } | undefine
 	const commandDisplay = command === null ? invalidArgText(theme) : command ? command : theme.fg("toolOutput", "...");
 	return theme.fg("toolTitle", theme.bold(`${prompt} ${commandDisplay}`)) + timeoutSuffix;
 }
+type BashResultLike = {
+	content: Array<{ type: string; text?: string; data?: string; mimeType?: string }>;
+	details?: BashToolDetails;
+};
+
+/** The plain output text shown for a result: trimmed, with the truncation footer removed when the file path is shown. */
+function bashOutputText(result: BashResultLike, showImages: boolean, isPartial: boolean): string {
+	let output = getTextOutput(result as any, showImages).trim();
+	const truncation = result.details?.truncation;
+	const fullOutputPath = result.details?.fullOutputPath;
+	if (!isPartial && truncation?.truncated && fullOutputPath && output.endsWith("]")) {
+		const footerStart = output.lastIndexOf("\n\n[");
+		if (footerStart !== -1 && output.slice(footerStart).includes(fullOutputPath)) {
+			output = output.slice(0, footerStart).trimEnd();
+		}
+	}
+	return output;
+}
+
+function styleBashOutput(output: string): string {
+	return output
+		.split("\n")
+		.map((line) => theme.fg("toolOutput", line))
+		.join("\n");
+}
+
 function rebuildBashResultRenderComponent(
 	component: Container,
-	result: {
-		content: Array<{ type: string; text?: string; data?: string; mimeType?: string }>;
-		details?: BashToolDetails;
-	},
+	result: BashResultLike,
 	options: ToolRenderResultOptions,
 	showImages: boolean,
 	startedAt: number | undefined,
@@ -49,29 +72,21 @@ function rebuildBashResultRenderComponent(
 ): void {
 	component.clear();
 
-	let output = getTextOutput(result as any, showImages).trim();
 	const truncation = result.details?.truncation;
 	const fullOutputPath = result.details?.fullOutputPath;
-	if (!options.isPartial && truncation?.truncated && fullOutputPath && output.endsWith("]")) {
-		const footerStart = output.lastIndexOf("\n\n[");
-		if (footerStart !== -1 && output.slice(footerStart).includes(fullOutputPath)) {
-			output = output.slice(0, footerStart).trimEnd();
-		}
-	}
+	const output = bashOutputText(result, showImages, options.isPartial === true);
 
 	if (output) {
-		const styledOutput = output
-			.split("\n")
-			.map((line) => theme.fg("toolOutput", line))
-			.join("\n");
-
 		if (options.expanded) {
-			component.addChild(new Text(`\n${styledOutput}`, 0, 0));
+			component.addChild(new Text(`\n${styleBashOutput(output)}`, 0, 0));
 		} else {
+			// The collapsed preview rebuilds its styled text from the result when its lines are not cached.
+			// Holding that styled copy would duplicate the output for as long as the component lives.
+			const isPartial = options.isPartial === true;
 			component.addChild(new Spacer(1));
 			component.addChild(
 				new VisualLinePreview({
-					text: styledOutput,
+					text: () => styleBashOutput(bashOutputText(result, showImages, isPartial)),
 					maxVisualLines: BASH_PREVIEW_LINES,
 					keep: "end",
 					formatHint: (hidden) =>

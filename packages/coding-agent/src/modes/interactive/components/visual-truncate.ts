@@ -52,8 +52,9 @@ export function truncateToVisualLines(
 }
 
 export interface VisualLinePreviewOptions {
-	/** Styled text; may contain newlines. */
-	text: string;
+	/** Styled text, or a function that builds it. A function is called only when lines are not cached,
+	 * so the styled copy need not stay in memory between renders. May contain newlines. */
+	text: string | (() => string);
 	maxVisualLines: number;
 	/** Which visual lines to keep. The hint goes before kept end lines and after kept start lines. */
 	keep: "start" | "end";
@@ -77,7 +78,8 @@ export class VisualLinePreview implements Component {
 
 	render(width: number): string[] {
 		if (this.cachedLines === undefined || this.cachedWidth !== width) {
-			const { text, maxVisualLines, keep, formatHint } = this.options;
+			const { maxVisualLines, keep, formatHint } = this.options;
+			const text = typeof this.options.text === "function" ? this.options.text() : this.options.text;
 			const preview = truncateToVisualLines(text, maxVisualLines, width, 0, keep);
 			const lines = preview.visualLines;
 			if (preview.skippedCount > 0) {
