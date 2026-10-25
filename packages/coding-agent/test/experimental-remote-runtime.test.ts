@@ -11,7 +11,12 @@ import { runClient } from "../src/experimental/client.ts";
 import { activateBuiltinClientServices, openClientRuntime } from "../src/experimental/client-runtime.ts";
 import { createPresentationFacetLoaders } from "../src/experimental/plugins/bundled.ts";
 import * as processRuntime from "../src/experimental/process.ts";
-import { type RunningServer, startServer } from "../src/experimental/server.ts";
+import {
+	activateServer,
+	ENV_ACTIVATION_TIMEOUT_MS,
+	type RunningServer,
+	startServer,
+} from "../src/experimental/server.ts";
 import { AgentController } from "../src/experimental/services/agent-controller.ts";
 import { createSessionServiceSource, type SessionAttachmentState } from "../src/experimental/services/connection.ts";
 import { Models } from "../src/experimental/services/models.ts";
@@ -40,6 +45,8 @@ beforeEach(async () => {
 	directories.add(agentDir);
 	await configureExperimentalWorkerModel(agentDir);
 	vi.stubEnv("PI_CODING_AGENT_DIR", agentDir);
+	// Source cold starts run through the on-the-fly resolver and share the host with parallel suites.
+	vi.stubEnv(ENV_ACTIVATION_TIMEOUT_MS, "60000");
 	await createExperimentalSessions(join(agentDir, "experimental", "sessions"), ["demo-1", "demo-2"]);
 });
 
@@ -818,3 +825,14 @@ function processExists(pid: number): boolean {
 		return (error as NodeJS.ErrnoException).code === "EPERM";
 	}
 }
+
+describe("experimental activation budget", () => {
+	test("rejects a malformed budget before spawning a server", async () => {
+		const directory = await mkdtemp(join("/tmp", "pes-budget-"));
+		directories.add(directory);
+		vi.stubEnv(ENV_ACTIVATION_TIMEOUT_MS, "1e3");
+		await expect(activateServer({ directory, sessionDir: join(directory, "sessions") })).rejects.toThrow(
+			ENV_ACTIVATION_TIMEOUT_MS,
+		);
+	});
+});

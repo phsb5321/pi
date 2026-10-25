@@ -125,8 +125,23 @@ export async function acquireServerProfile(directory: string, requestedServerId?
 	return { serverId, release };
 }
 
-const ACTIVATION_TIMEOUT_MS = 10_000;
+export const ENV_ACTIVATION_TIMEOUT_MS = "PI_EXPERIMENTAL_ACTIVATION_TIMEOUT_MS";
+const DEFAULT_ACTIVATION_TIMEOUT_MS = 10_000;
 const ACTIVATION_RETRY_MS = 10;
+
+/**
+ * Cold-activation budget in milliseconds. It bounds the client's wait and the activation lock's
+ * retry window, which must stay in step with it. Tests raise it because they cold-start from source.
+ */
+function resolveActivationTimeoutMs(): number {
+	const value = process.env[ENV_ACTIVATION_TIMEOUT_MS];
+	if (value === undefined || value === "") return DEFAULT_ACTIVATION_TIMEOUT_MS;
+	const ms = Number(value);
+	if (!/^\d+$/.test(value) || !Number.isSafeInteger(ms) || ms <= 0) {
+		throw new Error(`${ENV_ACTIVATION_TIMEOUT_MS} must be a positive integer of milliseconds, got "${value}"`);
+	}
+	return ms;
+}
 
 export interface ActivatedServer {
 	readonly client: Client;
@@ -151,7 +166,8 @@ export async function activateServer(options: ActivateServerOptions): Promise<Ac
 	const serverId = profile.serverId;
 	await profile.release();
 	const route = { serverId, path: getUnixSocketPath(serverId, options.directory) };
-	const release = await acquireServerActivation(options.directory, serverId);
+	const timeoutMs = resolveActivationTimeoutMs();
+	const release = await acquireServerActivation(options.directory, serverId, timeoutMs);
 	try {
 		const existing = await connect(route);
 		if (existing) {
@@ -177,7 +193,7 @@ export async function activateServer(options: ActivateServerOptions): Promise<Ac
 			spawnError = error;
 		});
 		try {
-			const deadline = Date.now() + ACTIVATION_TIMEOUT_MS;
+			const deadline = Date.now() + timeoutMs;
 			while (true) {
 				const client = await connect(route);
 				if (client) return { client, route };
@@ -197,17 +213,21 @@ export async function activateServer(options: ActivateServerOptions): Promise<Ac
 	}
 }
 
-export function acquireServerActivation(directory: string, serverId: ServerId): Promise<() => Promise<void>> {
+export function acquireServerActivation(
+	directory: string,
+	serverId: ServerId,
+	timeoutMs: number = resolveActivationTimeoutMs(),
+): Promise<() => Promise<void>> {
 	return lockfile.lock(join(directory, `activation-${serverId}`), {
 		realpath: false,
-		stale: ACTIVATION_TIMEOUT_MS * 2,
-		update: ACTIVATION_TIMEOUT_MS,
+		stale: timeoutMs * 2,
+		update: timeoutMs,
 		retries: {
-			retries: Math.ceil(ACTIVATION_TIMEOUT_MS / 25),
+			retries: Math.ceil(timeoutMs / 25),
 			factor: 1,
 			minTimeout: 25,
 			maxTimeout: 25,
-			maxRetryTime: ACTIVATION_TIMEOUT_MS,
+			maxRetryTime: timeoutMs,
 		},
 	});
 }
