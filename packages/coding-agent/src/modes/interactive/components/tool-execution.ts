@@ -156,6 +156,8 @@ export class ToolExecutionComponent extends Container {
 		// references above left them reachable from the child tree. Rebuild on the next paint.
 		this.contentBox.clear();
 		this.selfRenderContainer.clear();
+		// Release the fallback presentation text too; the next updateDisplay rebuilds it from the result.
+		this.contentText.setText("");
 		this.renderPending = true;
 	}
 
