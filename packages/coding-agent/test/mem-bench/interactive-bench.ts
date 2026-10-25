@@ -13,7 +13,8 @@
  *
  * Checkpoints (turns 50, 100, 200, final): gc() twice, then rss and heapUsed, one JSON line each.
  */
-import { appendFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { writeHeapSnapshot } from "node:v8";
 import { fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai/compat";
 import { VirtualTerminal } from "../../../tui/test/virtual-terminal.ts";
 import type { AgentSessionRuntime } from "../../src/core/agent-session-runtime.ts";
@@ -32,6 +33,15 @@ if (!process.env.PI_OFFLINE) throw new Error("set PI_OFFLINE=1 (no network in th
 const CHECKPOINTS = new Set([50, 100, 200, TURNS].filter((t) => t <= TURNS));
 // 500 lines of 100 bytes = 50,000 bytes: the bash tool's output cap.
 const COMMAND = "awk 'BEGIN{for(i=0;i<500;i++)printf \"%099d\\n\", 0}'";
+// BENCH_UNIQUE=1: each turn prints its own marker on every line (100 bytes per line), so copies of a
+// result can be told apart in a heap snapshot. Off by default to keep the w7 protocol.
+const UNIQUE = process.env.BENCH_UNIQUE === "1";
+const SNAPSHOT_DIR = process.env.BENCH_SNAPSHOT_DIR;
+if (SNAPSHOT_DIR) mkdirSync(SNAPSHOT_DIR, { recursive: true });
+function commandFor(turn: number): string {
+	if (!UNIQUE) return COMMAND;
+	return `awk -v t=${turn} 'BEGIN{for(j=0;j<500;j++)printf "T%05d L%04d %086d\\n", t, j, 0}'`;
+}
 
 function checkpoint(turn: number): void {
 	gc();
@@ -45,10 +55,12 @@ function checkpoint(turn: number): void {
 		lastTool && "content" in lastTool && Array.isArray(lastTool.content)
 			? lastTool.content.reduce((n, part) => n + (part.type === "text" ? Buffer.byteLength(part.text ?? "") : 0), 0)
 			: 0;
+	const snapshot = SNAPSHOT_DIR ? writeHeapSnapshot(`${SNAPSHOT_DIR}/t${turn}.heapsnapshot`) : undefined;
 	appendFileSync(
 		outFile,
 		`${JSON.stringify({
 			mode: "interactive",
+			snapshot,
 			turn,
 			rssMB: +(m.rss / 1048576).toFixed(1),
 			heapUsedMB: +(m.heapUsed / 1048576).toFixed(1),
@@ -81,10 +93,13 @@ await terminal.waitForRender();
 
 for (let i = 0; i < TURNS; i++) {
 	harness.setResponses([
-		fauxAssistantMessage([fauxToolCall("bash", { command: COMMAND })]),
+		fauxAssistantMessage([fauxToolCall("bash", { command: commandFor(i) })]),
 		fauxAssistantMessage(`done ${i}`),
 	]);
 	await harness.session.prompt(`turn ${i}`);
+	// The harness records every session event; the real InteractiveMode keeps none. Clear it so the
+	// heap reflects what the production controller retains.
+	harness.events.length = 0;
 	await terminal.waitForRender();
 	for (let p = 0; p < 3; p++) {
 		mode.ui.scrollBy(-terminal.rows);
