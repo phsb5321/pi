@@ -41,3 +41,26 @@ describe("ToolExecutionComponent.evictRenderCaches retention", () => {
 		expect(component.render(80)).toEqual(before);
 	});
 });
+
+describe("ToolExecutionComponent keeps only the result fields it renders", () => {
+	it("does not retain a bash result's structuredContent after updateResult", async () => {
+		// structuredContent.output is a second copy of the output kept for programmatic callers.
+		const component = new ToolExecutionComponent("bash", "call-1", {}, {}, undefined, ui, "/tmp");
+		let structured: WeakRef<object> | undefined;
+		const store = () => {
+			const structuredContent = { output: "y".repeat(50_000), truncated: false, exit_code: 0 };
+			structured = new WeakRef(structuredContent);
+			component.updateResult({
+				content: [{ type: "text", text: "out" }],
+				isError: false,
+				structuredContent,
+			} as never);
+		};
+		store();
+		await new Promise((resolve) => setImmediate(resolve));
+		gc();
+
+		expect(structured?.deref()).toBeUndefined();
+		expect(component.render(80).join("\n")).toContain("out");
+	});
+});
