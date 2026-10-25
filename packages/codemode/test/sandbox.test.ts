@@ -606,7 +606,7 @@ describe("limits and lifetime", () => {
 		const empty = await sandbox.execute(`for (;;) text("");`);
 		expect(empty).toMatchObject({ ok: false, error: { name: "RangeError" } });
 		expect(empty.output).toHaveLength(MAX_OUTPUT_ITEMS);
-	});
+	}, 30_000); // CPU-bound: fills the output limit for 3 variants, ~3 s locally against the 5 s default.
 
 	it("rejects execute after close", async () => {
 		const sandbox = createSandbox();
