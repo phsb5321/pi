@@ -176,6 +176,13 @@ export class NodeSqliteDatabase extends NodeSqliteExecutor implements SqliteData
 	}
 }
 
+function workerError(info: { name?: string; message: string; code?: unknown } | undefined): Error {
+	const error = new Error(info?.message ?? "SQLite worker failed");
+	if (info?.name !== undefined) error.name = info.name;
+	if (info?.code !== undefined) Object.assign(error, { code: info.code });
+	return error;
+}
+
 /** Open and configure a Node-backed SQLite database facade. */
 export async function openNodeSqliteDatabase(
 	path: string,
@@ -185,69 +192,76 @@ export async function openNodeSqliteDatabase(
 }
 
 /**
- * Runs in a worker thread: owns the connection and executes every statement there, so a slow call (fsync on WAL
- * switch, schema creation, a large commit) never blocks the event loop. Plain JavaScript, started from a string so
- * source and built output run the same code. `PI_DURABLE_SQLITE_TEST_BLOCK_MS` is a test seam: it blocks the
- * worker, not the caller, before the WAL switch, to model a slow disk.
+ * Runs in one shared worker thread that owns every connection in the process, keyed by database id. Statements run
+ * there, so a slow call (fsync on a WAL switch, schema creation, a large commit) never blocks the event loop. One
+ * worker, not one per database: starting a thread costs tens of milliseconds and every open paid it. Plain JavaScript,
+ * started from a string so source and built output run the same code.
  */
 const SQLITE_WORKER_SOURCE = `
-const { parentPort, workerData } = require("node:worker_threads");
+const { parentPort } = require("node:worker_threads");
 const { DatabaseSync } = require("node:sqlite");
-let database;
-const statements = new Map();
-function statement(sql) {
-  let prepared = statements.get(sql);
+const databases = new Map();
+function connection(id) {
+  const found = databases.get(id);
+  if (found === undefined) throw new Error("SQLite database " + id + " is closed");
+  return found;
+}
+function statement(found, sql) {
+  let prepared = found.statements.get(sql);
   if (prepared === undefined) {
-    prepared = database.prepare(sql);
-    statements.set(sql, prepared);
+    prepared = found.database.prepare(sql);
+    found.statements.set(sql, prepared);
   }
   return prepared;
 }
-function perform(op, sql, params) {
+function perform(op, id, sql, params, options) {
   switch (op) {
     case "open": {
-      database = new DatabaseSync(workerData.path, { timeout: workerData.busyTimeoutMs });
-      const block = Number(process.env.PI_DURABLE_SQLITE_TEST_BLOCK_MS ?? 0);
+      const database = new DatabaseSync(options.path, { timeout: options.busyTimeoutMs });
+      const block = options.testBlockMs;
       if (block > 0) {
         const end = Date.now() + block;
         while (Date.now() < end);
       }
       database.exec("PRAGMA journal_mode = WAL");
       database.exec("PRAGMA synchronous = NORMAL");
-      database.exec("PRAGMA wal_autocheckpoint = " + workerData.checkpointPages);
+      database.exec("PRAGMA wal_autocheckpoint = " + options.checkpointPages);
+      databases.set(id, { database, statements: new Map() });
       return undefined;
     }
     case "exec":
-      database.exec(sql);
+      connection(id).database.exec(sql);
       return undefined;
     case "run":
-      statement(sql).run(...params);
+      statement(connection(id), sql).run(...params);
       return undefined;
     case "get":
-      return statement(sql).get(...params);
+      return statement(connection(id), sql).get(...params);
     case "all":
-      return statement(sql).all(...params);
-    case "close":
-      if (database !== undefined) {
+      return statement(connection(id), sql).all(...params);
+    case "close": {
+      const found = databases.get(id);
+      if (found !== undefined) {
+        databases.delete(id);
         try {
-          database.exec("PRAGMA wal_checkpoint(TRUNCATE)");
+          found.database.exec("PRAGMA wal_checkpoint(TRUNCATE)");
         } finally {
-          statements.clear();
-          database.close();
-          database = undefined;
+          found.statements.clear();
+          found.database.close();
         }
       }
       return undefined;
+    }
     default:
       throw new Error("unknown sqlite worker operation " + op);
   }
 }
-parentPort.on("message", ({ id, op, sql, params }) => {
+parentPort.on("message", ({ call, id, op, sql, params, options }) => {
   try {
-    parentPort.postMessage({ id, ok: true, result: perform(op, sql, params) });
+    parentPort.postMessage({ call, ok: true, result: perform(op, id, sql, params, options) });
   } catch (error) {
     parentPort.postMessage({
-      id,
+      call,
       ok: false,
       error: { name: error?.name, message: error?.message ?? String(error), code: error?.code },
     });
@@ -256,48 +270,112 @@ parentPort.on("message", ({ id, op, sql, params }) => {
 `;
 
 type WorkerReply = {
-	readonly id: number;
+	readonly call: number;
 	readonly ok: boolean;
 	readonly result?: unknown;
 	readonly error?: { name?: string; message: string; code?: unknown };
 };
 
-/** Connection on a worker thread. Calls are serialized in call order; the queue holds until each settles. */
-class WorkerSqliteDatabase implements SqliteDatabase {
+type OpenOptions = {
+	readonly path: string;
+	readonly busyTimeoutMs: number;
+	readonly checkpointPages: number;
+	readonly testBlockMs: number;
+};
+
+/** The process-wide SQLite worker. Calls to it settle in the order its replies arrive, keyed by call id. */
+class SqliteWorker {
+	private static instance: SqliteWorker | undefined;
 	private readonly worker: Worker;
 	private readonly calls = new Map<number, { resolve(value: unknown): void; reject(error: unknown): void }>();
-	private readonly access = new SerialOperationQueue();
-	private nextId = 1;
+	private nextCall = 1;
+	private nextDatabase = 1;
 	private failure: Error | undefined;
+
+	private constructor() {
+		this.worker = new Worker(SQLITE_WORKER_SOURCE, { eval: true });
+		this.worker.on("message", (reply: WorkerReply) => this.settle(reply));
+		this.worker.on("error", (error) => this.fail(error));
+		this.worker.on("exit", () => this.fail(new Error("SQLite worker exited")));
+		// Unreferenced while idle, so an unclosed database cannot keep the process alive.
+		this.worker.unref();
+	}
+
+	/** The live worker; a crashed one is replaced for databases opened afterwards. */
+	static shared(): SqliteWorker {
+		if (SqliteWorker.instance === undefined || SqliteWorker.instance.failure !== undefined) {
+			SqliteWorker.instance = new SqliteWorker();
+		}
+		return SqliteWorker.instance;
+	}
+
+	newDatabaseId(): number {
+		return this.nextDatabase++;
+	}
+
+	call(
+		op: "open" | "exec" | "run" | "get" | "all" | "close",
+		id: number,
+		sql?: string,
+		params: SqliteValue[] = [],
+		options?: OpenOptions,
+	): Promise<unknown> {
+		if (this.failure !== undefined) return Promise.reject(this.failure);
+		const call = this.nextCall++;
+		return new Promise((resolve, reject) => {
+			this.calls.set(call, { resolve, reject });
+			if (this.calls.size === 1) this.worker.ref();
+			this.worker.postMessage({ call, id, op, sql, params, options });
+		});
+	}
+
+	private settle(reply: WorkerReply): void {
+		const pending = this.calls.get(reply.call);
+		if (pending === undefined) return;
+		this.finish(reply.call);
+		if (reply.ok) pending.resolve(reply.result);
+		else pending.reject(workerError(reply.error));
+	}
+
+	private fail(error: Error): void {
+		if (this.failure === undefined) this.failure = error;
+		for (const call of [...this.calls.keys()]) {
+			const pending = this.calls.get(call)!;
+			this.finish(call);
+			pending.reject(this.failure);
+		}
+	}
+
+	private finish(call: number): void {
+		this.calls.delete(call);
+		if (this.calls.size === 0) this.worker.unref();
+	}
+}
+
+/** Connection on the shared SQLite worker. Calls are serialized in call order; the queue holds until each settles. */
+class WorkerSqliteDatabase implements SqliteDatabase {
+	private readonly host: SqliteWorker;
+	private readonly id: number;
+	private readonly access = new SerialOperationQueue();
 	private closed = false;
 
-	private constructor(worker: Worker) {
-		this.worker = worker;
-		worker.on("message", (reply: WorkerReply) => this.settle(reply));
-		worker.on("error", (error) => this.fail(error));
-		worker.on("exit", () => this.fail(new Error("SQLite worker exited")));
-		// Unreferenced while idle, so an unclosed database cannot keep the process alive.
-		worker.unref();
+	private constructor(host: SqliteWorker, id: number) {
+		this.host = host;
+		this.id = id;
 	}
 
 	static async open(path: string, options: NodeSqliteStorageOptions): Promise<WorkerSqliteDatabase> {
 		if (path !== ":memory:") await mkdir(dirname(path), { recursive: true });
-		const worker = new Worker(SQLITE_WORKER_SOURCE, {
-			eval: true,
-			workerData: {
-				path,
-				busyTimeoutMs: options.busyTimeoutMs ?? DEFAULT_BUSY_TIMEOUT_MS,
-				checkpointPages: options.walAutoCheckpointPages ?? DEFAULT_WAL_AUTO_CHECKPOINT_PAGES,
-			},
+		const host = SqliteWorker.shared();
+		const id = host.newDatabaseId();
+		await host.call("open", id, undefined, [], {
+			path,
+			busyTimeoutMs: options.busyTimeoutMs ?? DEFAULT_BUSY_TIMEOUT_MS,
+			checkpointPages: options.walAutoCheckpointPages ?? DEFAULT_WAL_AUTO_CHECKPOINT_PAGES,
+			// Test seam: blocks the worker, not the caller, during the open.
+			testBlockMs: Number(process.env.PI_DURABLE_SQLITE_TEST_BLOCK_MS ?? 0),
 		});
-		const database = new WorkerSqliteDatabase(worker);
-		try {
-			await database.call("open");
-		} catch (error) {
-			await worker.terminate().catch(() => {});
-			throw error;
-		}
-		return database;
+		return new WorkerSqliteDatabase(host, id);
 	}
 
 	exec(sql: string): Promise<void> {
@@ -341,49 +419,13 @@ class WorkerSqliteDatabase implements SqliteDatabase {
 		return this.access.runAsync(async () => {
 			if (this.closed) return;
 			this.closed = true;
-			try {
-				await this.call("close");
-			} finally {
-				await this.worker.terminate();
-			}
+			await this.call("close");
 		});
 	}
 
 	/** One message to the worker, without the queue. Transactions use it from inside their own queue slot. */
-	call(
-		op: "open" | "exec" | "run" | "get" | "all" | "close",
-		sql?: string,
-		params: SqliteValue[] = [],
-	): Promise<unknown> {
-		if (this.failure !== undefined) return Promise.reject(this.failure);
-		const id = this.nextId++;
-		return new Promise((resolve, reject) => {
-			this.calls.set(id, { resolve, reject });
-			if (this.calls.size === 1) this.worker.ref();
-			this.worker.postMessage({ id, op, sql, params });
-		});
-	}
-
-	private settle(reply: WorkerReply): void {
-		const call = this.calls.get(reply.id);
-		if (call === undefined) return;
-		this.finish(reply.id);
-		if (reply.ok) call.resolve(reply.result);
-		else call.reject(workerError(reply.error));
-	}
-
-	private fail(error: Error): void {
-		if (this.failure === undefined) this.failure = error;
-		for (const id of [...this.calls.keys()]) {
-			const call = this.calls.get(id)!;
-			this.finish(id);
-			call.reject(this.failure);
-		}
-	}
-
-	private finish(id: number): void {
-		this.calls.delete(id);
-		if (this.calls.size === 0) this.worker.unref();
+	call(op: "exec" | "run" | "get" | "all" | "close", sql?: string, params: SqliteValue[] = []): Promise<unknown> {
+		return this.host.call(op, this.id, sql, params);
 	}
 }
 
@@ -416,13 +458,6 @@ class WorkerTransaction implements SqliteExecutor {
 		if (!this.scope.active) return Promise.reject(new Error("SQLite transaction handle is no longer active"));
 		return operation();
 	}
-}
-
-function workerError(info: { name?: string; message: string; code?: unknown } | undefined): Error {
-	const error = new Error(info?.message ?? "SQLite worker failed");
-	if (info?.name !== undefined) error.name = info.name;
-	if (info?.code !== undefined) Object.assign(error, { code: info.code });
-	return error;
 }
 
 /** Open or create file-backed durable storage using Node's built-in SQLite. */
