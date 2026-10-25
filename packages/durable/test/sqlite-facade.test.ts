@@ -11,11 +11,11 @@ import { type DocumentId, type EntryId, ROOT_CONVERSATION_ID } from "../src/type
 type SettlementMode = "immediate" | "delay" | "reject";
 
 class ControlledSettlementDatabase implements SqliteDatabase {
-	private readonly delegate: NodeSqliteDatabase;
+	private readonly delegate: SqliteDatabase;
 	private mode: SettlementMode = "immediate";
 	private pendingSettlement: (() => void) | undefined;
 
-	constructor(delegate: NodeSqliteDatabase) {
+	constructor(delegate: SqliteDatabase) {
 		this.delegate = delegate;
 	}
 
