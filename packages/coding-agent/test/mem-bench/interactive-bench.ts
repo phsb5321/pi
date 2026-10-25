@@ -11,7 +11,7 @@
  *   - the VirtualTerminal renders, then the viewport scrolls: 3 pages up per turn, and every 10th turn
  *     jumps to the top and back to the bottom so old components re-materialise and leave the window.
  *
- * Checkpoints (turns 50, 100, 200, final): gc() twice, then rss and heapUsed, one JSON line each.
+ * Checkpoints (turns 50,100,125,150,175,200): gc() twice, then the full process.memoryUsage() fields and the smaps split, one JSON line each.
  */
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { writeHeapSnapshot } from "node:v8";
@@ -21,18 +21,18 @@ import type { AgentSessionRuntime } from "../../src/core/agent-session-runtime.t
 import { InteractiveMode } from "../../src/modes/interactive/interactive-mode.ts";
 import { initTheme } from "../../src/modes/interactive/theme/theme.ts";
 import { createHarness } from "../suite/harness.ts";
+import { memRecord, parseBenchArgs, scrollSweep } from "./bench-util.ts";
 
-const [turnsArg, outFile] = process.argv.slice(2);
-const TURNS = Number(turnsArg ?? 200);
-if (!outFile || !Number.isFinite(TURNS) || TURNS < 1)
-	throw new Error("usage: interactive-bench.ts <turns> <out.jsonl>");
-const gcFn = globalThis.gc;
-if (typeof gcFn !== "function") throw new Error("run with --expose-gc");
-const gc: () => void = gcFn;
 if (!process.env.PI_OFFLINE) throw new Error("set PI_OFFLINE=1 (no network in the bench)");
 
-const CHECKPOINTS = new Set([50, 100, 200, TURNS].filter((t) => t <= TURNS));
+// Checkpoints (default 50-200) span the 100-200 window where the ~130 MB RSS jump happens.
 // 500 lines of 100 bytes = 50,000 bytes: the bash tool's output cap.
+const {
+	turns: TURNS,
+	outFile,
+	gc,
+	checkpoints: CHECKPOINTS,
+} = parseBenchArgs("interactive-bench.ts", [50, 100, 125, 150, 175, 200]);
 const COMMAND = "awk 'BEGIN{for(i=0;i<500;i++)printf \"%099d\\n\", 0}'";
 // BENCH_UNIQUE=1: each turn prints its own marker on every line (100 bytes per line), so copies of a
 // result can be told apart in a heap snapshot. Off by default to keep the w7 protocol.
@@ -47,7 +47,6 @@ function commandFor(turn: number): string {
 function checkpoint(turn: number): void {
 	gc();
 	gc();
-	const m = process.memoryUsage();
 	// Proof the real event path ran: chat children created by InteractiveMode's subscription, and
 	// the bash tool result the faux model asked for (last toolResult text length, bytes).
 	const chat = (mode as unknown as { chatContainer: { children: unknown[] } }).chatContainer;
@@ -57,19 +56,13 @@ function checkpoint(turn: number): void {
 			? lastTool.content.reduce((n, part) => n + (part.type === "text" ? Buffer.byteLength(part.text ?? "") : 0), 0)
 			: 0;
 	const snapshot = SNAPSHOT_DIR ? writeHeapSnapshot(`${SNAPSHOT_DIR}/t${turn}.heapsnapshot`) : undefined;
-	appendFileSync(
-		outFile,
-		`${JSON.stringify({
-			mode: "interactive",
-			snapshot,
-			turn,
-			rssMB: +(m.rss / 1048576).toFixed(1),
-			heapUsedMB: +(m.heapUsed / 1048576).toFixed(1),
-			chatChildren: chat.children.length,
-			sessionMessages: harness.session.messages.length,
-			lastToolResultBytes: toolBytes,
-		})}\n`,
-	);
+	const line = memRecord("interactive", turn, {
+		snapshot,
+		chatChildren: chat.children.length,
+		sessionMessages: harness.session.messages.length,
+		lastToolResultBytes: toolBytes,
+	});
+	appendFileSync(outFile, `${JSON.stringify(line)}\n`);
 }
 
 writeFileSync(outFile, "");
@@ -106,16 +99,7 @@ for (let i = 0; i < TURNS; i++) {
 	// heap reflects what the production controller retains.
 	harness.events.length = 0;
 	await terminal.waitForRender();
-	for (let p = 0; p < 3; p++) {
-		screen.scrollBy(-terminal.rows);
-		await terminal.waitForRender();
-	}
-	if (i % 10 === 9) {
-		screen.scrollToTop();
-		await terminal.waitForRender();
-		screen.scrollToBottom();
-		await terminal.waitForRender();
-	}
+	await scrollSweep(screen, terminal, i);
 	if (CHECKPOINTS.has(i + 1)) checkpoint(i + 1);
 }
 mode.stop();

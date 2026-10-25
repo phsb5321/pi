@@ -18,7 +18,7 @@
  * With BENCH_SNAPSHOT_DIR set, a V8 heap snapshot is written after gc() at each checkpoint, and
  * the per-space heap breakdown at the last one.
  */
-import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { getHeapSpaceStatistics, writeHeapSnapshot } from "node:v8";
 import { Container } from "@earendil-works/pi-tui";
@@ -26,50 +26,20 @@ import { VirtualTerminal } from "../../../tui/test/virtual-terminal.ts";
 import { BashExecutionComponent } from "../../src/modes/interactive/components/bash-execution.ts";
 import { createInteractiveTui } from "../../src/modes/interactive/interactive-mode.ts";
 import { initTheme } from "../../src/modes/interactive/theme/theme.ts";
+import { mb, memRecord, parseBenchArgs, scrollSweep } from "./bench-util.ts";
 
-const [turnsArg, outFile] = process.argv.slice(2);
-const TURNS = Number(turnsArg ?? 200);
-if (!outFile || !Number.isFinite(TURNS) || TURNS < 1) throw new Error("usage: tui-bench.ts <turns> <out.jsonl>");
-const gc = globalThis.gc;
-if (typeof gc !== "function") throw new Error("run with --expose-gc");
-
+const { turns: TURNS, outFile, gc, checkpoints: CHECKPOINTS } = parseBenchArgs("tui-bench.ts", [50, 100, 200]);
 const SNAPSHOT_DIR = process.env.BENCH_SNAPSHOT_DIR;
 if (SNAPSHOT_DIR) mkdirSync(SNAPSHOT_DIR, { recursive: true });
-const CHECKPOINTS = new Set([50, 100, 200, TURNS].filter((t) => t <= TURNS));
 const LINE = `${"x".repeat(99)}\n`; // 100 bytes per line, 500 lines = 50 KB per result
 const OUTPUT = LINE.repeat(500);
-const mb = (n: number) => +(n / 1048576).toFixed(1);
 
 // Linux only: split RSS into anonymous (malloc and V8 pages) and file-backed (binary, shared libs).
-function smapsRollup(): Record<string, number> {
-	try {
-		const out: Record<string, number> = {};
-		for (const line of readFileSync("/proc/self/smaps_rollup", "utf8").split("\n")) {
-			const m = /^(Rss|Anonymous|Private_Dirty|Shared_Clean|Private_Clean|Shared_Dirty):\s+(\d+)\s+kB/.exec(line);
-			if (m) out[`${m[1]}MB`] = +(Number(m[2]) / 1024).toFixed(1);
-		}
-		return out;
-	} catch {
-		return {};
-	}
-}
 
 function checkpoint(turn: number, extra: Record<string, unknown>): void {
 	gc();
 	gc();
-	const m = process.memoryUsage();
-	const line: Record<string, unknown> = {
-		mode: "tui",
-		turn,
-		rssMB: mb(m.rss),
-		heapTotalMB: mb(m.heapTotal),
-		heapUsedMB: mb(m.heapUsed),
-		externalMB: mb(m.external),
-		arrayBuffersMB: mb(m.arrayBuffers),
-		nonHeapMB: mb(m.rss - m.heapTotal - m.external),
-		smaps: smapsRollup(),
-		...extra,
-	};
+	const line = memRecord("tui", turn, extra);
 	if (SNAPSHOT_DIR) {
 		line.snapshot = writeHeapSnapshot(`${SNAPSHOT_DIR}/t${turn}.heapsnapshot`);
 		if (turn === TURNS) {
@@ -104,16 +74,7 @@ for (let i = 0; i < TURNS; i++) {
 	chat.addChild(comp);
 	tui.requestRender();
 	await terminal.waitForRender();
-	for (let p = 0; p < 3; p++) {
-		tui.scrollBy(-terminal.rows);
-		await terminal.waitForRender();
-	}
-	if (i % 10 === 9) {
-		tui.scrollToTop();
-		await terminal.waitForRender();
-		tui.scrollToBottom();
-		await terminal.waitForRender();
-	}
+	await scrollSweep(tui, terminal, i);
 	if (CHECKPOINTS.has(i + 1)) checkpoint(i + 1, { components: chat.children.length });
 }
 tui.stop();
