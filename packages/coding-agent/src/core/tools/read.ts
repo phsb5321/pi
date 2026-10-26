@@ -1,7 +1,7 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { Api, ImageContent, Model, ModelImageResizeOptions, TextContent } from "@earendil-works/pi-ai";
 import { constants } from "fs";
-import { access as fsAccess, readFile as fsReadFile } from "fs/promises";
+import { access as fsAccess, open as fsOpen, readFile as fsReadFile } from "fs/promises";
 import { type Static, Type } from "typebox";
 import { processImage } from "../../utils/image-process.ts";
 import { detectSupportedImageMimeTypeFromFile } from "../../utils/mime.ts";
@@ -59,6 +59,89 @@ const defaultReadOperations: ReadOperations = {
 	access: (path) => fsAccess(path, constants.R_OK),
 	detectImageMimeType: detectSupportedImageMimeTypeFromFile,
 };
+
+/** Files above this size are scanned in chunks instead of being decoded and split whole. */
+const WINDOW_READ_MIN_BYTES = 1024 * 1024;
+const WINDOW_CHUNK_BYTES = 1024 * 1024;
+
+interface TextWindow {
+	/** Lines in the file, as `content.split("\n").length` counts them. */
+	totalFileLines: number;
+	/** Decoded prefix of the selected region, long enough for truncateHead to decide (maxBytes + 1 bytes). */
+	prefix: string;
+	/** Byte length of the whole selected region. */
+	regionBytes: number;
+	/** Lines in the selected region, as truncateHead counts them. */
+	regionLines: number;
+	/** Byte length of the first selected line. */
+	firstLineBytes: number;
+}
+
+/**
+ * Read only the part of a large text file the read tool returns. One pass over fixed-size chunks finds
+ * the newline offsets that bound the selected region; only the first maxBytes + 1 bytes of the region
+ * are decoded. A 77 MB log costs one 1 MB buffer instead of buffer + string + line array + joined copy.
+ * ponytail: regionBytes is the raw byte count; it differs from Buffer.byteLength(decoded) only for
+ * invalid UTF-8, where replacement characters would have inflated it.
+ */
+async function readTextWindow(
+	path: string,
+	startLine: number,
+	limit: number | undefined,
+): Promise<TextWindow | undefined> {
+	const handle = await fsOpen(path, "r");
+	try {
+		const size = (await handle.stat()).size;
+		if (size < WINDOW_READ_MIN_BYTES) return undefined;
+		// Newline numbers (1-based) whose positions bound the region: it starts after newline `startLine`,
+		// its first line ends at newline `startLine + 1`, and with a limit it ends at newline `startLine + limit`.
+		const endNewline = limit === undefined ? Number.POSITIVE_INFINITY : startLine + limit;
+		let start = startLine === 0 ? 0 : -1;
+		let firstLineEnd = -1;
+		let end = -1;
+		let newlines = 0;
+		let regionNewlines = 0;
+		const buffer = Buffer.allocUnsafe(WINDOW_CHUNK_BYTES);
+		for (let position = 0; position < size; ) {
+			const { bytesRead } = await handle.read(buffer, 0, WINDOW_CHUNK_BYTES, position);
+			if (bytesRead === 0) break;
+			const chunk = bytesRead === WINDOW_CHUNK_BYTES ? buffer : buffer.subarray(0, bytesRead);
+			for (let i = chunk.indexOf(10); i !== -1; i = chunk.indexOf(10, i + 1)) {
+				newlines++;
+				const at = position + i;
+				if (start !== -1 && end === -1) regionNewlines++;
+				if (newlines === startLine) start = at + 1;
+				if (newlines === startLine + 1) firstLineEnd = at;
+				if (newlines === endNewline) end = at;
+			}
+			position += bytesRead;
+		}
+		const totalFileLines = newlines + 1;
+		if (start === -1) start = size;
+		if (end === -1) end = size;
+		else regionNewlines--; // the newline that ends the region is not part of it
+		if (firstLineEnd === -1 || firstLineEnd > end) firstLineEnd = end;
+		const regionBytes = Math.max(0, end - start);
+		const prefixBytes = Math.min(regionBytes, DEFAULT_MAX_BYTES + 1);
+		const prefixBuffer = Buffer.allocUnsafe(prefixBytes);
+		if (prefixBytes > 0) await handle.read(prefixBuffer, 0, prefixBytes, start);
+		let endsWithNewline = false;
+		if (regionBytes > 0) {
+			const last = Buffer.allocUnsafe(1);
+			await handle.read(last, 0, 1, end - 1);
+			endsWithNewline = last[0] === 10;
+		}
+		return {
+			totalFileLines,
+			prefix: prefixBuffer.toString("utf-8"),
+			regionBytes,
+			regionLines: regionBytes === 0 ? 0 : regionNewlines + 1 - (endsWithNewline ? 1 : 0),
+			firstLineBytes: Math.max(0, firstLineEnd - start),
+		};
+	} finally {
+		await handle.close();
+	}
+}
 
 export interface ReadToolOptions {
 	/** Whether to auto-resize images. Default: true */
@@ -152,33 +235,44 @@ export function createReadToolDefinition(
 								}
 							} else {
 								// Read text content.
-								const buffer = await ops.readFile(absolutePath);
-								const textContent = buffer.toString("utf-8");
-								const allLines = textContent.split("\n");
-								const totalFileLines = allLines.length;
 								// Apply offset if specified. Convert from 1-indexed input to 0-indexed array access.
 								const startLine = offset ? Math.max(0, offset - 1) : 0;
 								const startLineDisplay = startLine + 1;
-								// Check if offset is out of bounds.
-								if (startLine >= allLines.length) {
-									throw new Error(`Offset ${offset} is beyond end of file (${allLines.length} lines total)`);
-								}
-								let selectedContent: string;
+								// Large local files: scan in chunks and decode only the returned window.
+								const window =
+									ops.readFile === defaultReadOperations.readFile && (limit === undefined || limit > 0)
+										? await readTextWindow(absolutePath, startLine, limit)
+										: undefined;
+								let totalFileLines: number;
+								let truncation: TruncationResult;
+								let firstLineBytes: () => number;
 								let userLimitedLines: number | undefined;
-								// If limit is specified by the user, honor it first. Otherwise truncateHead decides.
-								if (limit !== undefined) {
-									const endLine = Math.min(startLine + limit, allLines.length);
-									selectedContent = allLines.slice(startLine, endLine).join("\n");
-									userLimitedLines = endLine - startLine;
+								if (window) {
+									totalFileLines = window.totalFileLines;
+									truncation = {
+										...truncateHead(window.prefix),
+										totalLines: window.regionLines,
+										totalBytes: window.regionBytes,
+									};
+									firstLineBytes = () => window.firstLineBytes;
 								} else {
-									selectedContent = allLines.slice(startLine).join("\n");
+									const allLines = (await ops.readFile(absolutePath)).toString("utf-8").split("\n");
+									totalFileLines = allLines.length;
+									// A user limit is honored first; otherwise truncateHead decides.
+									const endLine =
+										limit === undefined ? totalFileLines : Math.min(startLine + limit, totalFileLines);
+									truncation = truncateHead(allLines.slice(startLine, endLine).join("\n"));
+									firstLineBytes = () => Buffer.byteLength(allLines[startLine], "utf-8");
 								}
-								// Apply truncation, respecting both line and byte limits.
-								const truncation = truncateHead(selectedContent);
+								if (startLine >= totalFileLines) {
+									throw new Error(`Offset ${offset} is beyond end of file (${totalFileLines} lines total)`);
+								}
+								if (limit !== undefined)
+									userLimitedLines = Math.min(startLine + limit, totalFileLines) - startLine;
 								let outputText: string;
 								if (truncation.firstLineExceedsLimit) {
 									// First line alone exceeds the byte limit. Point the model at a bash fallback.
-									const firstLineSize = formatSize(Buffer.byteLength(allLines[startLine], "utf-8"));
+									const firstLineSize = formatSize(firstLineBytes());
 									outputText = `[Line ${startLineDisplay} is ${firstLineSize}, exceeds ${formatSize(DEFAULT_MAX_BYTES)} limit. Use bash: sed -n '${startLineDisplay}p' ${path} | head -c ${DEFAULT_MAX_BYTES}]`;
 									details = { truncation };
 								} else if (truncation.truncated) {
@@ -192,9 +286,9 @@ export function createReadToolDefinition(
 										outputText += `\n\n[Showing lines ${startLineDisplay}-${endLineDisplay} of ${totalFileLines} (${formatSize(DEFAULT_MAX_BYTES)} limit). Use offset=${nextOffset} to continue.]`;
 									}
 									details = { truncation };
-								} else if (userLimitedLines !== undefined && startLine + userLimitedLines < allLines.length) {
+								} else if (userLimitedLines !== undefined && startLine + userLimitedLines < totalFileLines) {
 									// User-specified limit stopped early, but the file still has more content.
-									const remaining = allLines.length - (startLine + userLimitedLines);
+									const remaining = totalFileLines - (startLine + userLimitedLines);
 									const nextOffset = startLine + userLimitedLines + 1;
 									outputText = `${truncation.content}\n\n[${remaining} more lines in file. Use offset=${nextOffset} to continue.]`;
 								} else {
