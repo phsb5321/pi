@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "package": "@earendil-works/pi-coding-agent",
+  "version": "1.1.0",
+  "bundle_manifest_sha512": "87fd97beb2a4e5d50db9a85141c189e9145e444af94d4c3a413f0f0aa2ec677e9e526c824a21d4097f06f7d5c6ff78569f52dce233dd8c670fa691ccfa7a6e67",
+  "bundle_manifest_short": "87fd97be",
+  "package_json_sha512": "c67827330866d27283e20d20aad9f9fb5b49e1687676518a84988075468d94a047a55932d9f09b26cf1db6dca36449ff6c331d526e26c1efe76dd9fe3e66317e",
+  "install_lock_sha512": "e810cf85d013e34c53ad4fa2962987e3f5391183b5e9deadeadf1c9e2cb236da25cca47f858e80a7519671d480228122f68dbc01b344692ba1d798716b28c3a4",
+  "dist_cli_sha512": "5d7f67e6cbdfc5411dfad4e1bb74a62c80391e1ea3b1dfd339a789e3b18193c342a266810645cbb4ad3c235229860dfd56af654e3ee540cd6e1133e27a930539",
+  "node_flags": "",
+  "wrapper_rev": 1
+}
