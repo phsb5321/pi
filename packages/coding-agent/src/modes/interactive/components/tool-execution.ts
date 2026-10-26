@@ -225,10 +225,22 @@ export class ToolExecutionComponent extends Container {
 			isError: boolean;
 			/** Execution time of a final result. */
 			durationMs?: number;
+			/** Programmatic copy of the output; not rendered, so the component does not keep it. */
+			structuredContent?: unknown;
 		},
 		isPartial = false,
 	): void {
-		this.result = result;
+		// A bash result also carries structuredContent.output, a second copy of the output for programmatic
+		// callers. Rendering never reads it, so store a copy without it instead of keeping the whole object alive.
+		this.result =
+			result.structuredContent === undefined
+				? result
+				: {
+						content: result.content,
+						isError: result.isError,
+						details: result.details,
+						durationMs: result.durationMs,
+					};
 		this.isPartial = isPartial;
 		this.updateDisplay();
 	}
