@@ -236,6 +236,10 @@ describe("experimental durable server composition", () => {
 		} finally {
 			await second.dispose();
 		}
+		// The second cold server also retires asynchronously and still writes the
+		// session directory while it shuts down; wait for it as for the first, or
+		// afterEach's rm races it (ENOTEMPTY on experimental/sessions/demo-1).
+		await expect.poll(() => pathExists(join(directory, `${serverId}.sock`)), { timeout: 5_000 }).toBe(false);
 	});
 
 	test("retires a cold server after its only Session attachment disconnects", async () => {
