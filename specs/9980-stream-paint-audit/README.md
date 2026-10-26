@@ -44,6 +44,30 @@ application is not claimed O(1). Real context handlers still pay the cloning
 cost. Streaming Markdown and scrollbar costs are separate, unmodified findings.
 The virtual terminal is not a measurement of physical display latency.
 
+## Follow-up: string-sharing clone (handler loaded)
+
+Every fleet seat loads `pi-context-lean.ts`, which registers a `context` handler,
+so the fast path never fires in production. `emitContext` now copies plain objects
+and arrays but shares strings (immutable), falling back to `structuredClone` for
+non-plain values and preserving aliasing/cycles. Microbench, 200 turns of 50 KB
+tool output: `structuredClone` 11.0 ms vs 0.69 ms; with 100-byte outputs
+`structuredClone` is 2.9 ms, so ~74% of its cost was string copying.
+
+With `pi-context-lean` loaded, 5 Latin-square triples x 200 turns (medians):
+
+| Metric | Base | Fast path only | + string-sharing clone |
+| --- | ---: | ---: | ---: |
+| CPU/turn, 1-10 | 91.4 ms | 91.7 ms | 92.4 ms |
+| CPU/turn, 91-100 | 103.9 ms | 103.8 ms | 95.2 ms |
+| CPU/turn, 191-200 | 155.9 ms | 154.9 ms | 107.3 ms |
+| Context CPU/call, 191-200 | 35.5 ms | 36.3 ms | 4.8 ms |
+| Total turn CPU, 200 turns | 24.38 s | 24.38 s | 20.64 s |
+| RSS at turn 200 | 277.8 MiB | 279.9 MiB | 217.1 MiB |
+| Heap used at turn 200 | 68.0 MiB | 68.0 MiB | 73.3 MiB |
+
+Share vs base total CPU savings per pair: 16.3, 16.2, 13.4, 17.5, 12.9%.
+RSS ranges do not overlap (267.9-302.8 vs 210.9-218.5 MiB).
+
 ## Checks and evidence
 
 Run from `packages/coding-agent` with an empty HOME and clean environment:

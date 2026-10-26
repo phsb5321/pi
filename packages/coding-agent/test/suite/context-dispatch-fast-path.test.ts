@@ -59,12 +59,52 @@ describe("context dispatch fast path", () => {
 			const messages: AgentMessage[] = [
 				{ role: "user", content: [{ type: "text", text: "original" }], timestamp: 0 },
 			];
+			const clone = vi.spyOn(globalThis, "structuredClone");
 			const result = await harness.session.extensionRunner.emitContext(messages);
 
+			// Plain JSON-shaped messages are copied structurally; their strings are shared, not serialized.
+			expect(clone).not.toHaveBeenCalled();
 			expect(result).not.toBe(messages);
 			expect(result[0]).not.toBe(messages[0]);
 			expect(result[0]).toMatchObject({ content: [{ type: "text", text: "request-local" }] });
 			expect(messages[0]).toMatchObject({ content: [{ type: "text", text: "original" }] });
 		},
 	);
+
+	it("falls back to structuredClone for non-plain values and keeps aliasing and cycles", async () => {
+		let seen: AgentMessage[] = [];
+		const harness = await createHarness({
+			extensionFactories: [
+				(pi) => {
+					pi.on("context", (event) => {
+						seen = event.messages;
+					});
+				},
+			],
+		});
+		harnesses.push(harness);
+		await harness.session.bindExtensions({});
+		const when = new Date(0);
+		const shared: Record<string, unknown> = { tag: "shared" };
+		shared.self = shared;
+		const custom = {
+			role: "custom",
+			customType: "probe",
+			content: "x",
+			display: false,
+			details: { when, a: shared, b: shared },
+			timestamp: 0,
+		} as AgentMessage;
+
+		await harness.session.extensionRunner.emitContext([custom]);
+
+		const details = (seen[0] as unknown as { details: { when: Date; a: Record<string, unknown>; b: unknown } })
+			.details;
+		expect(details.when).toBeInstanceOf(Date);
+		expect(details.when).not.toBe(when);
+		expect(details.when.getTime()).toBe(0);
+		expect(details.a).not.toBe(shared);
+		expect(details.b).toBe(details.a);
+		expect(details.a.self).toBe(details.a);
+	});
 });
