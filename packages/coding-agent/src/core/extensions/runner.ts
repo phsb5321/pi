@@ -270,6 +270,36 @@ function snapshotEventHandlers(extensions: Extension[], event: ExtensionEvent["t
 	return extensions.map((ext) => ({ ext, handlers: ext.handlers.get(event)?.slice() ?? [] }));
 }
 
+/**
+ * Deep-copy plain objects and arrays so handler mutations stay request-local, but share
+ * strings and other primitives: they are immutable, and copying large tool outputs was most
+ * of the cost. Anything that is not a plain object (custom `details` values) falls back to
+ * structuredClone. `seen` preserves aliasing and cycles as structuredClone does.
+ */
+function cloneMessages<T>(value: T, seen = new Map<object, unknown>()): T {
+	if (typeof value !== "object" || value === null) {
+		return typeof value === "function" || typeof value === "symbol" ? structuredClone(value) : value;
+	}
+	const existing = seen.get(value);
+	if (existing !== undefined) return existing as T;
+	if (Array.isArray(value)) {
+		const copy: unknown[] = new Array(value.length);
+		seen.set(value, copy);
+		for (let i = 0; i < value.length; i++) copy[i] = cloneMessages(value[i], seen);
+		return copy as T;
+	}
+	const proto = Object.getPrototypeOf(value);
+	if (proto !== Object.prototype && proto !== null) {
+		const copy = structuredClone(value);
+		seen.set(value, copy);
+		return copy;
+	}
+	const copy: Record<string, unknown> = proto === null ? Object.create(null) : {};
+	seen.set(value, copy);
+	for (const key of Object.keys(value)) copy[key] = cloneMessages((value as Record<string, unknown>)[key], seen);
+	return copy as T;
+}
+
 function sameMessages(left: AgentMessage[], right: AgentMessage[]): boolean {
 	return left.length === right.length && left.every((message, index) => message === right[index]);
 }
@@ -1296,8 +1326,10 @@ export class ExtensionRunner {
 	 * handlers then see the full transcript and their output is used as returned.
 	 */
 	async emitContext(messages: AgentMessage[]): Promise<AgentMessage[]> {
+		// No extension can mutate the request, so avoid copying the entire transcript.
+		if (!this.hasHandlers("context") && !this.hasHandlers("context_with_system")) return messages;
 		const ctx = this.createContext();
-		let currentMessages = structuredClone(messages);
+		let currentMessages = cloneMessages(messages);
 
 		for (const { ext, handlers } of snapshotEventHandlers(this.extensions, "context")) {
 			for (const handler of handlers) {

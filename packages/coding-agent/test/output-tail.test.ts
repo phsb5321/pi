@@ -113,7 +113,7 @@ console.log(JSON.stringify({ units: tail.output.length, retained: after.heapUsed
 
 	it("default caps: 50KiB long line with the pair split across appends", () => {
 		const prefix = "x".repeat(DEFAULT_MAX_BYTES - 3);
-		const { tail, full } = runChunks([prefix + HIGH, LOW + "y".repeat(63) + "\n", "tail\n"], CAPS);
+		const { tail, full } = runChunks([prefix + HIGH, `${LOW}${"y".repeat(63)}\n`, "tail\n"], CAPS);
 		expect(full.endsWith(tail.output)).toBe(true);
 		expect(tail.output).toContain(EMOJI);
 		expect(tail.output).not.toContain("\uFFFD");
@@ -164,7 +164,7 @@ console.log(JSON.stringify({ units: tail.output.length, retained: after.heapUsed
 		expect(small.output).toBe("a\nb\n");
 		expect(small.truncated).toBe(false);
 		const split = new BoundedOutputTail();
-		for (const c of ["多字节" + HIGH, "", LOW + " tail\n", "next"]) split.append(c);
+		for (const c of [`多字节${HIGH}`, "", `${LOW} tail\n`, "next"]) split.append(c);
 		expect(split.output).toBe(`多字节${EMOJI} tail\nnext`);
 		expect(split.tailText).toBe(split.output);
 		expect(split.output).not.toContain("\uFFFD");
