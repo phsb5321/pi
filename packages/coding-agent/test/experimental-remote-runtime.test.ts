@@ -748,7 +748,8 @@ describe("experimental durable server composition", () => {
 		expect(replacement.workerPids.get("demo-1")).toBe(workerPid);
 
 		await expect.poll(() => replacement.workerPids.has("demo-1"), { timeout: 5_000 }).toBe(false);
-		expect(processExists(workerPid!)).toBe(false);
+		// The map entry is dropped when retirement starts; the process exits after.
+		await expect.poll(() => processExists(workerPid!), { timeout: 5_000 }).toBe(false);
 	});
 
 	test("restores tracked sessions that are outside the replacement catalog", async () => {
