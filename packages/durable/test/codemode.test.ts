@@ -433,10 +433,18 @@ describe("durable code mode", () => {
 		// not a fixed number of event-loop turns starting from that independent hold.
 		const acknowledged = deferred();
 		const replayHarness = opened.harness;
-		const unsubscribe = replayHarness.subscribeCommits(() => {
-			void replayHarness.snapshot(CodemodeJournalDoc, task, context).then((journal) => {
+		const unsubscribe = replayHarness.subscribeCommits((publication) => {
+			for (const change of publication.changes) {
+				if (
+					change.type !== "document" ||
+					change.record.kind !== CodemodeJournalDoc.definition.kind ||
+					change.record.scope.kind !== "task" ||
+					change.record.scope.taskId !== task
+				)
+					continue;
+				const journal = change.value as { entries: { issuedAfter?: number }[] } | null;
 				if (journal?.entries[0]?.issuedAfter === 2) acknowledged.resolve();
-			}, acknowledged.reject);
+			}
 		});
 		opened.harness.resume();
 		try {
