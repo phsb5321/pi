@@ -333,9 +333,33 @@ export function getScrollbarGeometry(box: LayoutBox, includeHiddenAuto = false):
 	};
 }
 
+interface ScrollbarPaintCache {
+	column: number;
+	totalWidth: number;
+	preserveTargetBackground: boolean;
+	rows: Map<string, { replacement: string; painted: string }>;
+}
+
+const scrollbarPaintCaches = new WeakMap<ScrollView, ScrollbarPaintCache>();
+
 function paintScrollbar(box: LayoutBox, screen: string[], totalWidth: number): void {
 	const geometry = getScrollbarGeometry(box);
-	if (!geometry || !box.scrollView) return;
+	if (!box.scrollView) return;
+	if (!geometry) {
+		scrollbarPaintCaches.delete(box.scrollView);
+		return;
+	}
+
+	const preserveTargetBackground = box.scrollView.scrollbar !== "always";
+	const previous = scrollbarPaintCaches.get(box.scrollView);
+	const previousRows =
+		previous?.column === geometry.column &&
+		previous.totalWidth === totalWidth &&
+		previous.preserveTargetBackground === preserveTargetBackground
+			? previous.rows
+			: undefined;
+	// Retain only this viewport, never the transcript or every width/style visited.
+	const rows: ScrollbarPaintCache["rows"] = new Map();
 
 	for (let offset = 0; offset < geometry.trackHeight; offset++) {
 		const row = geometry.trackTop + offset;
@@ -344,14 +368,21 @@ function paintScrollbar(box: LayoutBox, screen: string[], totalWidth: number): v
 		const replacement = isThumb
 			? box.scrollView.scrollbarThumbStyle(box.scrollView.isScrollbarActive ? "█" : "┃")
 			: box.scrollView.scrollbarTrackStyle("│");
-		screen[row] = replaceScrollbarCell(
-			screen[row] ?? "",
-			geometry.column,
-			totalWidth,
-			replacement,
-			box.scrollView.scrollbar !== "always",
-		);
+		const line = screen[row] ?? "";
+		const cached = rows.get(line) ?? previousRows?.get(line);
+		const painted =
+			cached?.replacement === replacement
+				? cached.painted
+				: replaceScrollbarCell(line, geometry.column, totalWidth, replacement, preserveTargetBackground);
+		rows.set(line, { replacement, painted });
+		screen[row] = painted;
 	}
+	scrollbarPaintCaches.set(box.scrollView, {
+		column: geometry.column,
+		totalWidth,
+		preserveTargetBackground,
+		rows,
+	});
 }
 
 function paintBox(box: LayoutBox, screen: string[], totalWidth: number): void {
