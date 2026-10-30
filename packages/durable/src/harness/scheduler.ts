@@ -480,18 +480,22 @@ export class TaskScheduler {
 		// recovery. A process that dies before it lands must be woken again. A pass with nothing to do is not.
 		let active = this.#invocations.size > 0 || this.#reconcilingWork > 0 || this.#reconcileWork();
 		let at: number | undefined;
+		// Sleep deadlines still matter while active, but finding them must not scan every live task on every commit.
+		for (const id of this.#sleeping) {
+			const record = this.#live.get(id);
+			if (record?.state.status === "sleeping" && !record.abortRequested && record.state.until > now) {
+				at = at === undefined ? record.state.until : Math.min(at, record.state.until);
+			}
+		}
 		let snapshot: RegistrySnapshot | undefined;
 		let snapshotFailed = false;
 		for (const record of this.#live.values()) {
+			if (active) break;
 			const state = record.state;
 			if (state.status === "completing") continue;
 			if (state.status === "waiting" && !record.abortRequested && state.on.some((id) => this.#live.has(id)))
 				continue;
-			if (state.status === "sleeping" && !record.abortRequested && state.until > now) {
-				at = at === undefined ? state.until : Math.min(at, state.until);
-				continue;
-			}
-			if (active) continue;
+			if (state.status === "sleeping" && !record.abortRequested && state.until > now) continue;
 			if (this.#parked(record)) continue;
 			// An abort invocation waits for the live work below it, which counts itself.
 			if (record.abortRequested && this.#waitingOn(record, true).length > 0) continue;

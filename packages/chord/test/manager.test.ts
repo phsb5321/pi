@@ -90,7 +90,11 @@ describe("host manager (real child processes)", () => {
 	it("a child-owned kernel lock admits one live process; replace waits for the exit before the next start", async () => {
 		const lock = `chord2-test-${process.pid}-lock`;
 		const pids: number[] = [];
-		const base = driver({}, lock);
+		const base = forkDriver({
+			entry: fileURLToPath(new URL("./fixtures/lock-worker.ts", import.meta.url)),
+			init: null,
+			lock,
+		});
 		const watched: Driver = {
 			spawn() {
 				// Exit before replace: the previous child is gone when the next one spawns.
@@ -101,15 +105,22 @@ describe("host manager (real child processes)", () => {
 			},
 		};
 		const first = createHostManager({ driver: watched });
-		const second = createHostManager({ driver: driver({}, lock) });
-		const a = await first.start();
-		// Both managers race for the same lock; only the kernel decides, so the second child cannot start.
-		await assert.rejects(second.start(), (error) => isChordError(error, "unavailable") && error.reason === "locked");
-		const b = await first.replace();
-		assert.notEqual(a.pid, b.pid);
-		await first.stop();
-		await second.start();
-		await second.stop();
+		const second = createHostManager({ driver: base });
+		try {
+			const a = await first.start();
+			// Only the kernel decides: the second child cannot start while the first holds the lock.
+			await assert.rejects(
+				second.start(),
+				(error) => isChordError(error, "unavailable") && error.reason === "locked",
+			);
+			const b = await first.replace();
+			assert.notEqual(a.pid, b.pid);
+			await first.stop();
+			await second.start();
+			await second.stop();
+		} finally {
+			await Promise.all([first.stop(), second.stop()]);
+		}
 	});
 
 	it("a graceful exit still takes the child's descendants with it", async () => {

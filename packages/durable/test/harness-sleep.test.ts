@@ -13,7 +13,7 @@ import {
 import { afterEach, describe, expect, it } from "vitest";
 import { openNodeSqliteStorage } from "../src/storage/sqlite/node.ts";
 import { context, flush } from "./session-support.ts";
-import { aborted, abortedWith, completed, eventually, openTasks } from "./task-support.ts";
+import { aborted, abortedWith, completed, deferred, eventually, openTasks } from "./task-support.ts";
 
 const directories = new Set<string>();
 
@@ -135,6 +135,50 @@ describe("sleeping tasks", () => {
 		expect(wakes).toContainEqual({ active: false, at: 2_000 });
 		graph.dispose();
 		await harness.close(context);
+	});
+
+	it("keeps the earliest future sleep while another invocation is active", async () => {
+		let clock = 1_000;
+		const started = deferred();
+		const Nap = napTask(500);
+		const Held = defineTask<null, { phase: "run" }, null>({
+			name: "test.active-with-sleep",
+			version: 1,
+			initial: () => ({ phase: "run" }),
+			phases: {
+				run: async (_task, runtime) => {
+					started.resolve();
+					await aborted(runtime.signal);
+				},
+			},
+			abort: async (_task, runtime, ctx) => {
+				await runtime.commit(() => abortedWith("test"), ctx);
+			},
+		});
+		const { harness } = await openTasks(new MemoryStorage(), [Nap, Held], {
+			now: () => clock,
+			onWake: () => {},
+		});
+		try {
+			const first = await startNap(harness, Nap);
+			harness.resume();
+			await eventually(async () => (await stateOf(harness, first))?.status === "sleeping");
+			clock = 1_100;
+			const second = await startNap(harness, Nap);
+			await eventually(async () => (await stateOf(harness, second))?.status === "sleeping");
+			const root = await harness.root(context);
+			await root.commit((tx) => tx.createTask(Held, null, { ownership: { kind: "conversation" } }), context);
+			await started.promise;
+			expect(harness.wake()).toEqual({ active: true, at: 1_500 });
+			await harness.abortTask(first, context);
+			await harness.waitForTask(first, context);
+			expect(harness.wake()).toEqual({ active: true, at: 1_600 });
+			await harness.abortTask(second, context);
+			await harness.waitForTask(second, context);
+			expect(harness.wake()).toEqual({ active: true });
+		} finally {
+			await harness.close(context);
+		}
 	});
 
 	it("keeps a sleep across reopen", async () => {
