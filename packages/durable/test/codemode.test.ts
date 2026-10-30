@@ -13,7 +13,7 @@ import {
 	ToolTask,
 	type ToolTaskInput,
 } from "@earendil-works/pi-durable";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	type CodemodeGlobal,
 	CodemodeJournalDoc,
@@ -429,12 +429,23 @@ describe("durable code mode", () => {
 		await opened.harness.commit(async (tx) => {
 			delete (await tx.doc(CodemodeJournalDoc, task)).entries[0]!.issuedAfter;
 		}, context);
+		// The nested hold can resume before the replay's worker has even started. Wait for the journal event,
+		// not a fixed number of event-loop turns starting from that independent hold.
+		const acknowledged = deferred();
+		const replayHarness = opened.harness;
+		const unsubscribe = replayHarness.subscribeCommits(() => {
+			void replayHarness.snapshot(CodemodeJournalDoc, task, context).then((journal) => {
+				if (journal?.entries[0]?.issuedAfter === 2) acknowledged.resolve();
+			}, acknowledged.reject);
+		});
 		opened.harness.resume();
-		// The replay acknowledges result 1 and goes live; the script waits on hold, and the count is already recorded.
-		await chat.holds.reached.promise;
-		await eventually(
-			async () => (await opened.harness.snapshot(CodemodeJournalDoc, task, context))?.entries[0]?.issuedAfter === 2,
-		);
+		try {
+			await chat.holds.reached.promise;
+			await acknowledged.promise;
+		} finally {
+			unsubscribe();
+		}
+		expect((await replayHarness.snapshot(CodemodeJournalDoc, task, context))?.entries[0]?.issuedAfter).toBe(2);
 		await opened.harness.close(context);
 		chat.holds.block = false;
 		opened = await openChat(await openNodeSqliteStorage(path), chat.setup);
@@ -839,19 +850,30 @@ describe("durable code mode", () => {
 	});
 
 	it("times a script out across a restart, without admitting new calls", async () => {
-		const chat = codemodeChat();
-		const { harness, result } = await restart(
-			chat,
-			`// @options: {"timeout_ms": 300}
-			await tools.hold({}); await tools.echo({ text: "late" });`,
-			() => new Promise((resolve) => setTimeout(resolve, 400)),
-		);
-		expect(result.isError).toBe(true);
-		expect(result.text).toContain("deadline passed");
-		expect(chat.echo.size).toBe(0);
-		expect(chat.vm.starts).toBe(1);
-		await harness.close(context);
-	}, 30_000); // Restart + timeout machinery on a loaded CI executor exceeds vitest's 5 s default; assertions unchanged.
+		// The deadline must pass while interrupted, not while a cold worker starts before reaching hold.
+		// Keep the sandbox timer controlled and advance the Harness clock only between attempts.
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		try {
+			const chat = codemodeChat();
+			let now = 1000;
+			chat.setup.now = () => now;
+			const { harness, result } = await restart(
+				chat,
+				`// @options: {"timeout_ms": 300}
+				await tools.hold({}); await tools.echo({ text: "late" });`,
+				async () => {
+					now += 400;
+				},
+			);
+			expect(result.isError).toBe(true);
+			expect(result.text).toContain("deadline passed");
+			expect(chat.echo.size).toBe(0);
+			expect(chat.vm.starts).toBe(1);
+			await harness.close(context);
+		} finally {
+			vi.useRealTimers();
+		}
+	}, 30_000);
 
 	it("returns a decided outcome after a restart without running the script again", async () => {
 		const chat = codemodeChat();
