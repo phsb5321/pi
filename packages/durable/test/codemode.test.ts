@@ -7,6 +7,7 @@ import { type CodemodeRun, CodemodeSandbox } from "@earendil-works/pi-codemode";
 import {
 	defineTool,
 	type Harness,
+	type StorageWrite,
 	type TaskId,
 	type ToolRegistration,
 	ToolResultEntry,
@@ -807,14 +808,26 @@ describe("durable code mode", () => {
 
 	it("delivers a result only after its journal commit", async () => {
 		const storage = new ControlledStorage();
+		const lost = new Error("lost");
+		const rejected = deferred<readonly StorageWrite[]>();
+		const commit = storage.commit.bind(storage);
+		storage.commit = async (writes, callContext) => {
+			try {
+				return await commit(writes, callContext);
+			} catch (error) {
+				if (error === lost) rejected.resolve(structuredClone(writes));
+				throw error;
+			}
+		};
 		const seen: string[] = [];
+		const delivered: number[] = [];
 		const chat = codemodeChat([
 			{
 				name: "first",
 				execute: async () => {
 					seen.push("first");
 					// The next commit is this result's journal commit: it never lands.
-					storage.failNextCommit(new Error("lost"));
+					storage.failNextCommit(lost);
 					return 1;
 				},
 			},
@@ -827,13 +840,36 @@ describe("durable code mode", () => {
 			},
 		]);
 		chat.holds.block = false;
+		chat.vm.onStart = (run) => {
+			const deliver = run.deliver.bind(run);
+			run.deliver = (seq, now, id, outcome) => {
+				delivered.push(id);
+				deliver(seq, now, id, outcome);
+			};
+		};
 		chat.setup.faux.setResponses([script(`await first(); await second();`), DONE]);
 		const { harness, root } = await openChat(storage, chat.setup);
-		await root.submit({ type: "input", content: "go" }, context);
-		await eventually(() => seen.includes("first"));
-		await new Promise((resolve) => setTimeout(resolve, 100));
+		try {
+			await root.submit({ type: "input", content: "go" }, context);
+			// Worker startup is independent of event-loop turns. Wait for the actual failed write,
+			// and observe delivery at the host boundary rather than sleeping for a second VM call.
+			const writes = await rejected.promise;
+			const journalId = storage.commits
+				.flatMap((batch) =>
+					batch.flatMap((write) =>
+						write.type === "document.create" && write.record.kind === CodemodeJournalDoc.definition.kind
+							? [write.record.id]
+							: [],
+					),
+				)
+				.at(0);
+			expect(journalId).toBeDefined();
+			expect(writes).toContainEqual(expect.objectContaining({ type: "document.change", id: journalId }));
+		} finally {
+			await harness.close(context).catch(() => {});
+		}
 		expect(seen).toEqual(["first"]);
-		await harness.close(context).catch(() => {});
+		expect(delivered).toEqual([]);
 	});
 
 	it("refuses to resume when the sandbox's fingerprint or the code mode version changed", async () => {
