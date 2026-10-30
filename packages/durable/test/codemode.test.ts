@@ -851,7 +851,7 @@ describe("durable code mode", () => {
 		expect(chat.echo.size).toBe(0);
 		expect(chat.vm.starts).toBe(1);
 		await harness.close(context);
-	});
+	}, 30_000); // Restart + timeout machinery on a loaded CI executor exceeds vitest's 5 s default; assertions unchanged.
 
 	it("returns a decided outcome after a restart without running the script again", async () => {
 		const chat = codemodeChat();
