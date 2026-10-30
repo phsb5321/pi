@@ -14,9 +14,18 @@ const scratch = (name: string) => join(tmpdir(), `chord2-${process.pid}-${name}`
 const alive = (pid: number): boolean => {
 	try {
 		process.kill(pid, 0);
-		return true;
 	} catch {
 		return false;
+	}
+	// A zombie is not alive: its parent died before reaping it, and a container
+	// PID 1 that never reaps (the docker CI executor, unlike a VM's init) keeps
+	// the entry visible to kill(pid, 0) forever. Read the kernel's state instead.
+	try {
+		const stat = readFileSync(`/proc/${pid}/stat`, "utf8");
+		const afterComm = stat.lastIndexOf(")");
+		return afterComm !== -1 ? !stat.slice(afterComm + 2, afterComm + 3).startsWith("Z") : true;
+	} catch {
+		return true; // /proc unreadable (non-Linux): keep the kill(pid, 0) verdict
 	}
 };
 

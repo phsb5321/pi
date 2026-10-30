@@ -44,8 +44,7 @@ for (const path of paths) {
 		? [
 				join("..", "..", "node_modules", "vitest", "dist", "cli.js"),
 				"--run",
-				"--maxWorkers=2",
-				...(single ? ["--maxWorkers=1"] : []),
+				...(single ? ["--maxWorkers=1"] : ["--maxWorkers=2"]),
 			]
 		: ["test"];
 	const result = pkg.scripts.test.startsWith("vitest")
