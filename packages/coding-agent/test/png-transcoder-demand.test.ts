@@ -54,7 +54,11 @@ function pendingPhotonLoad(): () => ((value: ReturnType<typeof photon>) => void)
 }
 
 /** Arms the UI and demands one non-PNG image render, which is what starts a real Photon load. */
-async function armedUiWithDemandedImage(): Promise<{ conversion: Conversion; images: typeof Images; ui: Probe }> {
+async function armedUiWithDemandedImage(): Promise<{
+	conversion: Conversion;
+	images: Pick<typeof Images, "Image">;
+	ui: Probe;
+}> {
 	const loaded = await modules();
 	const ui = probe(loaded.conversion);
 	ui.ensurePngTranscoder();
@@ -65,7 +69,7 @@ async function armedUiWithDemandedImage(): Promise<{ conversion: Conversion; ima
 /** Loads the conversion module pair and arms the PNG transcoder once, the way interactive startup does. */
 async function armedUi(
 	images: ImageInstance[] = [],
-): Promise<{ conversion: Conversion; images: typeof Images; ui: Probe }> {
+): Promise<{ conversion: Conversion; images: Pick<typeof Images, "Image">; ui: Probe }> {
 	const loaded = await modules();
 	const ui = probe(loaded.conversion, images);
 	ui.ensurePngTranscoder();
@@ -272,7 +276,7 @@ describe("normal CLI cold PNG arming and owned repaint lifecycle", () => {
 	});
 
 	it("stop before pending completion never repaints the disposed UI", async () => {
-		const pendingResolve = pendingPhotonLoad();
+		pendingPhotonLoad();
 		const { ui } = await armedUiWithDemandedImage();
 		ui.stopInteractiveTui("none");
 		await settled();

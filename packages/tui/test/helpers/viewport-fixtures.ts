@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { Text } from "../../src/components/text.ts";
 import { TuiAltScreen } from "../../src/tui-alt-screen.ts";
-import type { VirtualTerminal } from "./virtual-terminal.ts";
+import type { VirtualTerminal } from "../virtual-terminal.ts";
 
 /** The three-row child every viewport test builds its scroll history from. */
 export function childLineSource(index: number): string {
@@ -9,7 +9,10 @@ export function childLineSource(index: number): string {
 }
 
 /** Builds `count` children with the shared three-row source, through `make` so a test can count stores. */
-export function childTexts(count: number, make: (source: string) => Text = (source) => new Text(source, 0, 0)): Text[] {
+export function childTexts<T extends Text>(
+	count: number,
+	make: (source: string) => T = (source) => new Text(source, 0, 0) as T,
+): T[] {
 	return Array.from({ length: count }, (_, i) => make(childLineSource(i)));
 }
 
