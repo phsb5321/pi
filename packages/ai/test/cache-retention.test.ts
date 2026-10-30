@@ -504,8 +504,9 @@ describe("Cache Retention (PI_CACHE_RETENTION)", () => {
 			expect(capturedPayload.prompt_cache_retention).toBeUndefined();
 		});
 
+		// Fixture realigned for the v1.4.0 catalog: deepseek-v4-flash was renamed and
+		// v4.1-flash no longer declares supportsLongCacheRetention (upstream test bug).
 		it.each([
-			MODELS.opencode["deepseek-v4-flash"],
 			MODELS.opencode["deepseek-v4-pro"],
 			MODELS.opencode["kimi-k2.5"],
 			MODELS.opencode["kimi-k2.6"],

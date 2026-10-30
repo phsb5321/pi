@@ -37,13 +37,20 @@ describe("collapsed bash preview retention", () => {
 		gc();
 		const before = process.memoryUsage().heapUsed;
 		const components = results.map((result) => {
-			const component = renderers.renderResult!(result as never, { expanded: false, isPartial: false } as never, undefined as never, context);
+			const component = renderers.renderResult!(
+				result as never,
+				{ expanded: false, isPartial: false } as never,
+				undefined as never,
+				context,
+			);
 			component.render(80);
 			return component;
 		});
 		gc();
 		const retained = process.memoryUsage().heapUsed - before;
-		process.stderr.write(`MEASURE bash-preview retained=${retained} bytes (N=${N}, ~${Math.round(LINES * 100 / 1000)} KB output each)\n`);
+		process.stderr.write(
+			`MEASURE bash-preview retained=${retained} bytes (N=${N}, ~${Math.round((LINES * 100) / 1000)} KB output each)\n`,
+		);
 
 		// Full styled copies would hold about 58 KB each. Visual lines alone are a few KB each.
 		expect(retained).toBeLessThan(N * 20_000);

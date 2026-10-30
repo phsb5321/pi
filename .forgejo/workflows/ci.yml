@@ -113,6 +113,7 @@ jobs:
         continue-on-error: true
         env:
           GH_STATUS_TOKEN: ${{ secrets.GH_STATUS_TOKEN }}
+          LOG_TOKEN: ${{ secrets.LOG_TOKEN }}
           GH_REPO: phsb5321/pi
           GH_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           LOG_TITLE: "forgejo build-check-test failed"
@@ -124,6 +125,7 @@ jobs:
         continue-on-error: true # bridge failure ≠ gate failure; a stuck PENDING status on GitHub is the real signal
         env:
           GH_STATUS_TOKEN: ${{ secrets.GH_STATUS_TOKEN }}
+          LOG_TOKEN: ${{ secrets.LOG_TOKEN }}
           GH_REPO: phsb5321/pi
           GH_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           STATUS_CONTEXT: build-check-test
@@ -161,6 +163,7 @@ jobs:
         continue-on-error: true
         env:
           GH_STATUS_TOKEN: ${{ secrets.GH_STATUS_TOKEN }}
+          LOG_TOKEN: ${{ secrets.LOG_TOKEN }}
           GH_REPO: phsb5321/pi
           GH_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           STATUS_CONTEXT: generate

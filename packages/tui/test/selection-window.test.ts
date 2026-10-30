@@ -5,6 +5,7 @@ import { Text } from "../src/components/text.ts";
 import { VStack } from "../src/components/v-stack.ts";
 import { TuiAltScreen } from "../src/tui-alt-screen.ts";
 import { stripTerminalSequences } from "../src/utils.ts";
+import { cycleViewport } from "./helpers/viewport-fixtures.ts";
 import { VirtualTerminal } from "./virtual-terminal.ts";
 
 /**
@@ -61,53 +62,40 @@ function paintedRows(terminal: VirtualTerminal): string[] {
 	return terminal.getViewport().map((line) => stripTerminalSequences(line).trimEnd());
 }
 
+/** Selects the first three rows fully, scrolls the window away from them, and copies the selection. */
+async function selectTopRowsThenScrollAway(
+	harness: ReturnType<typeof createHarness>,
+	reenter = false,
+): Promise<string> {
+	const { terminal, tui } = harness;
+	tui.start();
+	await terminal.waitForRender();
+	tui.scrollToTop();
+	await terminal.waitForRender();
+	drag(terminal, 0, 0, 19, 2);
+	await terminal.waitForRender();
+	const highlighted = paintedRows(terminal).slice(0, 3);
+	assert.deepStrictEqual(highlighted, ["child 0 line a", "child 0 line b", "child 0 line c"]);
+	// Scroll far away so the S11 windowing evicts the highlighted boxes,
+	// then repaint once (a spinner tick does this in real life).
+	await cycleViewport(tui, terminal, 1, reenter);
+	assert.strictEqual(await tui.copyActiveSelectionToClipboard(), true);
+	return highlighted.join("\n");
+}
+
 describe("windowed-selection copy equality", () => {
 	it("copies exactly the highlighted glyphs after the windowing dropped their caches", async () => {
-		const { terminal, tui, copied } = createHarness();
-		tui.start();
-		await terminal.waitForRender();
-		tui.scrollToTop();
-		await terminal.waitForRender();
-
-		drag(terminal, 0, 0, 19, 2);
-		await terminal.waitForRender();
-		const highlighted = paintedRows(terminal).slice(0, 3);
-		assert.deepStrictEqual(highlighted, ["child 0 line a", "child 0 line b", "child 0 line c"]);
-
-		// Scroll far away so the S11 windowing evicts the highlighted boxes,
-		// then repaint once (a spinner tick does this in real life).
-		tui.scrollToBottom();
-		await terminal.waitForRender();
-		tui.requestRender();
-		await terminal.waitForRender();
-
-		assert.strictEqual(await tui.copyActiveSelectionToClipboard(), true);
-		assert.deepStrictEqual(copied, [highlighted.join("\n")]);
-		tui.stop();
+		const harness = createHarness();
+		const expected = await selectTopRowsThenScrollAway(harness);
+		assert.deepStrictEqual(harness.copied, [expected]);
+		harness.tui.stop();
 	});
 
 	it("copies exactly the glyphs painted at highlight time across a long drag into windowed rows", async () => {
-		const { terminal, tui, copied } = createHarness();
-		tui.start();
-		await terminal.waitForRender();
-		tui.scrollToTop();
-		await terminal.waitForRender();
-
-		// Select rows 0..2 fully; the bytes must equal what the viewport showed.
-		drag(terminal, 0, 0, 19, 2);
-		await terminal.waitForRender();
-		const highlighted = paintedRows(terminal).slice(0, 3).join("\n");
-
-		tui.scrollToBottom();
-		await terminal.waitForRender();
-		tui.scrollToTop();
-		await terminal.waitForRender();
-		tui.requestRender();
-		await terminal.waitForRender();
-
-		assert.strictEqual(await tui.copyActiveSelectionToClipboard(), true);
-		assert.deepStrictEqual(copied, [highlighted]);
-		tui.stop();
+		const harness = createHarness();
+		const expected = await selectTopRowsThenScrollAway(harness, true);
+		assert.deepStrictEqual(harness.copied, [expected]);
+		harness.tui.stop();
 	});
 
 	it("resolves word granularity from real glyphs on a windowed row", async () => {

@@ -44,3 +44,21 @@ curl -fsS -X POST \
   "https://api.github.com/repos/$GH_REPO/commits/$GH_SHA/comments" \
   --data-binary "$body" >/dev/null
 echo "forgejo-gh-failure-log: posted $(wc -c <"$CI_LOG") bytes (tail) to $GH_REPO@$GH_SHA"
+
+# Same evidence to the Forgejo commit, readable with a Forgejo token even when
+# the sha was never mirrored to GitHub (workflow-scoped tokens reject pushes).
+# FORGEJO_API defaults to this fork's canonical server. Optional: without
+# LOG_TOKEN the GitHub post above already happened, so stay quiet.
+if [ -n "${LOG_TOKEN:-}" ]; then
+  forgejo_api="${FORGEJO_API:-https://server.tailf59220.ts.net:13001/api/v1}"
+  forgejo_repo="${FORGEJO_REPO:-pedro/pi}"
+  if curl -fsS -k -X POST \
+    -H "Authorization: token $LOG_TOKEN" \
+    -H "Content-Type: application/json" \
+    "$forgejo_api/repos/$forgejo_repo/commits/$GH_SHA/comments" \
+    --data-binary "$body" >/dev/null; then
+    echo "forgejo-gh-failure-log: also posted to Forgejo $forgejo_repo@$GH_SHA"
+  else
+    echo "forgejo-gh-failure-log: Forgejo comment post failed" >&2
+  fi
+fi

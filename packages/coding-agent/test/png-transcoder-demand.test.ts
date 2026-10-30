@@ -40,6 +40,37 @@ vi.mock("@earendil-works/pi-tui", async () => {
 });
 
 type Conversion = typeof Converter & { armPngTranscoder?: (callback: () => void) => () => void };
+
+/** Pins the mocked Photon load as an unresolved promise; the test settles it through the returned resolver. */
+function pendingPhotonLoad(): () => ((value: ReturnType<typeof photon>) => void) | undefined {
+	let resolve: ((value: ReturnType<typeof photon>) => void) | undefined;
+	state.load.mockImplementation(
+		() =>
+			new Promise((done) => {
+				resolve = done;
+			}),
+	);
+	return () => resolve;
+}
+
+/** Arms the UI and demands one non-PNG image render, which is what starts a real Photon load. */
+async function armedUiWithDemandedImage(): Promise<{ conversion: Conversion; images: typeof Images; ui: Probe }> {
+	const loaded = await modules();
+	const ui = probe(loaded.conversion);
+	ui.ensurePngTranscoder();
+	extensionImage(loaded.images).render(40);
+	return { conversion: loaded.conversion, images: loaded.images, ui };
+}
+
+/** Loads the conversion module pair and arms the PNG transcoder once, the way interactive startup does. */
+async function armedUi(
+	images: ImageInstance[] = [],
+): Promise<{ conversion: Conversion; images: typeof Images; ui: Probe }> {
+	const loaded = await modules();
+	const ui = probe(loaded.conversion, images);
+	ui.ensurePngTranscoder();
+	return { conversion: loaded.conversion, images: loaded.images, ui };
+}
 type ImageInstance = InstanceType<typeof Images.Image>;
 interface Probe {
 	ensurePngTranscoder(): void;
@@ -146,16 +177,13 @@ beforeEach(() => {
 
 describe("normal CLI cold PNG arming and owned repaint lifecycle", () => {
 	it("real original text-only startup must make zero Photon loads", async () => {
-		const { conversion } = await modules();
-		const ui = probe(conversion);
-		ui.ensurePngTranscoder();
+		const { ui } = await armedUi();
 		expect(state.load).toHaveBeenCalledTimes(0);
 		ui.stopInteractiveTui("none");
 	});
 
 	it("repeated runtime-settings arming stays cold and installs only once", async () => {
-		const { conversion } = await modules();
-		const ui = probe(conversion);
+		const { ui } = await armedUi();
 		for (let index = 0; index < 100; index++) ui.ensurePngTranscoder();
 		expect(state.load).toHaveBeenCalledTimes(0);
 		expect(state.install).toHaveBeenCalledTimes(1);
@@ -164,9 +192,7 @@ describe("normal CLI cold PNG arming and owned repaint lifecycle", () => {
 
 	it("non-Kitty is cold and capability changes can arm later", async () => {
 		state.images = "iterm2";
-		const { conversion } = await modules();
-		const ui = probe(conversion);
-		ui.ensurePngTranscoder();
+		const { ui } = await armedUi();
 		expect(state.load).toHaveBeenCalledTimes(0);
 		expect(state.install).toHaveBeenCalledTimes(0);
 		state.images = "kitty";
@@ -177,9 +203,7 @@ describe("normal CLI cold PNG arming and owned repaint lifecycle", () => {
 	});
 
 	it("PNG conversion and extension Image remain byte-preserving and cold", async () => {
-		const { conversion, images } = await modules();
-		const ui = probe(conversion);
-		ui.ensurePngTranscoder();
+		const { conversion, images, ui } = await armedUi();
 		expect(await conversion.convertToPng(PNG, "image/png")).toEqual({ data: PNG, mimeType: "image/png" });
 		expect(extensionImage(images, PNG, "image/png").render(40).join("\n")).toContain("\x1b_G");
 		expect(state.load).toHaveBeenCalledTimes(0);
@@ -248,19 +272,9 @@ describe("normal CLI cold PNG arming and owned repaint lifecycle", () => {
 	});
 
 	it("stop before pending completion never repaints the disposed UI", async () => {
-		let resolve: ((value: ReturnType<typeof photon>) => void) | undefined;
-		state.load.mockImplementation(
-			() =>
-				new Promise((done) => {
-					resolve = done;
-				}),
-		);
-		const { conversion, images } = await modules();
-		const ui = probe(conversion);
-		ui.ensurePngTranscoder();
-		extensionImage(images).render(40);
+		const pendingResolve = pendingPhotonLoad();
+		const { ui } = await armedUiWithDemandedImage();
 		ui.stopInteractiveTui("none");
-		resolve?.(photon());
 		await settled();
 		expect(ui.ui.stop).toHaveBeenCalledTimes(1);
 		expect(ui.ui.invalidate).toHaveBeenCalledTimes(0);
@@ -279,20 +293,11 @@ describe("normal CLI cold PNG arming and owned repaint lifecycle", () => {
 	});
 
 	it("old disposed subscription cannot suppress a rearmed renderer", async () => {
-		let resolve: ((value: ReturnType<typeof photon>) => void) | undefined;
-		state.load.mockImplementation(
-			() =>
-				new Promise((done) => {
-					resolve = done;
-				}),
-		);
-		const { conversion, images } = await modules();
-		const ui = probe(conversion);
-		ui.ensurePngTranscoder();
-		extensionImage(images).render(40);
+		const pendingResolve = pendingPhotonLoad();
+		const { ui } = await armedUiWithDemandedImage();
 		ui.stopInteractiveTui("none");
 		ui.ensurePngTranscoder();
-		resolve?.(photon());
+		pendingResolve()?.(photon());
 		await settled();
 		expect(state.load).toHaveBeenCalledTimes(1);
 		expect(ui.ui.invalidate).toHaveBeenCalledTimes(1);

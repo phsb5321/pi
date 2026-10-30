@@ -6,6 +6,7 @@ import { Text } from "../src/components/text.ts";
 import { VStack } from "../src/components/v-stack.ts";
 import { renderLayoutFrame } from "../src/layout.ts";
 import { TuiAltScreen } from "../src/tui-alt-screen.ts";
+import { childTexts, cycleViewport, dragSelectCjkAndCopy, recordingSelectionTui } from "./helpers/viewport-fixtures.ts";
 import { VirtualTerminal } from "./virtual-terminal.ts";
 
 class CountedText extends Text {
@@ -42,10 +43,7 @@ test("cold memo retains exact height/blankness until explicitly required for pai
 });
 
 test("re-entry renders only visible dropped leaves and retains cold offscreen eviction", () => {
-	const children = Array.from(
-		{ length: 80 },
-		(_, i) => new CountedText(`child ${i} line a\nchild ${i} line b\nchild ${i} line c`),
-	);
+	const children = childTexts(80, (source) => new CountedText(source));
 	const scroll = new ScrollView(new VStack(children), { primary: true });
 	const frame = () => renderLayoutFrame(scroll, 20, 5, () => {});
 	const stores = () => children.reduce((sum, child) => sum + child.stores, 0);
@@ -86,14 +84,7 @@ test("re-entry renders only visible dropped leaves and retains cold offscreen ev
 
 test("ANSI/CJK selection and exact painted padding survive repeated real viewport re-entry", async () => {
 	const terminal = new VirtualTerminal(20, 5);
-	const copied: string[] = [];
-	const tui = new TuiAltScreen(terminal, undefined, undefined, {
-		copyOnSelect: false,
-		copySelection: async (text) => {
-			copied.push(text);
-			return true;
-		},
-	});
+	const { copied, tui } = recordingSelectionTui(terminal);
 	const first = "A\x1b[31m界\x1b[0mB café\nsecond row\nthird row";
 	tui.setLayoutRoot(
 		new ScrollView(
@@ -109,24 +100,9 @@ test("ANSI/CJK selection and exact painted padding survive repeated real viewpor
 		await terminal.waitForRender();
 		const initial = terminal.getViewport().slice(0, 3);
 		assert.deepEqual(initial, ["A界B café".padEnd(19), "second row".padEnd(20), "third row".padEnd(20)]);
-		for (let cycle = 0; cycle < 2; cycle++) {
-			tui.scrollToBottom();
-			await terminal.waitForRender();
-			tui.requestRender();
-			await terminal.waitForRender();
-			tui.scrollToTop();
-			await terminal.waitForRender();
-			tui.requestRender();
-			await terminal.waitForRender();
-			assert.deepEqual(terminal.getViewport().slice(0, 3), initial);
-		}
-		terminal.sendInput("\x1b[<0;2;1M");
-		terminal.sendInput("\x1b[<32;4;1M");
-		terminal.sendInput("\x1b[<3;4;1m");
-		await terminal.waitForRender();
-		assert.ok(tui.getScreenLines()[0].includes("\x1b[7m"));
-		assert.equal(await tui.copyActiveSelectionToClipboard(), true);
-		assert.deepEqual(copied, ["界B"]);
+		await cycleViewport(tui, terminal, 2);
+		assert.deepEqual(terminal.getViewport().slice(0, 3), initial);
+		await dragSelectCjkAndCopy(tui, terminal, copied);
 	} finally {
 		tui.stop();
 	}

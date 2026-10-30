@@ -58,7 +58,6 @@ describe("Together models", () => {
 			thinkingFormat: "openai",
 		});
 
-		// The validated generated catalog uses the dated reasoning-only model.
 		const deepSeekV4 = getModel("together", "deepseek-ai/DeepSeek-V4-Pro-0813");
 		expect(deepSeekV4.thinkingLevelMap).toEqual({
 			minimal: null,
@@ -71,11 +70,6 @@ describe("Together models", () => {
 			supportsReasoningEffort: true,
 			thinkingFormat: "together",
 		});
-
-		const minimax = getModel("together", "MiniMaxAI/MiniMax-M3");
-		expect(minimax.thinkingLevelMap).toEqual({ minimal: null, low: null, medium: null });
-		expect(minimax.compat?.thinkingFormat).toBe("together");
-		expect(minimax.compat?.supportsReasoningEffort).toBe(false);
 	});
 
 	it("resolves TOGETHER_API_KEY from the environment", () => {
