@@ -16,7 +16,12 @@ name: ci
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  # Bulk ref imports (archive/** branches, tags) must not start a CI run per ref
+  # (31/10/2026: 11 ci.yml runs from the pi S1 import). Branches still run, so
+  # PR heads get the push-event checks that branch protection requires.
   push:
+    branches-ignore: ['archive/**']
+    tags-ignore: ['*']
   workflow_dispatch:
 
 # One run per branch: push and pull_request for the same head share this group
