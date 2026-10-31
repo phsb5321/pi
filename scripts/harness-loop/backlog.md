@@ -23,7 +23,7 @@ const state = await evaluate(workerJson);
 // Never spread worker fields over this result or infer success from object truthiness.
 ```
 
-Output is a frozen `{schemaVersion: 1, tasks, allVerified}`. Each row contains ONLY host-pinned `taskId`, `sha`, checker-derived `verdict`, `accepted` and `reason`. `accepted` is exactly `verdict === "verified"`; missing, rejected and unknown results cannot become accepted. `passes`/`measured` are deliberately absent: p2E retains real ledger custody. The factory rejects an empty/duplicate host task list rather than giving vacuous success.
+Output is a frozen `{schemaVersion: 1, tasks, allVerified}`. Each row contains ONLY host-pinned `taskId`, `sha`, checker-derived `verdict`, `accepted` and `reason`. `accepted` is exactly `verdict === "verified"`; missing, rejected and unknown results cannot become accepted. A required host check whose conclusion is `pending` (not completed) yields `unknown` rather than `rejected`, unless another required check completed with a failure; the loop checkpoints on it instead of spending a repair prompt. `passes`/`measured` are deliberately absent: p2E retains real ledger custody. The factory rejects an empty/duplicate host task list rather than giving vacuous success.
 
 Runnable focused acceptance:
 

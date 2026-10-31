@@ -107,6 +107,16 @@ export async function evaluateAttempt(input = {}) {
 		}
 		if ((await oracle.readSha()) !== expectedSha)
 			return verdict("unknown", "source SHA changed during dependency validation");
+		// A host check that has not completed ("pending") is not a source result: checkpoint as unknown so the
+		// loop does not spend a repair prompt on it. Any completed non-success still rejects, so a real failure
+		// is never hidden behind a sibling pending check. Unknown never verifies.
+		const incomplete = checks.filter((check) => check.conclusion === "pending").map((check) => check.id);
+		const completedFailure = checks.some(
+			(check) => check.conclusion !== "pending" && !(check.conclusion === "success" && check.exitCode === 0),
+		);
+		if (incomplete.length > 0 && !completedFailure) {
+			return verdict("unknown", `required host check incomplete: ${incomplete.join(", ")}`);
+		}
 		const checked = evaluateReceipt({
 			expectedSha,
 			requiredChecks,
