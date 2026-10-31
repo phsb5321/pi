@@ -405,6 +405,7 @@ class ModelsImpl implements MutableModels {
 	private identity: ClientIdentity | undefined;
 	private refreshGenerations = new Map<string, number>();
 	private refreshControllers = new Map<string, AbortController>();
+	private refreshOutcomes = new Map<string, { generation: number; outcome: Promise<Error | undefined> }>();
 	private publicationChains = new Map<string, Promise<unknown>>();
 
 	constructor(options?: CreateModelsOptions) {
@@ -562,6 +563,44 @@ class ModelsImpl implements MutableModels {
 		});
 	}
 
+	/**
+	 * Settle one provider refresh. A caller cancelled by its own signal reports nothing. A refresh
+	 * superseded by a newer refresh of the same provider joins that newer refresh and reports its
+	 * outcome, so an overlapping refresh can never turn a failing catalog into an empty success.
+	 * Supersession without a successor (setProvider, deleteProvider, clearProviders) reports nothing.
+	 */
+	private async settleProviderRefresh(
+		providerId: string,
+		generation: number,
+		controller: AbortController,
+		signal: AbortSignal,
+		callerSignal: AbortSignal,
+		operation: Promise<void>,
+	): Promise<Error | undefined> {
+		try {
+			await raceWithAbortSignal(operation, signal);
+			return undefined;
+		} catch (error) {
+			if (callerSignal.aborted) return undefined;
+			if (controller.signal.aborted) {
+				const successor = this.refreshOutcomes.get(providerId);
+				if (!successor || successor.generation === generation) return undefined;
+				try {
+					return await raceWithAbortSignal(successor.outcome, callerSignal);
+				} catch {
+					return undefined;
+				}
+			}
+			return error instanceof Error
+				? error
+				: new ModelsError("model_source", `Model refresh failed for ${providerId}`, { cause: error });
+		} finally {
+			if (this.refreshControllers.get(providerId) === controller) {
+				this.refreshControllers.delete(providerId);
+			}
+		}
+	}
+
 	async refresh(options: ModelsRefreshOptions = {}): Promise<ModelsRefreshResult> {
 		const allowNetwork = options.allowNetwork ?? true;
 		const callerSignal = operationSignal(options.signal);
@@ -596,20 +635,21 @@ class ModelsImpl implements MutableModels {
 					await this.runProviderRefreshPhase(provider, credential, true, options.force, generation, signal);
 				})();
 
+				const outcome = this.settleProviderRefresh(
+					provider.id,
+					generation,
+					controller,
+					signal,
+					callerSignal,
+					operation,
+				);
+				this.refreshOutcomes.set(provider.id, { generation, outcome });
 				try {
-					await raceWithAbortSignal(operation, signal);
-				} catch (error) {
-					if (!signal.aborted) {
-						errors.set(
-							provider.id,
-							error instanceof Error
-								? error
-								: new ModelsError("model_source", `Model refresh failed for ${provider.id}`, { cause: error }),
-						);
-					}
+					const error = await outcome;
+					if (error) errors.set(provider.id, error);
 				} finally {
-					if (this.refreshControllers.get(provider.id) === controller) {
-						this.refreshControllers.delete(provider.id);
+					if (this.refreshOutcomes.get(provider.id)?.generation === generation) {
+						this.refreshOutcomes.delete(provider.id);
 					}
 				}
 			}),
