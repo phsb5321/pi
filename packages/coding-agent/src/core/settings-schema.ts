@@ -62,6 +62,12 @@ const RetrySettingsSchema = Type.Object({
 		}),
 	),
 	maxAgentDelayMs: Type.Optional(Type.Number({ default: SETTINGS_DEFAULTS.retry.maxAgentDelayMs })),
+	maxQueueWaitMs: Type.Optional(
+		Type.Number({
+			description: "Total gateway queue wait per turn in milliseconds; queue bounces do not spend retries.",
+			default: SETTINGS_DEFAULTS.retry.maxQueueWaitMs,
+		}),
+	),
 	provider: Type.Optional(ProviderRetrySettingsSchema),
 	maxDelayMs: Type.Optional(
 		Type.Number({
