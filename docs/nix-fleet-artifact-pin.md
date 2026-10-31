@@ -11,7 +11,7 @@ memory-sound `1429d44ac` plus the four fleet packaging commits, with its existin
 - fleet source: `/nix/store/8bj6fdl0m5gjgj9a38zi9g7had6yj0lw-pi-fleet-source-1.1.0`
 - Node: `/nix/store/gf597zf0ysgbngwb92baxgxjd02px6jh-nodejs-22.23.2`
 - canonical computation: `bash packaging/fleet/fleet-install.sh compute --source <fleet-source>`
-- full manifest: `95db83e8b0bcb52c88effc329b1d0a6d6dec3e9711f24e0c3dc97d944fff67890f21985c4f56387a33dfda42bf83869569b25fda91961293e4c38b93e98e36b8`
+- full manifest: `61f13809b13fab5d4730ffed21125d3bec5e5f02e030ccc61ba1c8d943fecccfd4a9a840c6a7907b5490e44276e9033c8ec4d4461260c9674cc707f98e9e8279`
 
 The NixOS consumer selects the checked-in platform pin and puts an unmodified
 copy of `fleet-install.sh` next to it as `fleet-pin.json`. The script's verifier
