@@ -1,5 +1,6 @@
 {
   autoPatchelfHook,
+  esbuild,
   fd,
   fetchurl,
   importNpmLock,
@@ -101,6 +102,7 @@ stdenv.mkDerivation {
     nodejs
     importNpmLock.npmConfigHook
     makeWrapper
+    esbuild
   ]
   ++ lib.optionals stdenv.hostPlatform.isLinux [ autoPatchelfHook ];
 
@@ -117,6 +119,30 @@ stdenv.mkDerivation {
 
     mkdir -p "$out/lib/pi" "$out/bin"
     cp -R . "$out/lib/pi"
+
+    # V8 keeps the full source text of every loaded module on the JS heap for
+    # lazy compilation. Comments, indentation and non-Latin-1 characters (which
+    # turn a whole source string into two-byte) are pure cost there. Measured on
+    # the 1.4.0 fleet layout, 5 x 301 s per arm: heap -4.6 MiB, median per-pi
+    # PSS+swap -10.3 MiB, CPU and startup unchanged. Whitespace/syntax/ASCII
+    # escaping only: identifiers, module format and behaviour are untouched.
+    # A file esbuild rejects keeps its original text. PI_SKIP_MINIFY=1 is for
+    # builds that need readable stack columns.
+    if [ -z "''${PI_SKIP_MINIFY:-}" ]; then
+      find "$out/lib/pi/node_modules" -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.cjs' \) \
+        -not -name '*.min.*' -print0 |
+        xargs -0 -P "$NIX_BUILD_CORES" -n 20 sh -c '
+          for f in "$@"; do
+            [ "$(head -c 2 "$f")" = "#!" ] && continue
+            tmp="$f.min.tmp"
+            if esbuild --minify-whitespace --minify-syntax --charset=ascii --legal-comments=none \
+                 --target=node22 --log-level=error "$f" --outfile="$tmp" 2>/dev/null; then
+              chmod --reference="$f" "$tmp"; mv -f "$tmp" "$f"
+            else
+              rm -f "$tmp"
+            fi
+          done' sh
+    fi
 
     # The wrapper runs Pi with an absolute Node path. Node is only on PATH so Pi can
     # find npm for package installs; append it so that shells started by the
