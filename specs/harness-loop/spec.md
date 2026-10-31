@@ -2,6 +2,7 @@
 
 Status: local integration checks passed; external delivery/independent audit remain. Faux-provider acceptance is not measured model effectiveness. Owner: p2C. Delivery/evaluation: p2E. Measured pilot: p2D.
 Receiving base: `6784958b93dc2d85a8b43448e54b01c2514d84d5` (Forgejo memory-sound after PR #2; earlier slice verified at `056720511ef78ec5d79581641070c9a46004d44e`, merged v1.4 #52), descending from `1ca833bbebe58496e95157013740951f38e844f6`.
+Receiving base: `056720511ef78ec5d79581641070c9a46004d44e` (merged v1.4 #52), descending from `1ca833bbebe58496e95157013740951f38e844f6`.
 
 ## Problem and hypothesis
 

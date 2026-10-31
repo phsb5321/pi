@@ -1,0 +1,20 @@
+{
+  "battery": "harness-loop-pilot-v0",
+  "pinnedAt": "2026-10-30",
+  "baseSha": "1ca833bbebe58496e95157013740951f38e844f6",
+  "note": "Inputs and held-out keys are fixed before any worker trial. Changing any file below requires a new battery id.",
+  "tasks": [
+    { "id": "T1-context-recovery", "maxAttempts": 1,
+      "workerInputs": { "t1-context/feature_list.json": "2524e51b1f55e8fb6b69c1d0598b85e93d9217dfd2c8c288067f9b53214c4024", "t1-context/progress.md": "569b9a4a7a21b2dd4d8c964ee460cce281474793803fd909d2627daf67ddb00d" },
+      "heldOut": { "held-out/t1.key.json": "8b451d3885f22891be72f42ccaa884702d3bba2c403c058d5f41e952af7befb0" },
+      "ask": "Report the next feature to work on, the exact current source SHA and the last failed check id as JSON {nextFeature, sourceSha, lastFailedCheck}. Return feature_list.json unchanged unless a check you ran passed." },
+    { "id": "T2-executable-repair", "maxAttempts": 2,
+      "workerInputs": { "t2-repair/range.mjs": "d26d285dfde4d974865471d85268a4bb624334f2a7a061be40f199f63b4e0ce8", "t2-repair/visible-check.mjs": "3bb2e62cf47e87ac95ac515507f6b88e4abe00ee687d5d18d9c608ada023af84" },
+      "heldOut": { "held-out/t2.cases.json": "54be1d02134f67d51d614aaa9e85a99da224233a67840158c8b2ce95a48afed1" },
+      "ask": "Make node visible-check.mjs pass by fixing range.mjs. Do not edit visible-check.mjs. Return the changed files." },
+    { "id": "T3-quota-noprogress-stop", "maxAttempts": 1,
+      "workerInputs": { "t3-stop/observations.json": "21e0aaaa36dded73b38d3efcf694594c7f59e0cbb8c235fdeb215987510bf186" },
+      "heldOut": { "held-out/t3.key.json": "22d14b5e45225a40a36222d2de9f8e8e33c640584157ae7d5bad6f4bf4bf1dd3" },
+      "ask": "For each observation emit one action {step, action: run|repair|checkpoint|escalate|stop, reason, resumeAfter?}. A checkpoint after a lane hold must carry resumeAfter." }
+  ]
+}

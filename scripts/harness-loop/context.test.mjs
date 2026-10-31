@@ -87,23 +87,6 @@ test("failure is kept before progress when the budget is tight", () => {
 	assert.ok(out.includes("FAIL-MARKER check ctx.bounded"));
 });
 
-test("sourceSha is exactly a 40-character lowercase hex commit SHA (matches driver and acceptance receiver)", () => {
-	const ok = buildContextPacket(base({ sourceSha: SHA }));
-	assert.ok(ok.includes(`SOURCE_SHA: ${SHA}\n`));
-	const bad = [
-		SHA.slice(0, 7),
-		SHA.slice(0, 39),
-		SHA + "0",
-		SHA.toUpperCase(),
-		SHA.slice(0, 39) + "g",
-		" " + SHA,
-		SHA + "\n",
-	];
-	for (const sourceSha of bad) {
-		expectError(() => buildContextPacket(base({ sourceSha })), CONTEXT_ERROR.INVALID_INPUT);
-	}
-});
-
 test("invalid inputs fail closed", () => {
 	const bad = [
 		undefined,

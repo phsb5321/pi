@@ -157,13 +157,52 @@ test("actual failed command cannot be hidden by worker's successful receipt", as
 	await expectVerdict(input, "rejected", /did not succeed/);
 });
 
-for (const conclusion of ["skipped", "pending", "cancelled"]) {
+for (const conclusion of ["skipped", "cancelled", "timed_out", "failure"]) {
 	test(`${conclusion} host check never verifies`, async (t) => {
 		const { input, run } = fixture(t);
 		input.oracle.checks.set("regression", () => ({ ...run(), conclusion }));
 		await expectVerdict(input, "rejected", /did not succeed/);
 	});
 }
+
+test("incomplete (pending) host check checkpoints as unknown, never verified or rejected", async (t) => {
+	const { input, run } = fixture(t);
+	input.oracle.checks.set("regression", () => ({ ...run(), conclusion: "pending", exitCode: null }));
+	const result = await expectVerdict(input, "unknown", /incomplete: regression/);
+	assert.equal(result.failureKey, null);
+	assert.equal(result.repeatedFailure, false);
+	// A worker receipt claiming success cannot turn an incomplete host check into a pass.
+	input.receipt.passes = true;
+	await expectVerdict(input, "unknown", /incomplete/);
+});
+
+test("a completed failing check is not hidden by a pending sibling", async (t) => {
+	const { input, run } = fixture(t);
+	input.requiredChecks = ["regression", "lint"];
+	input.oracle.checks.set("regression", () => ({ ...run(), conclusion: "failure", exitCode: 1 }));
+	input.oracle.checks.set("lint", () => ({ ...run(), conclusion: "pending", exitCode: null }));
+	await expectVerdict(input, "rejected");
+});
+
+test("pending cannot legitimize a missing or unknown check ID", async (t) => {
+	const { input, run, runs } = fixture(t);
+	input.oracle.checks.set("regression", () => ({ ...run(), conclusion: "pending", exitCode: null }));
+	input.requiredChecks = ["regression", "missing"];
+	await expectVerdict(input, "unknown", /check\/dependency unavailable/);
+	input.requiredChecks = ["regression", "bad id!"];
+	await expectVerdict(input, "unknown", /invalid host task/);
+	assert.equal(runs(), 0);
+});
+
+test("pending still respects the exact-SHA fence", async (t) => {
+	const { input, run } = fixture(t);
+	input.oracle.checks.set("regression", () => {
+		const result = run();
+		writeFileSync(join(input.evidenceRoot, "source-sha"), otherSha);
+		return { ...result, conclusion: "pending", exitCode: null };
+	});
+	await expectVerdict(input, "unknown", /changed during checks/);
+});
 
 test("thrown/unavailable host check produces an explicit unknown verdict", async (t) => {
 	const { input } = fixture(t);

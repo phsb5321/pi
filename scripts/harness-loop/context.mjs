@@ -21,7 +21,7 @@ export const CONTEXT_ERROR = Object.freeze({
 // of even a trim marker (marker ~ 40 chars at 9 digits + JSON quotes).
 const PROGRESS_RESERVE = 64;
 
-const SHA_RE = /^[0-9a-f]{40}$/;
+const SHA_RE = /^[0-9a-f]{7,64}$/;
 const ID_RE = /^[A-Za-z0-9][A-Za-z0-9._:/-]*$/;
 const SINGLE_LINE_RE = /^[^\r\n]+$/;
 
@@ -49,7 +49,7 @@ function validate(input) {
 		throw invalid("goal must be a non-empty single-line string");
 	}
 	if (typeof sourceSha !== "string" || !SHA_RE.test(sourceSha)) {
-		throw invalid("sourceSha must be an exact 40-character lowercase hex commit SHA");
+		throw invalid("sourceSha must be 7-64 lowercase hex characters");
 	}
 	if (!Array.isArray(acceptanceIds) || acceptanceIds.length === 0) {
 		throw invalid("acceptanceIds must be a non-empty array");

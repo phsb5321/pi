@@ -18,19 +18,6 @@ afterEach(() => {
 	for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-function holdFirstTurn(harness: Harness, reply: string) {
-	const entered = Promise.withResolvers<void>();
-	const release = Promise.withResolvers<void>();
-	harness.setResponses([
-		async () => {
-			entered.resolve();
-			await release.promise;
-			return fauxAssistantMessage(reply);
-		},
-	]);
-	return { entered, release };
-}
-
 async function fixture() {
 	const dir = mkdtempSync(join(tmpdir(), "pi-bounded-goal-"));
 	dirs.push(dir);
@@ -172,12 +159,9 @@ describe("bounded native SDK goal", () => {
 
 	it("hard-stops a hanging trusted check and quarantines its owner lock", async () => {
 		const f = await fixture();
+		f.options.task.deadline = Date.now() + 500;
 		f.harness.setResponses([fauxAssistantMessage("done")]);
-		// Arm the 500 ms window when the hanging check starts, not before the worker turn (host-load race).
-		f.options.check = vi.fn(() => {
-			f.options.task.deadline = Date.now() + 500;
-			return new Promise<never>(() => {});
-		});
+		f.options.check = vi.fn(() => new Promise<never>(() => {}));
 		expect(await runBoundedGoal(f.options)).toMatchObject({ reason: "deadline", attempts: 1 });
 		expect(readdirSync(f.dir).some((name) => name.endsWith(".lock"))).toBe(true);
 		await expect(runBoundedGoal(f.options)).rejects.toThrow("EEXIST");
@@ -259,7 +243,15 @@ describe("bounded native SDK goal", () => {
 
 	it("rejects concurrent owners before a second dispatch", async () => {
 		const f = await fixture();
-		const { entered, release } = holdFirstTurn(f.harness, "done");
+		const entered = Promise.withResolvers<void>();
+		const release = Promise.withResolvers<void>();
+		f.harness.setResponses([
+			async () => {
+				entered.resolve();
+				await release.promise;
+				return fauxAssistantMessage("done");
+			},
+		]);
 		const first = runBoundedGoal(f.options);
 		await entered.promise;
 		try {
@@ -293,7 +285,15 @@ describe("bounded native SDK goal", () => {
 
 	it("does not abort a session already busy with unrelated work", async () => {
 		const f = await fixture();
-		const { entered, release } = holdFirstTurn(f.harness, "unrelated work");
+		const entered = Promise.withResolvers<void>();
+		const release = Promise.withResolvers<void>();
+		f.harness.setResponses([
+			async () => {
+				entered.resolve();
+				await release.promise;
+				return fauxAssistantMessage("unrelated work");
+			},
+		]);
 		const prompt = f.harness.session.prompt("unrelated");
 		await entered.promise;
 		const abort = vi.spyOn(f.harness.session, "abort");
@@ -323,12 +323,9 @@ describe("bounded native SDK goal", () => {
 
 	it("bounds the asynchronous p2J evaluation itself", async () => {
 		const f = await fixture();
+		f.options.task.deadline = Date.now() + 500;
 		f.harness.setResponses([fauxAssistantMessage("done")]);
-		// Arm the 500 ms window when evaluation starts: a fixed start-of-test deadline races the worker turn under host load.
-		f.adapters.evaluateAttempt = () => {
-			f.options.task.deadline = Date.now() + 500;
-			return new Promise<never>(() => {});
-		};
+		f.adapters.evaluateAttempt = () => new Promise<never>(() => {});
 		expect(await runBoundedGoal(f.options)).toMatchObject({ reason: "deadline", attempts: 1 });
 		await expect(runBoundedGoal(f.options)).rejects.toThrow("EEXIST");
 	});
@@ -415,6 +412,24 @@ describe("bounded native SDK goal", () => {
 		expect(result.status).not.toBe("verified");
 		expect(result.reason).toContain("mandatory context needs");
 		expect(result.attempts).toBe(0);
+		expect(f.harness.eventsOfType("agent_start")).toHaveLength(0);
+	});
+
+	// The context packet accepts 7-64 hex (memory-sound callers); the driver itself requires an exact commit SHA.
+	it("rejects a task sourceSha that is not an exact 40-character lowercase hex SHA", async () => {
+		const f = await fixture();
+		for (const sourceSha of [
+			sha.slice(0, 7),
+			sha.slice(0, 39),
+			`${sha}0`,
+			sha.toUpperCase(),
+			`${sha.slice(0, 39)}g`,
+			` ${sha}`,
+			`${sha}\n`,
+		]) {
+			f.options.task = { ...f.options.task, sourceSha };
+			await expect(runBoundedGoal(f.options)).rejects.toThrow("Invalid bounded goal");
+		}
 		expect(f.harness.eventsOfType("agent_start")).toHaveLength(0);
 	});
 
