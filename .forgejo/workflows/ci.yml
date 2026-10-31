@@ -91,30 +91,6 @@ jobs:
         run: |
           { echo "::: Test"; npm test; } 2>&1 | tee -a "$CI_LOG"
 
-      - name: Failure log → GitHub commit comment
-        if: failure()
-        continue-on-error: true
-        env:
-          GH_STATUS_TOKEN: ${{ secrets.GH_STATUS_TOKEN }}
-          GH_REPO: phsb5321/pi
-          GH_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          LOG_TITLE: "forgejo build-check-test failed"
-          LOG_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: bash scripts/forgejo-gh-failure-log.sh
-
-      - name: "Status bridge → GitHub (context: build-check-test)"
-        if: always()
-        continue-on-error: true # bridge failure ≠ gate failure; a stuck PENDING status on GitHub is the real signal
-        env:
-          GH_STATUS_TOKEN: ${{ secrets.GH_STATUS_TOKEN }}
-          GH_REPO: phsb5321/pi
-          GH_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          STATUS_CONTEXT: build-check-test
-          STATUS_STATE: ${{ job.status }}
-          STATUS_DESC: forgejo ci (${{ github.sha }})
-          STATUS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: bash scripts/forgejo-gh-status.sh
-
   generate:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -139,15 +115,3 @@ jobs:
       - name: Verify catalog is clean
         run: git diff --exit-code -- packages/ai/src/models.generated.ts
 
-      - name: "Status bridge → GitHub (context: generate)"
-        if: always()
-        continue-on-error: true
-        env:
-          GH_STATUS_TOKEN: ${{ secrets.GH_STATUS_TOKEN }}
-          GH_REPO: phsb5321/pi
-          GH_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          STATUS_CONTEXT: generate
-          STATUS_STATE: ${{ job.status }}
-          STATUS_DESC: forgejo model-catalog (${{ github.sha }})
-          STATUS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: bash scripts/forgejo-gh-status.sh
