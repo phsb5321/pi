@@ -14,8 +14,6 @@
 name: ci
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
   # Bulk ref imports (archive/** branches, tags) must not start a CI run per ref
   # (31/10/2026: 11 ci.yml runs from the pi S1 import). Branches still run, so
   # PR heads get the push-event checks that branch protection requires.
@@ -24,9 +22,10 @@ on:
     tags-ignore: ['*']
   workflow_dispatch:
 
-# One run per branch: push and pull_request for the same head share this group
-# (github.ref differs between them: refs/heads/X vs refs/pull/N/head), so the
-# second event cancels the duplicate instead of burning a runner slot twice.
+# One run per head (31/10/2026): push is the only code trigger, same model as
+# memory-sound (#7). With pull_request as well, the PR run cancelled the push
+# run in this group and the required '(push)' contexts read "cancelled". A newer
+# push to the same branch still cancels the older run.
 concurrency:
   group: ci-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
