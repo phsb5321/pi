@@ -1,0 +1,5 @@
+[
+  { "step": 0, "kind": "check-failed", "check": "chk-sha-exact", "fingerprint": "E-sha-truncated", "progressChanged": true },
+  { "step": 1, "kind": "check-failed", "check": "chk-sha-exact", "fingerprint": "E-sha-truncated", "progressChanged": false },
+  { "step": 2, "kind": "lane-signal", "lane": "claude-lane", "state": "quota_exhausted", "resetAt": "2026-10-30T21:00:00Z" }
+]

@@ -1,0 +1,5 @@
+[
+  { "id": "F1", "description": "Packet keeps the exact goal text", "check": "chk-goal-exact", "passes": true },
+  { "id": "F2", "description": "Packet keeps the exact source SHA", "check": "chk-sha-exact", "passes": false },
+  { "id": "F3", "description": "Packet fails loudly when indispensable context does not fit", "check": "chk-overflow", "passes": false }
+]
