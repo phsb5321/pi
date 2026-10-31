@@ -50,7 +50,10 @@ async function fixture() {
 		sourceSha: sha,
 		acceptanceIds: ["artifact-check"],
 		maxAttempts: 2,
-		deadline: Date.now() + 5000,
+		// Budget for the whole fixture run, not a timing assertion: the deadline behavior itself is
+		// pinned by the explicit-deadline tests below. 5s made a loaded CI runner stall past it and
+		// checkpoint with attempts 0 (Forgejo run 3296, 31/10/2026).
+		deadline: Date.now() + 120_000,
 	};
 	const adapters: GoalAdapters = {
 		buildContextPacket: vi.fn(deliveredAdapters.buildContextPacket),

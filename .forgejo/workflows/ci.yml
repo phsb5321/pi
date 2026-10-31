@@ -11,12 +11,20 @@
 # setup-node npm cache (runner cache backend off), bridge step appended,
 # push trigger widened to all branches so PR head branches can fire gates
 # without a Forgejo PR.
+# One run per head (31/10/2026): push is the only code trigger. A pull_request
+# trigger re-ran the identical gates on the identical head SHA (both events
+# post the same build-check-test / generate contexts for that SHA), doubling
+# the load on the shared runner. Do not re-add pull_request without a
+# concurrency key that collapses it with the push run.
 name: ci
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  # Bulk ref imports (archive/** branches, tags) must not start a CI run per ref
+  # (31/10/2026: 11 ci.yml runs from the pi S1 import). Branches still run, so
+  # PR heads get the push-event checks that branch protection requires.
   push:
+    branches-ignore: ['archive/**']
+    tags-ignore: ['*']
   workflow_dispatch:
 
 concurrency:
