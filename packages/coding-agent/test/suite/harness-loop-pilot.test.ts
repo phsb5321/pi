@@ -73,7 +73,8 @@ async function pilotTrial() {
 		sourceSha: sha,
 		acceptanceIds: ["t2-held-out"],
 		maxAttempts: 2,
-		deadline: Date.now() + 20_000,
+		// Run budget, not a timing assertion (see bounded-goal.test.ts): a loaded runner stalled past 20s.
+		deadline: Date.now() + 120_000,
 	};
 	const adapters: GoalAdapters = {
 		buildContextPacket: vi.fn((input: Parameters<typeof deliveredAdapters.buildContextPacket>[0]) => {
