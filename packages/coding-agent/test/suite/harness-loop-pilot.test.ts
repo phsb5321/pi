@@ -13,6 +13,7 @@ import { gradeRangeCandidate, gradeTrialRecord } from "../../../../scripts/harne
 import { type GoalAdapters, type GoalTask, runBoundedGoal } from "../../examples/sdk/bounded-goal.ts";
 import * as deliveredAdapters from "../../examples/sdk/bounded-goal-adapters.mjs";
 import { SessionManager } from "../../src/core/session-manager.ts";
+import { freezeDate } from "./bounded-goal-clock.ts";
 import { createHarness, type Harness } from "./harness.ts";
 
 const FIX = join(__dirname, "../../../../scripts/harness-loop/fixtures/pilot");
@@ -30,14 +31,12 @@ const later = (make: () => ReturnType<typeof fauxAssistantMessage>) => () => mak
 const harnesses: Harness[] = [];
 const dirs: string[] = [];
 afterEach(() => {
-	vi.useRealTimers();
 	for (const h of harnesses.splice(0)) h.cleanup();
 	for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
 });
 
 async function pilotTrial() {
-	// Deadline is an absolute wall-clock instant: freeze Date (timers stay real) so host load cannot spend the window.
-	if (!vi.isFakeTimers()) vi.useFakeTimers({ toFake: ["Date"] });
+	freezeDate();
 	const dir = mkdtempSync(join(tmpdir(), "pi-pilot-faux-"));
 	dirs.push(dir);
 	let range = original;
