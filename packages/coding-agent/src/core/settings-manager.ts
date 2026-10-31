@@ -38,6 +38,9 @@ export interface BranchSummarySettings {
 	skipPrompt?: boolean; // default: false - when true, skips "Summarize branch?" prompt and defaults to no summary
 }
 
+/** Default total time a turn may wait in the gateway queue (30 min). */
+export const DEFAULT_MAX_QUEUE_WAIT_MS = 30 * 60_000;
+
 export interface ProviderRetrySettings {
 	timeoutMs?: number; // SDK/provider request timeout in milliseconds
 	maxRetries?: number; // SDK/provider retry attempts
@@ -49,6 +52,7 @@ export interface RetrySettings {
 	maxRetries?: number; // default: 3
 	baseDelayMs?: number; // default: 2000 (exponential backoff: 2s, 4s, 8s)
 	maxAgentDelayMs?: number; // default: 60000
+	maxQueueWaitMs?: number; // default: 1800000 (total gateway queue wait per turn)
 	provider?: ProviderRetrySettings;
 }
 
@@ -1021,12 +1025,19 @@ export class SettingsManager {
 		this.save();
 	}
 
-	getRetrySettings(): { enabled: boolean; maxRetries: number; baseDelayMs: number; maxAgentDelayMs: number } {
+	getRetrySettings(): {
+		enabled: boolean;
+		maxRetries: number;
+		baseDelayMs: number;
+		maxAgentDelayMs: number;
+		maxQueueWaitMs: number;
+	} {
 		return {
 			enabled: this.getRetryEnabled(),
 			maxRetries: this.settings.retry?.maxRetries ?? 3,
 			baseDelayMs: this.settings.retry?.baseDelayMs ?? 2000,
 			maxAgentDelayMs: this.settings.retry?.maxAgentDelayMs ?? DEFAULT_MAX_AGENT_RETRY_DELAY_MS,
+			maxQueueWaitMs: this.settings.retry?.maxQueueWaitMs ?? DEFAULT_MAX_QUEUE_WAIT_MS,
 		};
 	}
 
