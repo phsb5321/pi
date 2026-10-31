@@ -14,11 +14,14 @@ import { createHarness, type Harness } from "./harness.ts";
 const harnesses: Harness[] = [];
 const dirs: string[] = [];
 afterEach(() => {
+	vi.useRealTimers();
 	for (const h of harnesses.splice(0)) h.cleanup();
 	for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
 async function fixture(activePhase: "acting" | null, siblingPhase: "acting" | "checking") {
+	// Deadline is an absolute wall-clock instant: freeze Date (timers stay real) so host load cannot spend the window.
+	if (!vi.isFakeTimers()) vi.useFakeTimers({ toFake: ["Date"] });
 	const dir = mkdtempSync(join(tmpdir(), "p2j-native-branch-"));
 	dirs.push(dir);
 	const task: GoalTask = {

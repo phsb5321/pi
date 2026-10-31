@@ -14,11 +14,15 @@ const sha = "1ca833bbebe58496e95157013740951f38e844f6";
 const harnesses: Harness[] = [];
 const dirs: string[] = [];
 afterEach(() => {
+	vi.useRealTimers();
 	for (const harness of harnesses.splice(0)) harness.cleanup();
 	for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
 async function fixture() {
+	// The driver's deadline is an absolute wall-clock instant. Freeze Date (real timers stay real) so cold
+	// start or CPU starvation cannot consume a window that only the deadline tests are meant to bound.
+	if (!vi.isFakeTimers()) vi.useFakeTimers({ toFake: ["Date"] });
 	const dir = mkdtempSync(join(tmpdir(), "pi-bounded-goal-"));
 	dirs.push(dir);
 	const artifact = join(dir, "artifact.txt");
