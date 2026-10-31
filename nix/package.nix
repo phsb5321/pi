@@ -184,6 +184,10 @@ stdenv.mkDerivation {
        }"
     ${nodejs}/bin/node -e \
       "require('$out/lib/pi/node_modules/@silvia-odwyer/photon-node')"
+    # The minified install must still load extensions, report their errors and
+    # name the throwing function in stack frames (line:column then refer to the
+    # minified file).
+    ${nodejs}/bin/node ${source}/scripts/smoke-installed-js.mjs "$out/lib/pi" "$out/bin/pi"
     runHook postInstallCheck
   '';
 
