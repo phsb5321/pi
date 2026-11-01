@@ -13,6 +13,7 @@ import { gradeRangeCandidate, gradeTrialRecord } from "../../../../scripts/harne
 import { type GoalAdapters, type GoalTask, runBoundedGoal } from "../../examples/sdk/bounded-goal.ts";
 import * as deliveredAdapters from "../../examples/sdk/bounded-goal-adapters.mjs";
 import { SessionManager } from "../../src/core/session-manager.ts";
+import { freezeDate } from "./bounded-goal-clock.ts";
 import { createHarness, type Harness } from "./harness.ts";
 
 const FIX = join(__dirname, "../../../../scripts/harness-loop/fixtures/pilot");
@@ -35,6 +36,7 @@ afterEach(() => {
 });
 
 async function pilotTrial() {
+	freezeDate();
 	const dir = mkdtempSync(join(tmpdir(), "pi-pilot-faux-"));
 	dirs.push(dir);
 	let range = original;

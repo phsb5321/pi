@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { type GoalAdapters, type GoalTask, runBoundedGoal } from "../../examples/sdk/bounded-goal.ts";
 import * as deliveredAdapters from "../../examples/sdk/bounded-goal-adapters.mjs";
 import { SessionManager } from "../../src/core/session-manager.ts";
+import { freezeDate } from "./bounded-goal-clock.ts";
 import { createHarness, type Harness } from "./harness.ts";
 
 const sha = "1ca833bbebe58496e95157013740951f38e844f6";
@@ -19,6 +20,7 @@ afterEach(() => {
 });
 
 async function fixture() {
+	freezeDate();
 	const dir = mkdtempSync(join(tmpdir(), "pi-bounded-goal-"));
 	dirs.push(dir);
 	const artifact = join(dir, "artifact.txt");
@@ -405,6 +407,34 @@ describe("bounded native SDK goal", () => {
 			reason: "uncertain-effect: reconcile before resume",
 		});
 		expect(f.check).not.toHaveBeenCalled();
+		expect(f.harness.eventsOfType("agent_start")).toHaveLength(0);
+	});
+
+	it("fails closed without a prompt when indispensable context overflows", async () => {
+		const f = await fixture();
+		f.options.maxContextChars = 40;
+		const result = await runBoundedGoal(f.options);
+		expect(result.status).not.toBe("verified");
+		expect(result.reason).toContain("mandatory context needs");
+		expect(result.attempts).toBe(0);
+		expect(f.harness.eventsOfType("agent_start")).toHaveLength(0);
+	});
+
+	// The context packet accepts 7-64 hex (memory-sound callers); the driver itself requires an exact commit SHA.
+	it("rejects a task sourceSha that is not an exact 40-character lowercase hex SHA", async () => {
+		const f = await fixture();
+		for (const sourceSha of [
+			sha.slice(0, 7),
+			sha.slice(0, 39),
+			`${sha}0`,
+			sha.toUpperCase(),
+			`${sha.slice(0, 39)}g`,
+			` ${sha}`,
+			`${sha}\n`,
+		]) {
+			f.options.task = { ...f.options.task, sourceSha };
+			await expect(runBoundedGoal(f.options)).rejects.toThrow("Invalid bounded goal");
+		}
 		expect(f.harness.eventsOfType("agent_start")).toHaveLength(0);
 	});
 
