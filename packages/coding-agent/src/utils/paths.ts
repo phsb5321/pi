@@ -1,4 +1,5 @@
-import { realpathSync, statSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { readFileSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, join, resolve as nodeResolvePath, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,6 +31,28 @@ export function canonicalizePath(path: string): string {
 		return realpathSync(path);
 	} catch {
 		return path;
+	}
+}
+
+/**
+ * Content-addressed revision for a small text file whose bytes are the state (credentials, model
+ * overrides). {@link getFileRevision} is metadata-only, so two same-length in-place rewrites inside
+ * one filesystem timestamp quantum are indistinguishable and a cache keyed on it serves the stale
+ * value: 190 of 200 same-length write pairs on this host's tmpfs produced an identical revision, and
+ * that is what surfaced as the coalesced-reload failure in run 419 (02/11/2026). Hashing costs about
+ * 5 us for a ~50-byte file, which buys a collision-free identity.
+ */
+export function getContentRevisionFor(content: string): string {
+	const digest = createHash("sha256").update(content, "utf8").digest("hex");
+	return `${Buffer.byteLength(content, "utf8")}:${digest}`;
+}
+
+/** Read and hash a file for its content revision. Returns undefined when it cannot be read. */
+export function getContentRevision(path: string): string | undefined {
+	try {
+		return getContentRevisionFor(readFileSync(path, "utf8"));
+	} catch {
+		return undefined;
 	}
 }
 

@@ -623,12 +623,125 @@ function parseSessionEntryLine(line: string): FileEntry | null {
 	}
 }
 
+/** Byte range of a persisted entry's JSON line (without the newline) in its session file. */
+interface EntryLocation {
+	file: string;
+	offset: number;
+	length: number;
+}
+
+/**
+ * Where each persisted entry lives on disk. Cold message payloads are re-read from here, so the
+ * file stays the source of truth and the in-memory entry only keeps its skeleton.
+ */
+const entryLocations = new WeakMap<object, EntryLocation>();
+/** Message entries whose heavy payload is currently served from disk. */
+const coldEntries = new WeakSet<object>();
+/** Smaller entries are not worth a disk round trip. */
+const MIN_COLD_ENTRY_BYTES = 4096;
+/** Message fields that carry the bulk of an entry: LLM/user content, tool details, bash output. */
+const COLD_PAYLOAD_KEYS = ["content", "details", "output"] as const;
+
+function isColdContentEnabled(): boolean {
+	return process.env.PI_SESSION_COLD_CONTENT !== "0";
+}
+
+function readPersistedMessageEntry(location: EntryLocation, id: string): SessionMessageEntry {
+	const { file } = location;
+	const fd = openSync(file, "r");
+	try {
+		const buffer = Buffer.allocUnsafe(location.length);
+		if (readSync(fd, buffer, 0, location.length, location.offset) === location.length) {
+			const parsed = parseSessionEntryLine(buffer.toString("utf8"));
+			if (parsed?.type === "message" && parsed.id === id) return parsed;
+		}
+	} finally {
+		closeSync(fd);
+	}
+	// Another writer shifted the file under us: find the entry by id instead of trusting the offset.
+	for (const entry of loadEntriesFromFile(file)) {
+		if (entry.type === "message" && entry.id === id) return entry;
+	}
+	throw new Error(`Session entry ${id} can no longer be read from ${file}`);
+}
+
+/**
+ * Serve a message entry's heavy fields from the session file instead of the heap. The accessors are
+ * enumerable, so JSON.stringify, spread and structuredClone still see the full message; assigning a
+ * field turns it back into a plain data property. Reads re-parse the entry's single line, and keep
+ * the result only weakly so a payload nobody holds can be collected again.
+ */
+function makeMessagePayloadCold(entry: SessionMessageEntry, location: EntryLocation): void {
+	const message = entry.message as unknown as Record<string, unknown>;
+	const loaded = new Map<string, WeakRef<object>>();
+	for (const key of COLD_PAYLOAD_KEYS) {
+		if (message[key] === undefined) continue;
+		Object.defineProperty(message, key, {
+			enumerable: true,
+			configurable: true,
+			get: () => {
+				const kept = loaded.get(key)?.deref();
+				if (kept) return kept;
+				const value = (readPersistedMessageEntry(location, entry.id).message as unknown as Record<string, unknown>)[
+					key
+				];
+				if (typeof value === "object" && value !== null) loaded.set(key, new WeakRef(value));
+				return value;
+			},
+			set: (value: unknown) => {
+				Object.defineProperty(message, key, { value, enumerable: true, writable: true, configurable: true });
+			},
+		});
+	}
+	coldEntries.add(entry);
+}
+
+/** Read every cold payload back into memory, so the entry no longer depends on its session file. */
+function warmEntries(entries: readonly FileEntry[]): void {
+	for (const entry of entries) {
+		// Inspect the message, not the entry: branching copies entries but shares their message objects.
+		if (entry.type !== "message") continue;
+		const message = entry.message as unknown as Record<string, unknown>;
+		for (const key of COLD_PAYLOAD_KEYS) {
+			if (!Object.getOwnPropertyDescriptor(message, key)?.get) continue;
+			const value: unknown = message[key];
+			message[key] = value;
+		}
+		coldEntries.delete(entry);
+	}
+}
+
+/** Write entries as JSONL and remember where each one landed, so its payload can be re-read later. */
+function writeEntriesJsonl(fd: number, file: string, entries: readonly FileEntry[]): void {
+	let offset = 0;
+	for (const entry of entries) {
+		const line = JSON.stringify(entry);
+		const length = Buffer.byteLength(line);
+		writeFileSync(fd, `${line}\n`);
+		entryLocations.set(entry, { file, offset, length });
+		offset += length + 1;
+	}
+}
+
 /** Exported for testing */
 export function loadEntriesFromFile(filePath: string): FileEntry[] {
 	const resolvedFilePath = normalizePath(filePath);
 	if (!existsSync(resolvedFilePath)) return [];
 
 	const entries: FileEntry[] = [];
+	const locations: Array<[FileEntry, EntryLocation]> = [];
+	// Byte offsets are only trustworthy while decoding is lossless (a U+FFFD would change byte lengths).
+	let offsetsReliable = true;
+	let lineOffset = 0;
+	const recordLine = (line: string): void => {
+		const entry = parseSessionEntryLine(line);
+		const length = Buffer.byteLength(line);
+		if (entry) {
+			entries.push(entry);
+			locations.push([entry, { file: resolvedFilePath, offset: lineOffset, length }]);
+		}
+		lineOffset += length + 1;
+	};
 	let pending = "";
 	const fd = openSync(resolvedFilePath, "r");
 	try {
@@ -639,21 +752,23 @@ export function loadEntriesFromFile(filePath: string): FileEntry[] {
 			const bytesRead = readSync(fd, buffer, 0, buffer.length, null);
 			if (bytesRead === 0) break;
 
-			pending += decoder.write(buffer.subarray(0, bytesRead));
+			const decoded = decoder.write(buffer.subarray(0, bytesRead));
+			if (decoded.includes("\uFFFD")) offsetsReliable = false;
+			pending += decoded;
 			let lineStart = 0;
 			let newlineIndex = pending.indexOf("\n", lineStart);
 			while (newlineIndex !== -1) {
-				const entry = parseSessionEntryLine(pending.slice(lineStart, newlineIndex));
-				if (entry) entries.push(entry);
+				recordLine(pending.slice(lineStart, newlineIndex));
 				lineStart = newlineIndex + 1;
 				newlineIndex = pending.indexOf("\n", lineStart);
 			}
 			pending = pending.slice(lineStart);
 		}
 
-		pending += decoder.end();
-		const finalEntry = parseSessionEntryLine(pending);
-		if (finalEntry) entries.push(finalEntry);
+		const tail = decoder.end();
+		if (tail.includes("\uFFFD")) offsetsReliable = false;
+		pending += tail;
+		recordLine(pending);
 	} finally {
 		closeSync(fd);
 	}
@@ -666,6 +781,9 @@ export function loadEntriesFromFile(filePath: string): FileEntry[] {
 	}
 
 	if (pending) appendFileSync(resolvedFilePath, "\n");
+	if (offsetsReliable) {
+		for (const [entry, location] of locations) entryLocations.set(entry, location);
+	}
 	return entries;
 }
 
@@ -1098,6 +1216,7 @@ export class SessionManager {
 		}
 
 		this._buildIndex();
+		this._tierEntries();
 	}
 
 	private _buildIndex(): void {
@@ -1123,13 +1242,42 @@ export class SessionManager {
 
 	private _rewriteFile(): void {
 		if (!this.persist || !this.sessionFile) return;
+		// "w" truncates the file cold payloads are read from: bring them into memory first.
+		warmEntries(this.fileEntries);
 		const fd = openSync(this.sessionFile, "w");
 		try {
-			for (const entry of this.fileEntries) {
-				writeFileSync(fd, `${JSON.stringify(entry)}\n`);
-			}
+			writeEntriesJsonl(fd, this.sessionFile, this.fileEntries);
 		} finally {
 			closeSync(fd);
+		}
+	}
+
+	/**
+	 * Keep only the context-relevant part of the session fully in memory: the active branch from the
+	 * last compaction's first kept entry to the leaf. Every other message entry (older history, other
+	 * branches) keeps its skeleton (ids, tree links, roles, usage, timestamps) but serves its bulky
+	 * payload from the session file, which stays the complete record. Nothing is dropped from the
+	 * entry list, so tree navigation, resume, fork and usage totals are unchanged; reading a cold
+	 * payload costs one line read. PI_SESSION_COLD_CONTENT=0 disables this.
+	 */
+	private _tierEntries(): void {
+		if (!this.persist || !isColdContentEnabled()) return;
+		const path = this.getBranch();
+		let start = 0;
+		for (let i = path.length - 1; i >= 0; i--) {
+			const entry = path[i];
+			if (entry.type !== "compaction") continue;
+			const keptAt = entry.firstKeptEntryId ? path.findIndex((e) => e.id === entry.firstKeptEntryId) : -1;
+			start = keptAt >= 0 && keptAt < i ? keptAt : i;
+			break;
+		}
+		const hot = new Set<string>();
+		for (let i = start; i < path.length; i++) hot.add(path[i].id);
+		warmEntries(path.slice(start));
+		for (const entry of this.fileEntries) {
+			if (entry.type !== "message" || hot.has(entry.id) || coldEntries.has(entry)) continue;
+			const location = entryLocations.get(entry);
+			if (location && location.length >= MIN_COLD_ENTRY_BYTES) makeMessagePayloadCold(entry, location);
 		}
 	}
 
@@ -1174,17 +1322,20 @@ export class SessionManager {
 
 		if (!this.flushed) {
 			if (!this._hasConversation()) return;
+			// Entries can still be cold from the session this one was branched from; that file is not
+			// touched here, so they stay readable.
 			const fd = openSync(this.sessionFile, "wx");
 			try {
-				for (const e of this.fileEntries) {
-					writeFileSync(fd, `${JSON.stringify(e)}\n`);
-				}
+				writeEntriesJsonl(fd, this.sessionFile, this.fileEntries);
 			} finally {
 				closeSync(fd);
 			}
 			this.flushed = true;
 		} else {
-			appendFileSync(this.sessionFile, `${JSON.stringify(entry)}\n`);
+			const line = JSON.stringify(entry);
+			const offset = existsSync(this.sessionFile) ? statSync(this.sessionFile).size : 0;
+			appendFileSync(this.sessionFile, `${line}\n`);
+			entryLocations.set(entry, { file: this.sessionFile, offset, length: Buffer.byteLength(line) });
 		}
 	}
 
@@ -1283,6 +1434,7 @@ export class SessionManager {
 			...(systemMessage ? { systemMessage: { ...systemMessage, timestamp: new Date(timestamp).getTime() } } : {}),
 		};
 		this._appendEntry(entry);
+		this._tierEntries();
 		return entry.id;
 	}
 
@@ -1581,6 +1733,7 @@ export class SessionManager {
 			throw new Error(`Entry ${branchFromId} not found`);
 		}
 		this.leafId = branchFromId;
+		this._tierEntries();
 	}
 
 	/**
