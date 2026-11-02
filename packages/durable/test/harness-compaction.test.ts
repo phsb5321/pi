@@ -34,7 +34,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { selectCut, serializeConversation } from "../src/harness/compaction.ts";
 import { orderToolResults } from "../src/harness/context.ts";
 import { openNodeSqliteStorage } from "../src/storage/sqlite/node.ts";
-import { allEntries, type ChatSetup, chatSetup, openChat, runBudget, textOf, toolsNamed, waitFor } from "./chat-support.ts";
+import { allEntries, type ChatSetup, chatSetup, openChat, textOf, toolsNamed, waitFor } from "./chat-support.ts";
 import { addHooks, addSection, addTask, addTool } from "./harness-support.ts";
 import { ControlledStorage, context } from "./session-support.ts";
 import { aborted, type Deferred, deferred } from "./task-support.ts";
@@ -2339,7 +2339,7 @@ describe("compaction pinning, silent overflow, and late policy changes", () => {
 });
 
 describe("blocked compaction", () => {
-	it("survives reopen blocked and is orphaned on abort with its status removed", { timeout: runBudget(15) }, async () => {
+	it("survives reopen blocked and is orphaned on abort with its status removed", async () => {
 		const path = await sqlitePath();
 		const setup = chatSetup();
 		let { harness, root } = await openChat(await openNodeSqliteStorage(path), setup);
