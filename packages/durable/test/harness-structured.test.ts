@@ -36,7 +36,7 @@ import {
 } from "@earendil-works/pi-durable";
 import { afterEach, describe, expect, it } from "vitest";
 import { openNodeSqliteStorage } from "../src/storage/sqlite/node.ts";
-import { allEntries, chatSetup, openChat, waitFor } from "./chat-support.ts";
+import { allEntries, chatSetup, openChat, runBudget, waitFor } from "./chat-support.ts";
 import { addHooks, addTask, addTool } from "./harness-support.ts";
 import { ControlledStorage, context } from "./session-support.ts";
 import { aborted, type Deferred, deferred, openTasks, settled } from "./task-support.ts";
@@ -1690,7 +1690,7 @@ describe("recovery through ownership edges", () => {
 		await harness.close(context);
 	});
 
-	it("keeps the root busy after reopen for work below a child task's owned conversation", async () => {
+	it("keeps the root busy after reopen for work below a child task's owned conversation", { timeout: runBudget(12) }, async () => {
 		const path = await sqlitePath();
 		let inner: TaskId | undefined;
 		script("child", {

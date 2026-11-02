@@ -84,6 +84,25 @@ export function textOf(message: Message | undefined): string | undefined {
 }
 
 /** Poll `check` in real time until it holds; for waits that span throttle windows and timers. */
+/**
+ * Per-test run budget for harness tests that drive several durable operations.
+ *
+ * These tests inherited vitest's 5 s default, which bounds the whole test by wall clock rather than
+ * by the work it does. Standalone the two slowest need ~1 s; with four jobs in flight on the shared
+ * runner the same test crossed 5 s and failed before its assertions ran (pi#16 run 417, pi#17 run
+ * 419, 01/11/2026). The budget scales with the number of durable operations the test performs and
+ * is clamped both ways, so a loaded runner gets headroom while a hung test still fails in bounded
+ * time. It is not an assertion: the deadline behaviour itself is pinned by the explicit-deadline
+ * tests.
+ */
+const RUN_BUDGET_PER_OPERATION_MS = 2_000;
+const RUN_BUDGET_MIN_MS = 15_000;
+const RUN_BUDGET_MAX_MS = 120_000;
+
+export function runBudget(operations: number): number {
+	return Math.min(RUN_BUDGET_MAX_MS, Math.max(RUN_BUDGET_MIN_MS, operations * RUN_BUDGET_PER_OPERATION_MS));
+}
+
 export async function waitFor(check: () => boolean | Promise<boolean>, timeoutMs = 5000): Promise<void> {
 	const deadline = Date.now() + timeoutMs;
 	while (!(await check())) {
