@@ -28,6 +28,17 @@ checkpoint=""
 pi_bin="${PI_SEAT_SLEEP_PI:-pi}"
 wait_pid=""
 
+# Not a sleep (no checkpoint, another run's checkpoint, nothing to wake with): exit, but first consume what a
+# sender is still writing. Closing the read end under an active writer is an EPIPE for it, which is exactly the
+# race that made the tip's test flake. A tty is never drained: there is no writer to protect and the pane must
+# close at once. Non-tty reads are chunked with a timeout so a silent writer cannot hold the pane open.
+bail() {
+	if [ ! -t 0 ]; then
+		while IFS= read -r -s -N 4096 -t 2 _; do :; done
+	fi
+	exit 0
+}
+
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--checkpoint)
@@ -48,7 +59,7 @@ while [ $# -gt 0 ]; do
 	esac
 done
 
-[ -n "$checkpoint" ] || exit 0
+[ -n "$checkpoint" ] || bail
 
 # The launcher passes the run id it exported for the pi it replaced: a checkpoint from another run (or a normal
 # exit that wrote none) means this is not a sleep, so the pane closes as it always did.
@@ -60,15 +71,15 @@ if [ -n "$wait_pid" ]; then
 	done
 fi
 
-[ -s "$checkpoint" ] || exit 0
-[ -s "$checkpoint.wake" ] || exit 0
+[ -s "$checkpoint" ] || bail
+[ -s "$checkpoint.wake" ] || bail
 
 # The wake file is written by the extension with shell-quoted values and mode 0600.
 # shellcheck disable=SC1090
-. "$checkpoint.wake" || exit 0
+. "$checkpoint.wake" || bail
 
 if [ -n "${PI_SEAT_SLEEP_RUN_ID:-}" ] && [ "${PI_WAKE_RUN_ID:-}" != "$PI_SEAT_SLEEP_RUN_ID" ]; then
-	exit 0
+	bail
 fi
 
 line=""

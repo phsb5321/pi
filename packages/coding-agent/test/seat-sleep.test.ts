@@ -268,4 +268,16 @@ describe("stub", () => {
 	it("does nothing without a checkpoint", () => {
 		expect(wake({ prompt: "hi\n", sessionExists: true, writeCheckpoint: false }).args).toEqual([]);
 	});
+
+	it("drains stdin instead of closing the read end under an active sender", () => {
+		const dir = tempDir();
+		// More than a pipe buffer: if the stub exits before reading, the writer gets EPIPE (run 450 on af8addbae).
+		expect(() =>
+			execFileSync("bash", [STUB, "--checkpoint", join(dir, "absent.json")], {
+				input: "x".repeat(1 << 20),
+				stdio: ["pipe", "pipe", "pipe"],
+				timeout: 20_000,
+			}),
+		).not.toThrow();
+	});
 });
