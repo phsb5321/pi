@@ -112,6 +112,20 @@ function appendCheckpoint(manager: SessionManager, task: GoalTask, phase: "actin
 	});
 }
 
+/** Park the worker inside its first turn: `entered` resolves once the provider call is in flight. */
+function parkInFirstTurn(f: Awaited<ReturnType<typeof fixture>>, message: string) {
+	const entered = Promise.withResolvers<void>();
+	const release = Promise.withResolvers<void>();
+	f.harness.setResponses([
+		async () => {
+			entered.resolve();
+			await release.promise;
+			return fauxAssistantMessage(message);
+		},
+	]);
+	return { entered: entered.promise, release };
+}
+
 describe("bounded native SDK goal", () => {
 	it("feeds a concrete trusted failure into a repair and verifies the actual effect", async () => {
 		const f = await fixture();
@@ -248,17 +262,9 @@ describe("bounded native SDK goal", () => {
 
 	it("rejects concurrent owners before a second dispatch", async () => {
 		const f = await fixture();
-		const entered = Promise.withResolvers<void>();
-		const release = Promise.withResolvers<void>();
-		f.harness.setResponses([
-			async () => {
-				entered.resolve();
-				await release.promise;
-				return fauxAssistantMessage("done");
-			},
-		]);
+		const { entered, release } = parkInFirstTurn(f, "done");
 		const first = runBoundedGoal(f.options);
-		await entered.promise;
+		await entered;
 		try {
 			await expect(runBoundedGoal(f.options)).rejects.toThrow("EEXIST");
 		} finally {
@@ -290,17 +296,9 @@ describe("bounded native SDK goal", () => {
 
 	it("does not abort a session already busy with unrelated work", async () => {
 		const f = await fixture();
-		const entered = Promise.withResolvers<void>();
-		const release = Promise.withResolvers<void>();
-		f.harness.setResponses([
-			async () => {
-				entered.resolve();
-				await release.promise;
-				return fauxAssistantMessage("unrelated work");
-			},
-		]);
+		const { entered, release } = parkInFirstTurn(f, "unrelated work");
 		const prompt = f.harness.session.prompt("unrelated");
-		await entered.promise;
+		await entered;
 		const abort = vi.spyOn(f.harness.session, "abort");
 		try {
 			expect(await runBoundedGoal(f.options)).toMatchObject({ reason: "Session is busy; it was not interrupted" });
