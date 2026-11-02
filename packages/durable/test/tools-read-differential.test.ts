@@ -169,7 +169,7 @@ describe("read tool", () => {
 				expect(actual, `seed ${seed} offset ${offset} limit ${limit}`).toEqual(expected);
 			}
 		}
-	}, 120_000);
+	});
 
 	it("detects animated PNGs whose acTL chunk lies far beyond the header", async () => {
 		const cwd = mkdtempSync(join(tmpdir(), "pi-durable-read-"));
