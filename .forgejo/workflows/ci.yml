@@ -27,9 +27,20 @@ on:
     tags-ignore: ['*']
   workflow_dispatch:
 
+# One heavy job at a time, across refs (01/11/2026). Measured on the shared runner host (16 cores,
+# also running the NixOS CI nix builds and jellyfin): 7 jobs ran at once at 21:24Z, 6 of them
+# build-check-test, and 5 of those 6 went red. Each job allows VITEST_MAX_WORKERS=2 and --cpus=4, so
+# six concurrent jobs ask for 12 vitest forks plus six tsc/biome/build trees — more CPU demand than the
+# host has — and the timing-sensitive suites (harness-compaction, harness-structured, auth-storage,
+# worker-lifetime) invert their ordering assertions under that starvation. Job duration at
+# concurrency 6-7 was p50 19-26 min against 4 min uncontended; the worst job took 45 min.
+# Serializing the heavy job costs ~5 min per queued head, so a six-head wave finishes in ~30 min
+# instead of 12-45 min per job in parallel while most of them fail.
+# `cancel-in-progress: false` is required with a shared group: cancelling a run leaves its sha without
+# the build-check-test context, which branch protection requires before a PR can merge.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-heavy
+  cancel-in-progress: false
 
 permissions: {}
 
