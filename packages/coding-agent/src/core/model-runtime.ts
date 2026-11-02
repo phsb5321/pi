@@ -868,15 +868,22 @@ export class ModelRuntime implements Models {
 		};
 		// Published pi-ai builds before ModelsStore returned void and accepted a provider ID.
 		// The fallback keeps source-mode CLI tests working without rebuilding workspace dependencies.
-		const result = ((await this.models.refresh(refreshOptions)) as ModelsRefreshResult | undefined) ?? {
+		const result: ModelsRefreshResult = ((await this.models.refresh(refreshOptions)) as
+			| ModelsRefreshResult
+			| undefined) ?? {
 			aborted: refreshOptions.signal?.aborted ?? false,
 			errors: new Map(),
+			superseded: new Set<string>(),
 		};
 		const errors = new Map(result.errors);
+		// A refresh that lost to a newer refresh of the same provider published nothing itself; its
+		// availability pass would invalidate and then overwrite the winner's newer view with this one.
+		const superseded = result.superseded ?? new Set<string>();
 		this.updateModelSnapshot();
 		if (options.providers) {
+			const owned = [...new Set(options.providers)].filter((providerId) => !superseded.has(providerId));
 			await Promise.all(
-				[...new Set(options.providers)].map(async (providerId) => {
+				owned.map(async (providerId) => {
 					try {
 						await this.refreshProviderAvailability(providerId, operationSignal(options.signal));
 					} catch (error) {
@@ -886,7 +893,7 @@ export class ModelRuntime implements Models {
 					}
 				}),
 			);
-		} else {
+		} else if (superseded.size === 0) {
 			try {
 				await this.queueAvailabilityRefresh(options.signal);
 			} catch {
