@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Added opt-in idle-seat sleep, default OFF: with `PI_SEAT_SLEEP_MIN` set and a resident launcher present
+  (`PI_SEAT_SLEEP_LAUNCHER=1`), an idle seat writes a checkpoint and exits instead of holding ~150 MiB; the
+  launcher's stub (`assets/seat-sleep-stub.sh`) holds the pane and wakes pi on the first input line, resuming the
+  checkpoint's session file (falling back to `--continue` only when that file is gone). Without the launcher the
+  feature registers no listener and no timer.
+
 ## [1.4.0] - 2026-10-21
 
 ### New Features
