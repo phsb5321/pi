@@ -5,6 +5,7 @@ import type { Model } from "@earendil-works/pi-ai";
 import lockfile from "proper-lockfile";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { FileModelsStore } from "../src/core/models-store.ts";
+import { getFileRevision } from "../src/utils/paths.ts";
 
 const sharedTempDir = join(tmpdir(), `pi-models-store-shared-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 const sharedModelsPath = join(sharedTempDir, "models-store.json");
@@ -143,5 +144,24 @@ describe("FileModelsStore", () => {
 		const stored = JSON.parse(readFileSync(sharedModelsPath, "utf8")) as Record<string, unknown>;
 		expect(stored.one).toBeDefined();
 		expect(stored.two).toBeUndefined();
+	});
+	it("reloads after a same-length rewrite that leaves the models file metadata identical", async () => {
+		// Same exposure as auth.json: the metadata revision (dev:ino:size:mtimeNs:ctimeNs) does not
+		// change for a same-length in-place rewrite inside one timestamp quantum, so the read fast
+		// path serves the previous catalog. Find such a pair, then require the newer content.
+		let store: FileModelsStore | undefined;
+		for (let attempt = 0; attempt < 200 && !store; attempt++) {
+			const candidate = join(sharedTempDir, `same-length-${attempt}.json`);
+			writeFileSync(candidate, JSON.stringify({ alpha: { models: [model("alpha", "old")], checkedAt: 1 } }));
+			const opened = new FileModelsStore(candidate);
+			// Cache the old catalog, so the fast path has a revision to compare against.
+			expect((await opened.read("alpha"))?.models.map((entry) => entry.id)).toEqual(["old"]);
+			const before = getFileRevision(candidate);
+			writeFileSync(candidate, JSON.stringify({ alpha: { models: [model("alpha", "new")], checkedAt: 1 } }));
+			if (getFileRevision(candidate) === before) store = opened;
+		}
+		// A filesystem that gives every write a distinct timestamp cannot exercise the collision.
+		if (!store) return;
+		expect((await store.read("alpha"))?.models.map((entry) => entry.id)).toEqual(["new"]);
 	});
 });
