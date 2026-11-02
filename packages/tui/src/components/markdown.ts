@@ -1,4 +1,4 @@
-import { Marked, type Token, Tokenizer, type TokenizerExtension, type Tokens } from "marked";
+import { Lexer, Marked, type Token, Tokenizer, type TokenizerExtension, type Tokens, type TokensList } from "marked";
 import markedCjkFriendly from "marked-cjk-friendly";
 import { renderLatex } from "../latex.ts";
 import { getCapabilities, hyperlink, isImageLine } from "../terminal-image.ts";
@@ -189,6 +189,19 @@ function trimPartialClosingFences(tokens: readonly Token[]): void {
 }
 
 const markdownParser = new Marked();
+
+/** Tokens cover the source exactly; anything else means the incremental append split a block and must be discarded. */
+function tokenRawsMatch(tokens: readonly Token[], source: string): boolean {
+	let offset = 0;
+	for (const token of tokens) {
+		if (token.raw.length === 0 || !source.startsWith(token.raw, offset)) {
+			return false;
+		}
+		offset += token.raw.length;
+	}
+	return offset === source.length;
+}
+
 markdownParser.setOptions({
 	tokenizer: new StrictStrikethroughTokenizer(),
 });
@@ -256,6 +269,23 @@ interface InlineStyleContext {
 	stylePrefix: string;
 }
 
+interface LexState {
+	source: string;
+	/** Offset of the last token; text before it is stable and is never re-lexed. */
+	stableOffset: number;
+	/** Number of leading tokens that are stable. */
+	stableCount: number;
+	tokens: TokensList;
+}
+
+interface BlockLines {
+	width: number;
+	nextType: string | undefined;
+	lines: string[];
+}
+
+const REFERENCE_DEFINITION = /(?:^|\n) {0,3}\[[^\]\n]+\]:/;
+
 export class Markdown extends MemoizedRender implements Component {
 	private text: string;
 	private paddingX: number; // Left/right padding
@@ -268,7 +298,10 @@ export class Markdown extends MemoizedRender implements Component {
 	// Parsed tokens depend only on the source, so they survive theme and width invalidation. Held weakly: a token tree is
 	// about ten times the size of its source, and every message of a long transcript keeps a Markdown component. The
 	// tokens survive a burst of re-renders, such as a theme preview, and are collected afterwards.
-	private cachedTokens?: WeakRef<{ source: string; tokens: Token[] }>;
+	private lexState?: WeakRef<LexState>;
+	// Per-block layout (wrap, margins, background, padding) of the current width. Keyed by token identity: a streamed
+	// message only re-lexes its last block, so every finished block keeps its token object and answers from here.
+	private blockLines = new WeakMap<Token, BlockLines>();
 
 	constructor(
 		text: string,
@@ -289,11 +322,15 @@ export class Markdown extends MemoizedRender implements Component {
 
 	setText(text: string): void {
 		this.text = text;
-		this.invalidate();
+		// The rendered result is not a pure function of the source: the transform reads live state such as the streaming
+		// flag, so an identical source can still render differently. Parsing and layout survive below.
+		this.renderMemo.clear();
 	}
 
 	invalidate(): void {
 		this.renderMemo.clear();
+		this.lexState = undefined;
+		this.blockLines = new WeakMap();
 	}
 
 	render(width: number): string[] {
@@ -315,64 +352,34 @@ export class Markdown extends MemoizedRender implements Component {
 		// Replace tabs with 3 spaces for consistent rendering
 		const normalizedText = text.replace(/\t/g, "   ");
 
-		// Parse markdown to HTML-like tokens
-		const cached = this.cachedTokens?.deref();
-		let tokens = cached?.source === normalizedText ? cached.tokens : undefined;
-		if (!tokens) {
-			tokens = markdownParser.lexer(normalizedText);
-			trimPartialClosingFences(tokens);
-			this.cachedTokens = new WeakRef({ source: normalizedText, tokens });
-		}
+		// Parse markdown to HTML-like tokens. A streamed message appends to the last block, so only that block is
+		// re-lexed; every finished block keeps its tokens and its layout across renders.
+		const tokens = this.lex(normalizedText);
 
 		// Convert tokens to styled terminal output
-		const renderedLines: string[] = [];
+		const contentLines: string[] = [];
 
 		for (let i = 0; i < tokens.length; i++) {
 			const token = tokens[i];
 			const nextToken = tokens[i + 1];
-			const tokenLines = this.renderToken(token, contentWidth, nextToken?.type);
-			for (const tokenLine of tokenLines) {
-				renderedLines.push(tokenLine);
-			}
-		}
-
-		// Wrap lines (NO padding, NO background yet)
-		const wrappedLines: string[] = [];
-		for (const line of renderedLines) {
-			if (isImageLine(line)) {
-				wrappedLines.push(line);
-			} else {
-				for (const wrappedLine of wrapTextWithAnsi(line, contentWidth)) {
-					wrappedLines.push(wrappedLine);
+			const nextType = nextToken?.type;
+			const cached = this.blockLines.get(token);
+			if (cached !== undefined && cached.width === width && cached.nextType === nextType) {
+				for (const line of cached.lines) {
+					contentLines.push(line);
 				}
-			}
-		}
-
-		// Add margins and background to each wrapped line
-		const leftMargin = " ".repeat(this.paddingX);
-		const rightMargin = " ".repeat(this.paddingX);
-		const bgFn = this.defaultTextStyle?.bgColor;
-		const contentLines: string[] = [];
-
-		for (const line of wrappedLines) {
-			if (isImageLine(line)) {
-				contentLines.push(line);
 				continue;
 			}
 
-			const lineWithMargins = leftMargin + line + rightMargin;
-
-			if (bgFn) {
-				contentLines.push(applyBackgroundToLine(lineWithMargins, width, bgFn));
-			} else {
-				// No background - just pad to width
-				const visibleLen = visibleWidth(lineWithMargins);
-				const paddingNeeded = Math.max(0, width - visibleLen);
-				contentLines.push(lineWithMargins + " ".repeat(paddingNeeded));
+			const lines = this.layoutLines(this.renderToken(token, contentWidth, nextType), width, contentWidth);
+			this.blockLines.set(token, { width, nextType, lines });
+			for (const line of lines) {
+				contentLines.push(line);
 			}
 		}
 
 		// Add top/bottom padding (empty lines)
+		const bgFn = this.defaultTextStyle?.bgColor;
 		const emptyLine = " ".repeat(width);
 		const emptyLines: string[] = [];
 		for (let i = 0; i < this.paddingY; i++) {
@@ -387,6 +394,107 @@ export class Markdown extends MemoizedRender implements Component {
 		this.renderMemo.store(this.text, width, result);
 
 		return result.length > 0 ? result : [""];
+	}
+
+	/**
+	 * Tokenize the source, re-lexing only the last block of a grown source.
+	 *
+	 * A streamed message is one growing string: every render prefixes the previous source. Everything before the last
+	 * token is finished (a block boundary ends at the last token's raw offset), so the tokens already produced for it stay
+	 * valid and only the tail is lexed again. The result is rebuilt from the token raws and compared to the source; any
+	 * disagreement falls back to a full lex, which is exactly the old path.
+	 */
+	private lex(text: string): TokensList {
+		const cached = this.lexState?.deref();
+		if (cached?.source === text) {
+			return cached.tokens;
+		}
+
+		if (cached !== undefined && text.length >= cached.source.length && cached.stableCount > 0) {
+			const stablePrefix = cached.source.slice(0, cached.stableOffset);
+			if (text.startsWith(stablePrefix)) {
+				const tail = text.slice(cached.stableOffset);
+				// A reference definition retargets links in blocks that are already stable.
+				if (!REFERENCE_DEFINITION.test(tail)) {
+					const lexer = new Lexer(markdownParser.defaults);
+					lexer.tokens.links = { ...cached.tokens.links };
+					const tailTokens = lexer.lex(tail);
+					const combined = cached.tokens.slice(0, cached.stableCount).concat(tailTokens) as TokensList;
+					combined.links = lexer.tokens.links;
+					trimPartialClosingFences(combined);
+					if (tokenRawsMatch(combined, text)) {
+						return this.storeLexState(text, combined);
+					}
+				}
+			}
+		}
+
+		const tokens = markdownParser.lexer(text) as TokensList;
+		trimPartialClosingFences(tokens);
+		return this.storeLexState(text, tokens);
+	}
+
+	private storeLexState(source: string, tokens: TokensList): TokensList {
+		// Trailing whitespace can still belong to the block before it (an indented continuation), so the stable prefix
+		// ends at the last non-space block: that block and every token after it are re-lexed on the next append.
+		let lastBlock = tokens.length - 1;
+		while (lastBlock >= 0 && tokens[lastBlock].type === "space") {
+			lastBlock--;
+		}
+		if (lastBlock < 0) {
+			this.lexState = new WeakRef({ source, stableOffset: source.length, stableCount: tokens.length, tokens });
+			return tokens;
+		}
+		let tailLength = 0;
+		for (let i = lastBlock; i < tokens.length; i++) {
+			tailLength += tokens[i].raw.length;
+		}
+		this.lexState = new WeakRef({
+			source,
+			stableOffset: source.length - tailLength,
+			stableCount: lastBlock,
+			tokens,
+		});
+		return tokens;
+	}
+
+	/** Wrap, then apply margins, background and right padding to one block's raw lines. */
+	private layoutLines(renderedLines: readonly string[], width: number, contentWidth: number): string[] {
+		const wrappedLines: string[] = [];
+		for (const line of renderedLines) {
+			if (isImageLine(line)) {
+				wrappedLines.push(line);
+			} else {
+				for (const wrappedLine of wrapTextWithAnsi(line, contentWidth)) {
+					wrappedLines.push(wrappedLine);
+				}
+			}
+		}
+
+		const leftMargin = " ".repeat(this.paddingX);
+		const rightMargin = " ".repeat(this.paddingX);
+		const bgFn = this.defaultTextStyle?.bgColor;
+		const lines: string[] = [];
+
+		for (const line of wrappedLines) {
+			if (isImageLine(line)) {
+				lines.push(line);
+				continue;
+			}
+
+			const lineWithMargins = leftMargin + line + rightMargin;
+
+			if (bgFn) {
+				lines.push(applyBackgroundToLine(lineWithMargins, width, bgFn));
+			} else {
+				// No background - just pad to width
+				const visibleLen = visibleWidth(lineWithMargins);
+				const paddingNeeded = Math.max(0, width - visibleLen);
+				lines.push(lineWithMargins + " ".repeat(paddingNeeded));
+			}
+		}
+
+		return lines;
 	}
 
 	/**

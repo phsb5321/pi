@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Streaming Markdown now re-lexes only the block that is still growing: finished blocks keep their parsed tokens and
+  their wrapped layout between deltas instead of the whole message being parsed and wrapped again. A 200k-character
+  streamed reply costs about 6 s of CPU instead of about 190 s, and the per-delta cost stops growing with the reply.
+
 ## [1.4.0] - 2026-10-21
 
 ### Added
