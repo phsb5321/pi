@@ -68,6 +68,10 @@ let
       pack_package packages/agent agent
       pack_package packages/codemode codemode
       pack_package packages/mcp mcp
+      # v1.4.0 removed the experimental server/client/protocol stack; the
+      # install lock still references their registry releases, so keep packing
+      # the remaining workspace packages from this checkout.
+      pack_package packages/durable durable
       pack_package packages/coding-agent coding-agent
 
       runHook postInstall
@@ -86,6 +90,7 @@ let
       "node_modules/@earendil-works/pi-mcp" = workspacePackages + "/mcp.tgz";
       "node_modules/@earendil-works/pi-telemetry" = workspacePackages + "/telemetry.tgz";
       "node_modules/@earendil-works/pi-tui" = workspacePackages + "/tui.tgz";
+      "node_modules/@earendil-works/pi-durable" = workspacePackages + "/durable.tgz";
     };
   };
 in

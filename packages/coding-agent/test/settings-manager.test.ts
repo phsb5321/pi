@@ -378,12 +378,19 @@ describe("SettingsManager", () => {
 				maxRetries: 3,
 				baseDelayMs: 2000,
 				maxAgentDelayMs: 60000,
+				maxQueueWaitMs: 1_800_000,
 			});
 			expect(
 				SettingsManager.inMemory({
 					retry: { enabled: true, maxRetries: 10, baseDelayMs: 500, maxAgentDelayMs: 5000 },
 				}).getRetrySettings(),
-			).toEqual({ enabled: true, maxRetries: 10, baseDelayMs: 500, maxAgentDelayMs: 5000 });
+			).toEqual({
+				enabled: true,
+				maxRetries: 10,
+				baseDelayMs: 500,
+				maxAgentDelayMs: 5000,
+				maxQueueWaitMs: 1_800_000,
+			});
 		});
 	});
 
