@@ -679,6 +679,82 @@ describe("Models runtime", () => {
 		expect((await store.read("dynamic"))?.models[0]?.id).toBe("generation-2");
 	});
 
+	it("reports the superseding refresh's provider error to a superseded caller", async () => {
+		// Forced order: C starts, then X supersedes it before any provider work runs.
+		let releaseProvider: (() => void) | undefined;
+		const providerGate = new Promise<void>((resolve) => {
+			releaseProvider = resolve;
+		});
+		const models = createModels();
+		models.setProvider(
+			testProvider({
+				id: "dynamic",
+				refreshModels: async () => {
+					await providerGate;
+					throw new Error("corrupt catalog");
+				},
+			}),
+		);
+
+		let joinedSettled = false;
+		const joined = models.refresh({ allowNetwork: false }).finally(() => {
+			joinedSettled = true;
+		});
+		const superseding = models.refresh({ allowNetwork: false });
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(joinedSettled).toBe(false);
+
+		releaseProvider?.();
+		const [joinedResult, supersedingResult] = await Promise.all([joined, superseding]);
+		expect(supersedingResult.errors.get("dynamic")?.message).toBe("corrupt catalog");
+		expect(joinedResult.aborted).toBe(false);
+		expect(joinedResult.errors.get("dynamic")?.message).toBe("corrupt catalog");
+	});
+
+	it("does not report a superseded refresh's own failure when the superseding refresh succeeds", async () => {
+		const models = createModels();
+		models.setProvider(
+			testProvider({
+				id: "dynamic",
+				refreshModels: async ({ signal }) => {
+					await Promise.resolve();
+					if (signal.aborted) throw new Error("superseded attempt failure");
+				},
+			}),
+		);
+
+		const first = models.refresh({ allowNetwork: false });
+		const second = models.refresh({ allowNetwork: false });
+		const [firstResult, secondResult] = await Promise.all([first, second]);
+		expect(firstResult.aborted).toBe(false);
+		expect(firstResult.errors.size).toBe(0);
+		expect(secondResult.errors.size).toBe(0);
+	});
+
+	it("lets a superseded caller abort while it waits for the superseding refresh", async () => {
+		const controller = new AbortController();
+		const models = createModels();
+		models.setProvider(
+			testProvider({
+				id: "dynamic",
+				refreshModels: async ({ signal }) => {
+					await new Promise<void>((resolve) => signal.addEventListener("abort", () => resolve(), { once: true }));
+				},
+			}),
+		);
+
+		const joined = models.refresh({ allowNetwork: false, signal: controller.signal });
+		const superseding = models.refresh({ allowNetwork: false });
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		controller.abort();
+
+		const joinedResult = await joined;
+		expect(joinedResult.aborted).toBe(true);
+		expect(joinedResult.errors.size).toBe(0);
+		models.clearProviders();
+		await superseding;
+	});
+
 	it("passes caller signals to provider auth callbacks", async () => {
 		const controller = new AbortController();
 		const received: AbortSignal[] = [];
