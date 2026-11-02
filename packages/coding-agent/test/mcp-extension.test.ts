@@ -12,7 +12,7 @@ import {
 	McpSessionExpiredError,
 } from "@earendil-works/pi-mcp";
 import { createInMemoryTransportPair, type InMemoryTransport } from "@earendil-works/pi-mcp/testing";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { InMemoryAuthStorageBackend } from "../src/core/auth-storage.ts";
 import { truncateMiddle } from "../src/core/tools/truncate.ts";
 import {
@@ -466,13 +466,22 @@ describe("MCP connections", () => {
 
 	/** In-memory server that answers initialize, tools/list, and tools/call with "ok". */
 	function createTransport(
-		options: { expireFirstCall?: boolean; methods?: string[]; noTools?: boolean; resources?: boolean } = {},
+		options: {
+			expireFirstCall?: boolean;
+			methods?: string[];
+			noTools?: boolean;
+			resources?: boolean;
+			/** Never answer these methods, for the first `count` requests of each. */
+			stall?: { method: string; count: number };
+		} = {},
 	) {
 		const pair = createInMemoryTransportPair();
 		servers.push(pair.server);
+		let stalled = 0;
 		pair.server.onMessage((message) => {
 			if (!("id" in message) || !("method" in message)) return;
 			options.methods?.push(message.method);
+			if (message.method === options.stall?.method && stalled++ < options.stall.count) return;
 			const response: JsonRpcMessage =
 				message.method === "initialize"
 					? {
@@ -524,6 +533,77 @@ describe("MCP connections", () => {
 		});
 		return { connection, opened: () => opened };
 	}
+
+	describe("timeouts", () => {
+		afterEach(() => vi.useRealTimers());
+
+		const stalledHandshake = () => createTransport({ stall: { method: "initialize", count: 1 } });
+
+		it("fails a stalled handshake after the connect timeout, not the call timeout", async () => {
+			vi.useFakeTimers();
+			const { connection } = connect({ name: "fake", config: { command: "unused", timeout: 300 }, source: "test" }, [
+				stalledHandshake,
+			]);
+			const attempt = connection.getClient().catch((error: Error) => error);
+			await vi.advanceTimersByTimeAsync(60_000);
+			expect(await attempt).toEqual(
+				expect.objectContaining({ message: expect.stringContaining("timed out after 60000ms") }),
+			);
+			expect(connection.state).toBe("failed");
+			await connection.close();
+		});
+
+		it("keeps a shorter configured timeout for the handshake", async () => {
+			vi.useFakeTimers();
+			const { connection } = connect({ name: "fake", config: { command: "unused", timeout: 5 }, source: "test" }, [
+				stalledHandshake,
+			]);
+			const attempt = connection.getClient().catch((error: Error) => error);
+			await vi.advanceTimersByTimeAsync(5_000);
+			expect(await attempt).toEqual(
+				expect.objectContaining({ message: expect.stringContaining("timed out after 5000ms") }),
+			);
+			await connection.close();
+		});
+
+		it("reconnects on the next call after a failed handshake", async () => {
+			vi.useFakeTimers();
+			const { connection, opened } = connect(
+				{ name: "fake", config: { command: "unused", timeout: 300 }, source: "test" },
+				[stalledHandshake, () => createTransport()],
+			);
+			const first = connection.callTool("echo", {}, {}).catch((error: Error) => error);
+			await vi.advanceTimersByTimeAsync(60_000);
+			expect(await first).toBeInstanceOf(Error);
+			expect(connection.state).toBe("failed");
+			await expect(connection.callTool("echo", {}, {})).resolves.toEqual({
+				content: [{ type: "text", text: "ok" }],
+			});
+			expect(connection.state).toBe("connected");
+			expect(opened()).toBe(2);
+			await connection.close();
+		});
+
+		// Guard: a tool-call timeout is not a connection failure (falsifies the "call timeout marks failed" theory).
+		it("stays connected after a tool call times out and serves the next call", async () => {
+			vi.useFakeTimers();
+			const { connection, opened } = connect(
+				{ name: "fake", config: { command: "unused", timeout: 300 }, source: "test" },
+				[() => createTransport({ stall: { method: "tools/call", count: 1 } })],
+			);
+			const slow = connection.callTool("echo", {}, { timeoutMs: 90_000 }).catch((error: Error) => error);
+			await vi.advanceTimersByTimeAsync(90_000);
+			expect(await slow).toEqual(
+				expect.objectContaining({ message: expect.stringContaining("timed out after 90000ms") }),
+			);
+			expect(connection.state).toBe("connected");
+			await expect(connection.callTool("echo", {}, {})).resolves.toEqual({
+				content: [{ type: "text", text: "ok" }],
+			});
+			expect(opened()).toBe(1);
+			await connection.close();
+		});
+	});
 
 	it("starts a new session and retries once when the session expired", async () => {
 		const { connection, opened } = connect({ name: "fake", config: { command: "unused" }, source: "test" }, [

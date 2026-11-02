@@ -84,6 +84,5 @@ describe("NodeExecutionEnv spill backpressure", () => {
 				`${"a".repeat(20)}${"b".repeat(1000)}`,
 			);
 		},
-		10_000,
 	);
 });
