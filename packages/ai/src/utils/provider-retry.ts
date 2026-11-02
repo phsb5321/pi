@@ -68,6 +68,28 @@ function getRetryDelayMs(error: ProviderError, retryIndex: number, maxRetryDelay
 	return exponentialDelay * (1 - Math.random() * 0.25);
 }
 
+/**
+ * Gateway queue bounce: the Throttler stamps its queue-wait timeout 503 with
+ * `x-anthropic-throttle-queue-timeout: 1` and a `Retry-After` drain estimate.
+ * Such a response means "queued, not failed" and must not spend the retry budget.
+ */
+export function readGatewayQueueBounce(error: unknown): { gatewayQueued: boolean; retryAfterMs?: number } {
+	if (!isProviderError(error) || !error.headers) return { gatewayQueued: false };
+	const gatewayQueued = error.headers.get("x-anthropic-throttle-queue-timeout") === "1";
+	return { gatewayQueued, retryAfterMs: getServerRetryAfterMs(error.headers) };
+}
+
+/** Server-named delay from `retry-after-ms` or `retry-after`, or undefined when absent or unparseable. */
+export function getServerRetryAfterMs(headers: Headers): number | undefined {
+	const retryAfterMs = Number.parseFloat(headers.get("retry-after-ms") ?? "");
+	if (Number.isFinite(retryAfterMs) && retryAfterMs >= 0) return retryAfterMs;
+	const retryAfter = headers.get("retry-after");
+	if (!retryAfter) return undefined;
+	const seconds = Number.parseFloat(retryAfter);
+	const delayMs = Number.isNaN(seconds) ? Date.parse(retryAfter) - Date.now() : seconds * 1000;
+	return Number.isFinite(delayMs) && delayMs >= 0 ? delayMs : undefined;
+}
+
 function createAbortError(): Error {
 	const error = new Error("Request aborted");
 	error.name = "AbortError";
