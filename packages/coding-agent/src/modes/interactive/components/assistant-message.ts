@@ -1,6 +1,14 @@
 import type { AssistantMessage } from "@earendil-works/pi-ai";
-import { Container, Markdown, type MarkdownTheme, MouseRegion, Spacer, Text } from "@earendil-works/pi-tui";
-import type { MarkdownTransformer } from "../../../core/extensions/types.ts";
+import {
+	Container,
+	type DefaultTextStyle,
+	Markdown,
+	type MarkdownTheme,
+	MouseRegion,
+	Spacer,
+	Text,
+} from "@earendil-works/pi-tui";
+import type { MarkdownTransformContext, MarkdownTransformer } from "../../../core/extensions/types.ts";
 import { getMarkdownTheme, theme } from "../theme/theme.ts";
 import { createMarkdownTransform } from "./markdown-transform.ts";
 
@@ -22,6 +30,9 @@ export class AssistantMessageComponent extends Container {
 	private hasToolCalls = false;
 	private isStreaming = false;
 	private thinkingVisibilityOverrides = new Map<number, boolean>();
+	// A streaming message re-renders on every delta. Keep the Markdown component per content slot so a growing block
+	// re-parses only its last block instead of rebuilding the whole message; the surrounding wrappers are cheap.
+	private markdownSlots = new Map<string, Markdown>();
 
 	constructor(
 		message?: AssistantMessage,
@@ -50,6 +61,7 @@ export class AssistantMessageComponent extends Container {
 
 	override invalidate(): void {
 		super.invalidate();
+		this.markdownSlots.clear();
 		if (this.lastMessage) {
 			this.updateContent(this.lastMessage);
 		}
@@ -72,6 +84,7 @@ export class AssistantMessageComponent extends Container {
 
 	setOutputPad(padding: number): void {
 		this.outputPad = padding;
+		this.markdownSlots.clear();
 		if (this.lastMessage) {
 			this.updateContent(this.lastMessage);
 		}
@@ -88,12 +101,41 @@ export class AssistantMessageComponent extends Container {
 		return lines;
 	}
 
+	/**
+	 * The Markdown component for one content slot, reused across streaming updates so the growing block keeps its parsed
+	 * tokens and the finished blocks keep their layout. The transformer reads the live streaming flag: the component
+	 * outlives the state that was current when it was created.
+	 */
+	private markdownBlock(
+		slot: string,
+		text: string,
+		messageType: MarkdownTransformContext["messageType"],
+		defaultTextStyle?: DefaultTextStyle,
+	): Markdown {
+		let block = this.markdownSlots.get(slot);
+		if (block === undefined) {
+			block = new Markdown(text, this.outputPad, 0, this.markdownTheme, defaultTextStyle, {
+				transform: (markdown, availableWidth) =>
+					createMarkdownTransform(
+						messageType,
+						this.isStreaming,
+						this.markdownTransformers,
+					)(markdown, availableWidth),
+			});
+			this.markdownSlots.set(slot, block);
+		} else {
+			block.setText(text);
+		}
+		return block;
+	}
+
 	updateContent(message: AssistantMessage, isStreaming = this.isStreaming): void {
 		this.lastMessage = message;
 		this.isStreaming = isStreaming;
 
 		// Clear content container
 		this.contentContainer.clear();
+		const usedSlots = new Set<string>();
 
 		const hasVisibleContent = message.content.some(
 			(c) => (c.type === "text" && c.text.trim()) || (c.type === "thinking" && c.thinking.trim()),
@@ -110,11 +152,9 @@ export class AssistantMessageComponent extends Container {
 			if (content.type === "text" && content.text.trim()) {
 				// Assistant text messages with no background - trim the text
 				// Set paddingY=0 to avoid extra spacing before tool executions
-				this.contentContainer.addChild(
-					new Markdown(content.text.trim(), this.outputPad, 0, this.markdownTheme, undefined, {
-						transform: createMarkdownTransform("assistant", this.isStreaming, this.markdownTransformers),
-					}),
-				);
+				const slot = `text:${i}`;
+				usedSlots.add(slot);
+				this.contentContainer.addChild(this.markdownBlock(slot, content.text.trim(), "assistant"));
 			} else if (content.type === "thinking") {
 				const thinkingBlocks: string[] = [];
 				for (; i < message.content.length; i++) {
@@ -141,25 +181,21 @@ export class AssistantMessageComponent extends Container {
 
 				const runIndex = thinkingRunIndex++;
 				const hidden = this.thinkingVisibilityOverrides.get(runIndex) ?? this.hideThinkingBlock;
-				const thinkingComponent = hidden
-					? new Text(theme.italic(theme.fg("thinkingText", this.hiddenThinkingLabel)), this.outputPad, 0)
-					: new Markdown(
-							thinkingBlocks.join("\n\n"),
-							this.outputPad,
-							0,
-							this.markdownTheme,
-							{
-								color: (text: string) => theme.fg("thinkingText", text),
-								italic: true,
-							},
-							{
-								transform: createMarkdownTransform(
-									"assistant-thinking",
-									this.isStreaming,
-									this.markdownTransformers,
-								),
-							},
-						);
+				let thinkingComponent: Text | Markdown;
+				if (hidden) {
+					thinkingComponent = new Text(
+						theme.italic(theme.fg("thinkingText", this.hiddenThinkingLabel)),
+						this.outputPad,
+						0,
+					);
+				} else {
+					const slot = `thinking:${runIndex}`;
+					usedSlots.add(slot);
+					thinkingComponent = this.markdownBlock(slot, thinkingBlocks.join("\n\n"), "assistant-thinking", {
+						color: (text: string) => theme.fg("thinkingText", text),
+						italic: true,
+					});
+				}
 				this.contentContainer.addChild(
 					new MouseRegion(thinkingComponent, (event) => {
 						if (event.type !== "click" || event.button !== "left") return undefined;
@@ -171,6 +207,13 @@ export class AssistantMessageComponent extends Container {
 				if (hasVisibleContentAfter) {
 					this.contentContainer.addChild(new Spacer(1));
 				}
+			}
+		}
+
+		// Drop slots the message no longer has, so a reused component cannot resurrect stale blocks.
+		for (const key of this.markdownSlots.keys()) {
+			if (!usedSlots.has(key)) {
+				this.markdownSlots.delete(key);
 			}
 		}
 
