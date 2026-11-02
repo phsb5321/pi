@@ -13,6 +13,7 @@ import { gradeRangeCandidate, gradeTrialRecord } from "../../../../scripts/harne
 import { type GoalAdapters, type GoalTask, runBoundedGoal } from "../../examples/sdk/bounded-goal.ts";
 import * as deliveredAdapters from "../../examples/sdk/bounded-goal-adapters.mjs";
 import { SessionManager } from "../../src/core/session-manager.ts";
+import { freezeDate } from "./bounded-goal-clock.ts";
 import { createHarness, type Harness } from "./harness.ts";
 
 const FIX = join(__dirname, "../../../../scripts/harness-loop/fixtures/pilot");
@@ -27,6 +28,9 @@ const visible: [number, number, number][] = [[1, 3, 6]];
 // Built at request time so the message timestamp is the real request time (scripted messages are stamped
 // when constructed, which precedes the driver's usage window).
 const later = (make: () => ReturnType<typeof fauxAssistantMessage>) => () => make();
+// One scripted worker turn that tries to exit before the checks run. Used by both bypass tests.
+const writeExitFirst = () =>
+	later(() => fauxAssistantMessage(fauxToolCall("write_range", { content: exitFirst }), { stopReason: "toolUse" }));
 const harnesses: Harness[] = [];
 const dirs: string[] = [];
 afterEach(() => {
@@ -35,6 +39,7 @@ afterEach(() => {
 });
 
 async function pilotTrial() {
+	freezeDate();
 	const dir = mkdtempSync(join(tmpdir(), "pi-pilot-faux-"));
 	dirs.push(dir);
 	let range = original;
@@ -73,7 +78,8 @@ async function pilotTrial() {
 		sourceSha: sha,
 		acceptanceIds: ["t2-held-out"],
 		maxAttempts: 2,
-		deadline: Date.now() + 20_000,
+		// Run budget, not a timing assertion (see bounded-goal.test.ts): a loaded runner stalled past 20s.
+		deadline: Date.now() + 120_000,
 	};
 	const adapters: GoalAdapters = {
 		buildContextPacket: vi.fn((input: Parameters<typeof deliveredAdapters.buildContextPacket>[0]) => {
@@ -179,9 +185,7 @@ describe("harness-loop pilot faux smoke (actual A/H/C/J stack, grader v1)", () =
 	it("rejects the exit-before-checks candidate, feeds back visible-only failure, verifies the real fix", async () => {
 		const t = await pilotTrial();
 		t.harness.setResponses([
-			later(() =>
-				fauxAssistantMessage(fauxToolCall("write_range", { content: exitFirst }), { stopReason: "toolUse" }),
-			),
+			writeExitFirst(),
 			later(() => fauxAssistantMessage("done, all checks pass")),
 			later(() => fauxAssistantMessage(fauxToolCall("write_range", { content: fixed }), { stopReason: "toolUse" })),
 			later(() => fauxAssistantMessage("repaired")),
@@ -225,13 +229,9 @@ describe("harness-loop pilot faux smoke (actual A/H/C/J stack, grader v1)", () =
 	it("stops without verification when the worker repeats the bypass", async () => {
 		const t = await pilotTrial();
 		t.harness.setResponses([
-			later(() =>
-				fauxAssistantMessage(fauxToolCall("write_range", { content: exitFirst }), { stopReason: "toolUse" }),
-			),
+			writeExitFirst(),
 			later(() => fauxAssistantMessage("done")),
-			later(() =>
-				fauxAssistantMessage(fauxToolCall("write_range", { content: exitFirst }), { stopReason: "toolUse" }),
-			),
+			writeExitFirst(),
 			later(() => fauxAssistantMessage("done again")),
 		]);
 		const result = await runBoundedGoal(t.options);

@@ -46,6 +46,12 @@ export { McpServerLog } from "./log.ts";
 export { McpOAuthCredentialStore, McpSignInCancelledError, signInMcpServer } from "./oauth.ts";
 
 const DEFAULT_TIMEOUT_SECONDS = 60;
+/**
+ * Longest wait for a server to finish its handshake (initialize and discovery). A server that
+ * never answers fails here and the next call connects again, instead of holding the seat for the
+ * whole per-call timeout, which tool calls need but a handshake does not.
+ */
+const CONNECT_TIMEOUT_MS = 60_000;
 const STDERR_TAIL_CHARS = 2_000;
 /** Delays between attempts to connect to an HTTP server that failed with a transient error. */
 const CONNECT_RETRY_DELAYS_MS = [250, 1_000];
@@ -211,6 +217,10 @@ export class McpServerConnection implements McpToolCaller, McpResourceServer {
 		return (this.entry.config.timeout ?? DEFAULT_TIMEOUT_SECONDS) * 1000;
 	}
 
+	get connectTimeoutMs(): number {
+		return Math.min(this.timeoutMs, CONNECT_TIMEOUT_MS);
+	}
+
 	/** Server URL when the server authenticates with OAuth. */
 	get oauthUrl(): string | undefined {
 		return usesOAuth(this.entry) && "url" in this.entry.config ? this.entry.config.url : undefined;
@@ -360,7 +370,7 @@ export class McpServerConnection implements McpToolCaller, McpResourceServer {
 		const client = new McpClient({
 			name: "pi",
 			version: VERSION,
-			requestTimeoutMs: this.timeoutMs,
+			requestTimeoutMs: this.connectTimeoutMs,
 			roots: [{ uri: pathToFileURL(this.cwd).href, name: basename(this.cwd) }],
 		});
 		const log = this.log;
