@@ -28,6 +28,9 @@ const visible: [number, number, number][] = [[1, 3, 6]];
 // Built at request time so the message timestamp is the real request time (scripted messages are stamped
 // when constructed, which precedes the driver's usage window).
 const later = (make: () => ReturnType<typeof fauxAssistantMessage>) => () => make();
+// One scripted worker turn that tries to exit before the checks run. Used by both bypass tests.
+const writeExitFirst = () =>
+	later(() => fauxAssistantMessage(fauxToolCall("write_range", { content: exitFirst }), { stopReason: "toolUse" }));
 const harnesses: Harness[] = [];
 const dirs: string[] = [];
 afterEach(() => {
@@ -182,9 +185,7 @@ describe("harness-loop pilot faux smoke (actual A/H/C/J stack, grader v1)", () =
 	it("rejects the exit-before-checks candidate, feeds back visible-only failure, verifies the real fix", async () => {
 		const t = await pilotTrial();
 		t.harness.setResponses([
-			later(() =>
-				fauxAssistantMessage(fauxToolCall("write_range", { content: exitFirst }), { stopReason: "toolUse" }),
-			),
+			writeExitFirst(),
 			later(() => fauxAssistantMessage("done, all checks pass")),
 			later(() => fauxAssistantMessage(fauxToolCall("write_range", { content: fixed }), { stopReason: "toolUse" })),
 			later(() => fauxAssistantMessage("repaired")),
@@ -228,13 +229,9 @@ describe("harness-loop pilot faux smoke (actual A/H/C/J stack, grader v1)", () =
 	it("stops without verification when the worker repeats the bypass", async () => {
 		const t = await pilotTrial();
 		t.harness.setResponses([
-			later(() =>
-				fauxAssistantMessage(fauxToolCall("write_range", { content: exitFirst }), { stopReason: "toolUse" }),
-			),
+			writeExitFirst(),
 			later(() => fauxAssistantMessage("done")),
-			later(() =>
-				fauxAssistantMessage(fauxToolCall("write_range", { content: exitFirst }), { stopReason: "toolUse" }),
-			),
+			writeExitFirst(),
 			later(() => fauxAssistantMessage("done again")),
 		]);
 		const result = await runBoundedGoal(t.options);
