@@ -115,6 +115,18 @@ export interface ModelsRefreshOptions {
 export interface ModelsRefreshResult {
 	aborted: boolean;
 	errors: ReadonlyMap<string, Error>;
+	/**
+	 * Providers whose refresh this caller lost to a newer refresh of the same provider. The caller
+	 * joined that newer refresh and reports its errors; it published nothing itself, so a consumer
+	 * that owns runtime state must not republish from this result.
+	 */
+	superseded?: ReadonlySet<string>;
+}
+
+/** Settled outcome of one provider refresh, including whether this caller lost the race. */
+interface ProviderRefreshOutcome {
+	error?: Error;
+	superseded: boolean;
 }
 
 export interface ModelsRequestTransforms {
@@ -405,7 +417,10 @@ class ModelsImpl implements MutableModels {
 	private identity: ClientIdentity | undefined;
 	private refreshGenerations = new Map<string, number>();
 	private refreshControllers = new Map<string, AbortController>();
-	private refreshOutcomes = new Map<string, { generation: number; outcome: Promise<Error | undefined> }>();
+	private refreshOutcomes = new Map<
+		string,
+		{ generation: number; outcome: Promise<ProviderRefreshOutcome> }
+	>();
 	private publicationChains = new Map<string, Promise<unknown>>();
 
 	constructor(options?: CreateModelsOptions) {
@@ -576,24 +591,29 @@ class ModelsImpl implements MutableModels {
 		signal: AbortSignal,
 		callerSignal: AbortSignal,
 		operation: Promise<void>,
-	): Promise<Error | undefined> {
+	): Promise<ProviderRefreshOutcome> {
 		try {
 			await raceWithAbortSignal(operation, signal);
-			return undefined;
+			return { superseded: false };
 		} catch (error) {
-			if (callerSignal.aborted) return undefined;
+			if (callerSignal.aborted) return { superseded: false };
 			if (controller.signal.aborted) {
 				const successor = this.refreshOutcomes.get(providerId);
-				if (!successor || successor.generation === generation) return undefined;
+				if (!successor || successor.generation === generation) return { superseded: false };
 				try {
-					return await raceWithAbortSignal(successor.outcome, callerSignal);
+					const joined = await raceWithAbortSignal(successor.outcome, callerSignal);
+					return { error: joined.error, superseded: true };
 				} catch {
-					return undefined;
+					return { superseded: true };
 				}
 			}
-			return error instanceof Error
-				? error
-				: new ModelsError("model_source", `Model refresh failed for ${providerId}`, { cause: error });
+			return {
+				error:
+					error instanceof Error
+						? error
+						: new ModelsError("model_source", `Model refresh failed for ${providerId}`, { cause: error }),
+				superseded: false,
+			};
 		} finally {
 			if (this.refreshControllers.get(providerId) === controller) {
 				this.refreshControllers.delete(providerId);
@@ -605,7 +625,8 @@ class ModelsImpl implements MutableModels {
 		const allowNetwork = options.allowNetwork ?? true;
 		const callerSignal = operationSignal(options.signal);
 		const errors = new Map<string, Error>();
-		if (callerSignal.aborted) return { aborted: true, errors };
+		const superseded = new Set<string>();
+		if (callerSignal.aborted) return { aborted: true, errors, superseded };
 		const selected = options.providers ? new Set(options.providers) : undefined;
 		const refreshable = Array.from(this.providers.values()).filter(
 			(provider): provider is Provider & Required<Pick<Provider, "refreshModels">> =>
@@ -645,8 +666,9 @@ class ModelsImpl implements MutableModels {
 				);
 				this.refreshOutcomes.set(provider.id, { generation, outcome });
 				try {
-					const error = await outcome;
-					if (error) errors.set(provider.id, error);
+					const settled = await outcome;
+					if (settled.error) errors.set(provider.id, settled.error);
+					if (settled.superseded) superseded.add(provider.id);
 				} finally {
 					if (this.refreshOutcomes.get(provider.id)?.generation === generation) {
 						this.refreshOutcomes.delete(provider.id);
@@ -661,7 +683,7 @@ class ModelsImpl implements MutableModels {
 			if (!callerSignal.aborted) throw error;
 		}
 
-		return { aborted: callerSignal.aborted, errors: new Map(errors) };
+		return { aborted: callerSignal.aborted, errors: new Map(errors), superseded };
 	}
 
 	private async resolveRefreshCredential(
