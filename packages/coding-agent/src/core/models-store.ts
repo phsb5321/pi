@@ -2,7 +2,7 @@ import { join } from "node:path";
 import type { ModelsStore, ModelsStoreEntry, ModelsStoreOperationOptions } from "@earendil-works/pi-ai";
 import { getAgentDir } from "../config.ts";
 import { raceWithAbortSignal } from "../utils/abort.ts";
-import { getFileRevision, normalizePath } from "../utils/paths.ts";
+import { getContentRevision, getContentRevisionFor, normalizePath } from "../utils/paths.ts";
 import { stripBom } from "../utils/text.ts";
 import { type AuthStorageBackend, FileAuthStorageBackend } from "./auth-storage.ts";
 
@@ -74,7 +74,7 @@ export class FileModelsStore implements ModelsStore {
 	): Promise<StoredModels> {
 		return this.storage.withLockAsync(async (content) => {
 			const data = this.parse(content);
-			this.updateReadState(readState, data, getFileRevision(this.path));
+			this.updateReadState(readState, data, content !== undefined ? getContentRevisionFor(content) : undefined);
 			return { result: data };
 		}, options);
 	}
@@ -84,7 +84,7 @@ export class FileModelsStore implements ModelsStore {
 		options?: ModelsStoreOperationOptions,
 	): Promise<StoredModels> {
 		options?.signal?.throwIfAborted();
-		const revision = getFileRevision(this.path);
+		const revision = getContentRevision(this.path);
 		if (revision !== undefined && revision === readState.revision) return readState.data;
 		if (!readState.reload) {
 			const controller = new AbortController();
