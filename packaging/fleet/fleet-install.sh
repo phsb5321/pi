@@ -79,7 +79,7 @@ verify_source() { # verify_source <src> <pin> — full-pin check of a bundle dir
 
   got="$(manifest_digest "$src")"
   want="$(json_get "$pin" bundle_manifest_sha512)"
-  [ "$got" = "$want" ] || die "bundle manifest mismatch"
+  [ "$got" = "$want" ] || die "bundle manifest mismatch: got ${got:0:16} want ${want:0:16} ($(basename "$pin"))"
   echo "fleet-install: source verified against $(basename "$pin")"
 }
 
