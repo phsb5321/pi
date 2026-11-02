@@ -868,9 +868,12 @@ export class ModelRuntime implements Models {
 		};
 		// Published pi-ai builds before ModelsStore returned void and accepted a provider ID.
 		// The fallback keeps source-mode CLI tests working without rebuilding workspace dependencies.
-		const result = ((await this.models.refresh(refreshOptions)) as ModelsRefreshResult | undefined) ?? {
+		const result: ModelsRefreshResult = ((await this.models.refresh(refreshOptions)) as
+			| ModelsRefreshResult
+			| undefined) ?? {
 			aborted: refreshOptions.signal?.aborted ?? false,
 			errors: new Map(),
+			superseded: new Set<string>(),
 		};
 		const errors = new Map(result.errors);
 		// A refresh that lost to a newer refresh of the same provider published nothing itself; its
