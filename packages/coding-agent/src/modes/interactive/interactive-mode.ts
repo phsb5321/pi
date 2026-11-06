@@ -170,7 +170,7 @@ import {
 	CompactionStatusIndicator,
 	IdleStatus,
 	RetryStatusIndicator,
-	type StatusIndicator,
+	StatusIndicator,
 	WorkingStatusIndicator,
 } from "./components/status-indicator.ts";
 import { ThemedText } from "./components/themed-text.ts";
@@ -3757,6 +3757,36 @@ export class InteractiveMode {
 				this.showStatusIndicator(
 					new RetryStatusIndicator(this.ui, event.attempt, event.maxAttempts, event.delayMs),
 				);
+				this.ui.requestRender();
+				break;
+			}
+
+			case "queue_wait_start": {
+				// Gateway queue bounce: one status line that updates in place, Esc cancels the wait.
+				this.retryEscapeHandler ??= this.defaultEditor.onEscape;
+				this.defaultEditor.onEscape = () => {
+					this.session.abortRetry();
+				};
+				const seconds = Math.ceil(event.waitMs / 1000);
+				this.showStatusIndicator(
+					new StatusIndicator(
+						"retry",
+						this.ui,
+						(spinner) => theme.fg("warning", spinner),
+						(text) => theme.fg("muted", text),
+						`⏳ queued at Throttler — retrying in ${seconds}s (wait #${event.waitCount}, ${keyText("app.interrupt")} to cancel)`,
+					),
+				);
+				this.ui.requestRender();
+				break;
+			}
+
+			case "queue_wait_end": {
+				if (this.retryEscapeHandler) {
+					this.defaultEditor.onEscape = this.retryEscapeHandler;
+					this.retryEscapeHandler = undefined;
+				}
+				this.clearStatusIndicator("retry");
 				this.ui.requestRender();
 				break;
 			}

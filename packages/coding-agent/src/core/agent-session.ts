@@ -220,6 +220,8 @@ export type AgentSessionEvent =
 	  }
 	| { type: "auto_retry_start"; attempt: number; maxAttempts: number; delayMs: number; errorMessage: string }
 	| { type: "auto_retry_end"; success: boolean; attempt: number; finalError?: string }
+	| { type: "queue_wait_start"; waitMs: number; waitCount: number; totalWaitMs: number }
+	| { type: "queue_wait_end" }
 	| {
 			type: "summarization_retry_scheduled";
 			attempt: number;
@@ -411,6 +413,9 @@ export class AgentSession {
 	// Retry state
 	private _retryAbortController: AbortController | undefined = undefined;
 	private _retryAttempt = 0;
+	/** Gateway queue waits in the current prompt; not part of the retry budget. */
+	private _queueWaitTotalMs = 0;
+	private _queueWaitCount = 0;
 	/**
 	 * Failed response that the next request repeats, set by auto-retry and overflow recovery. The
 	 * retry is routed with it as `failed`, since the context no longer contains it.
@@ -1200,14 +1205,16 @@ export class AgentSession {
 	private _willRetryAfterAgentEnd(event: Extract<AgentEvent, { type: "agent_end" }>): boolean {
 		if (this._agentRunAbortRequested) return false;
 		const settings = this.settingsManager.getRetrySettings();
-		if (!settings.enabled || this._retryAttempt >= settings.maxRetries) {
-			return false;
-		}
+		if (!settings.enabled) return false;
 
 		for (let i = event.messages.length - 1; i >= 0; i--) {
 			const message = event.messages[i];
 			if (message.role === "assistant") {
-				return this._isRetryableError(message as AssistantMessage);
+				const assistant = message as AssistantMessage;
+				if (assistant.gatewayQueued) {
+					return this._queueWaitTotalMs + this._queueWaitDelayMs(assistant, settings) <= settings.maxQueueWaitMs;
+				}
+				return this._retryAttempt < settings.maxRetries && this._isRetryableError(assistant);
 			}
 		}
 		return false;
@@ -1895,6 +1902,8 @@ export class AgentSession {
 		// The run records the loadout in the transcript; restored tools that did not register by now
 		// are dropped, so a tool that never registers does not stay pending.
 		this._pendingToolNames.clear();
+		this._queueWaitTotalMs = 0;
+		this._queueWaitCount = 0;
 		try {
 			await this.agent.prompt(messages);
 			while (!this._agentRunAbortRequested) {
@@ -3767,6 +3776,8 @@ export class AgentSession {
 	 * Context overflow errors are NOT retryable (handled by compaction instead).
 	 */
 	private _isRetryableError(message: AssistantMessage): boolean {
+		// A gateway queue bounce is a wait, not a failure; it is always retried (bounded by maxQueueWaitMs).
+		if (message.gatewayQueued) return true;
 		// Context overflow is handled by compaction, not retry.
 		if (isContextOverflow(message, (this._modelForMessage(message) ?? this.model)?.contextWindow ?? 0)) return false;
 		return isRetryableAssistantError(message);
@@ -3824,6 +3835,7 @@ export class AgentSession {
 		if (!settings.enabled) {
 			return false;
 		}
+		if (message.gatewayQueued) return this._prepareQueueWait(message, settings);
 
 		this._retryAttempt++;
 
@@ -3833,7 +3845,9 @@ export class AgentSession {
 			return false;
 		}
 
-		const delayMs = retryDelayMs(settings, this._retryAttempt);
+		// Honor a server-named Retry-After (never 0s when the server named a delay), capped like backoff.
+		const serverDelayMs = Math.min(message.retryAfterMs ?? 0, settings.maxAgentDelayMs);
+		const delayMs = Math.max(retryDelayMs(settings, this._retryAttempt), serverDelayMs);
 
 		this._emit({
 			type: "auto_retry_start",
@@ -3859,6 +3873,45 @@ export class AgentSession {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Wait out a gateway queue bounce without touching the retry budget or leaving an error in
+	 * the model history. Returns false (normal error path) once the turn's queue wait would exceed
+	 * `retry.maxQueueWaitMs`, or when the wait is aborted.
+	 */
+	private async _prepareQueueWait(
+		message: AssistantMessage,
+		settings: { baseDelayMs: number; maxQueueWaitMs: number },
+	): Promise<boolean> {
+		const delayMs = this._queueWaitDelayMs(message, settings);
+		if (this._queueWaitTotalMs + delayMs > settings.maxQueueWaitMs) return false;
+
+		this._queueWaitTotalMs += delayMs;
+		this._queueWaitCount++;
+		this._emit({
+			type: "queue_wait_start",
+			waitMs: delayMs,
+			waitCount: this._queueWaitCount,
+			totalWaitMs: this._queueWaitTotalMs,
+		});
+		this._omitRecoveryAttempt(message);
+
+		this._retryAbortController = new AbortController();
+		try {
+			await sleep(delayMs, this._retryAbortController.signal);
+			return true;
+		} catch {
+			return false;
+		} finally {
+			this._retryAbortController = undefined;
+			this._emit({ type: "queue_wait_end" });
+		}
+	}
+
+	/** Wait for a queue bounce: max(Retry-After, base delay) with up to 20% jitter. */
+	private _queueWaitDelayMs(message: AssistantMessage, settings: { baseDelayMs: number }): number {
+		return Math.round(Math.max(message.retryAfterMs ?? 0, settings.baseDelayMs) * (1 + Math.random() * 0.2));
 	}
 
 	/**

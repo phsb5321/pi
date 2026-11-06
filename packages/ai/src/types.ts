@@ -592,6 +592,10 @@ export interface AssistantMessage {
 	stopReason: StopReason;
 	deferred?: DeferredHandle;
 	errorMessage?: string;
+	/** Set when the gateway queued the request and timed out its wait: a queue bounce, not a failure. */
+	gatewayQueued?: boolean;
+	/** Server-named retry delay (Retry-After) for a failed response, in milliseconds. */
+	retryAfterMs?: number;
 	rawStopReason?: string;
 	/**
 	 * Provider indication of whether the model explicitly ended its turn.
