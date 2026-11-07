@@ -85,8 +85,8 @@ describe("createAgentSession stream options", () => {
 		requestOptions: SimpleStreamOptions = {},
 		extensionFactory?: ExtensionFactory,
 		providerEvent?: unknown,
+		model = createModel(api),
 	): Promise<SimpleStreamOptions | undefined> {
-		const model = createModel(api);
 		const settingsManager = SettingsManager.inMemory(settings);
 		const resourceLoader = new DefaultResourceLoader({
 			cwd,
@@ -219,6 +219,31 @@ describe("createAgentSession stream options", () => {
 		} finally {
 			fixture.dispose();
 		}
+	});
+
+	it("wires the default-off local host issuer into ordinary AgentSession requests", async () => {
+		const model: Model<Api> = {
+			...createModel("anthropic-messages"),
+			provider: "claude-lane",
+			id: "claude-fixture",
+			baseUrl: "http://127.0.0.1:8765/v1",
+		};
+		const options = await captureStreamOptions(model.api, {}, {}, undefined, undefined, model);
+		expect(options?.gatewayPreEgressTrust).toMatchObject({
+			origin: "http://127.0.0.1:8765",
+			verify: expect.any(Function),
+		});
+	});
+
+	it("does not inject a host issuer into other providers", async () => {
+		const options = await captureStreamOptions("openai-completions", {});
+		expect(options?.gatewayPreEgressTrust).toBeUndefined();
+	});
+
+	it("preserves an explicit trusted SDK host issuer", async () => {
+		const gatewayPreEgressTrust = { origin: "http://127.0.0.1:8765", verify: () => false };
+		const options = await captureStreamOptions("anthropic-messages", {}, { gatewayPreEgressTrust });
+		expect(options?.gatewayPreEgressTrust).toBe(gatewayPreEgressTrust);
 	});
 
 	it("forwards httpIdleTimeoutMs as timeoutMs for OpenAI Codex", async () => {
