@@ -32,6 +32,10 @@
               "path": "models.md"
             },
             {
+              "title": "Gateway Queue Status",
+              "path": "gateway-queues.md"
+            },
+            {
               "title": "Manage Sessions and Context",
               "path": "sessions.md"
             },

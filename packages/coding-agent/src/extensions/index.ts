@@ -1,5 +1,6 @@
 import type { InlineExtension } from "../core/extensions/types.ts";
 import codemodeExtension from "./codemode/index.ts";
+import gatewayQueueExtension from "./gateway-queue/index.ts";
 import llamaExtension from "./llama/index.ts";
 import mcpExtension from "./mcp/index.ts";
 import seatSleepExtension from "./seat-sleep/index.ts";
@@ -13,4 +14,5 @@ export const builtInExtensions: InlineExtension[] = [
 	{ name: "tool-search", factory: toolSearchExtension, replaceable: true, builtin: true },
 	{ name: "mcp", factory: mcpExtension, replaceable: true, builtin: true },
 	{ name: "seat-sleep", factory: seatSleepExtension, builtin: true },
+	{ name: "gateway-queue", factory: gatewayQueueExtension, builtin: true },
 ];

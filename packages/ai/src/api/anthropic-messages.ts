@@ -37,6 +37,7 @@ import type {
 	ToolCall,
 	ToolResultMessage,
 } from "../types.ts";
+import { raceWithAbortSignal } from "../utils/abort.ts";
 import { appendAssistantMessageDiagnostic } from "../utils/diagnostics.ts";
 import { AssistantMessageEventStream } from "../utils/event-stream.ts";
 import { headersToRecord } from "../utils/headers.ts";
@@ -483,7 +484,8 @@ async function* iterateSseMessages(
 				throw new Error("Request was aborted");
 			}
 
-			const { value, done } = await reader.read();
+			const read = reader.read();
+			const { value, done } = signal ? await raceWithAbortSignal(read, signal) : await read;
 			if (done) {
 				break;
 			}
@@ -523,13 +525,18 @@ async function* iterateSseMessages(
 			yield trailingEvent;
 		}
 	} finally {
-		reader.releaseLock();
+		try {
+			await reader.cancel();
+		} finally {
+			reader.releaseLock();
+		}
 	}
 }
 
 async function* iterateAnthropicEvents(
 	response: Response,
 	signal?: AbortSignal,
+	onPing?: (data: unknown) => void | Promise<void>,
 ): AsyncGenerator<RawMessageStreamEvent> {
 	if (!response.body) {
 		throw new Error("Attempted to iterate over an Anthropic response with no body");
@@ -541,6 +548,20 @@ async function* iterateAnthropicEvents(
 	for await (const sse of iterateSseMessages(response.body, signal)) {
 		if (sse.event === "error") {
 			throw new Error(sse.data);
+		}
+
+		if (sse.event === "ping" && onPing) {
+			let ping: unknown;
+			try {
+				ping = JSON.parse(sse.data);
+			} catch {
+				// Malformed keepalives were ignored before; never turn one into a model failure.
+				continue;
+			}
+			if (ping !== null && typeof ping === "object" && "type" in ping && ping.type === "ping") {
+				await onPing(ping);
+			}
+			continue;
 		}
 
 		if (!ANTHROPIC_MESSAGE_EVENTS.has(sse.event ?? "")) {
@@ -693,7 +714,9 @@ export const stream: StreamFunction<"anthropic-messages", AnthropicOptions> = (
 			type Block = (ThinkingContent | TextContent | (ToolCall & { partialJson: string })) & { index: number };
 			const blocks = output.content as Block[];
 
-			for await (const event of iterateAnthropicEvents(response, options?.signal)) {
+			for await (const event of iterateAnthropicEvents(response, options?.signal, (data) =>
+				options?.onProviderStreamEvent?.(data, model),
+			)) {
 				await options?.onProviderStreamEvent?.(event, model);
 				if (event.type === "message_start") {
 					output.responseId = event.message.id;
