@@ -33,6 +33,38 @@ export default function gatewayQueueExtension(pi: ExtensionAPI): void {
 	pi.on("agent_settled", clear);
 	pi.on("before_provider_request", clear);
 	pi.on("after_provider_response", (event, ctx) => {
+		// This typed native HTTP503 lifecycle is not an upstream ping or successful response.
+		if (event.preEgressWait) {
+			clear(event, ctx);
+			const wait = event.preEgressWait;
+			const model = ctx.model;
+			if (
+				wait.state !== "waiting" ||
+				wait.reason !== "maintenance" ||
+				event.status !== 503 ||
+				(ctx.mode !== "tui" && ctx.mode !== "rpc") ||
+				!ctx.hasUI ||
+				model?.provider !== "claude-lane" ||
+				model.api !== "anthropic-messages" ||
+				!Number.isFinite(wait.elapsedMs) ||
+				wait.elapsedMs < 0 ||
+				!Number.isFinite(wait.nextCheckMs) ||
+				wait.nextCheckMs <= 0
+			)
+				return;
+			try {
+				const url = new URL(model.baseUrl);
+				if (url.username || url.password || !GATEWAY_ORIGINS.has(url.origin)) return;
+			} catch {
+				return;
+			}
+			const headers = new Headers(event.headers);
+			if (headers.get("x-anthropic-throttle-proxy") !== "1" || headers.get("x-throttle-admission-closed") !== "1")
+				return;
+			displayed = `Waiting: maintenance (pre-egress) | waited ${Math.floor(wait.elapsedMs / 1000)}s | next check in ${Math.ceil(wait.nextCheckMs / 1000)}s`;
+			ctx.ui.setStatus(STATUS_KEY, displayed);
+			return;
+		}
 		clear(event, ctx);
 		const model = ctx.model;
 		if (

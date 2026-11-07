@@ -55,6 +55,7 @@ export function buildBaseOptions(
 		identity: options?.identity,
 		onPayload: options?.onPayload,
 		onResponse: options?.onResponse,
+		gatewayPreEgressTrust: options?.gatewayPreEgressTrust,
 		onProviderStreamEvent: options?.onProviderStreamEvent,
 		timeoutMs: options?.timeoutMs,
 		websocketConnectTimeoutMs: options?.websocketConnectTimeoutMs,

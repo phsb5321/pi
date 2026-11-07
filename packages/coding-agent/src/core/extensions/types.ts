@@ -36,6 +36,7 @@ import type {
 	ProviderHeaders,
 	ProviderId,
 	ProviderImages,
+	ProviderResponse,
 	RefreshModelsContext,
 	SimpleStreamOptions,
 	TextContent,
@@ -912,10 +913,8 @@ export interface BeforeProviderHeadersEvent {
 }
 
 /** Fired after a provider response is received and before the response stream is consumed. */
-export interface AfterProviderResponseEvent {
+export interface AfterProviderResponseEvent extends ProviderResponse {
 	type: "after_provider_response";
-	status: number;
-	headers: Record<string, string>;
 }
 
 /** Fired for a parsed provider stream event before Pi normalizes it. */

@@ -1,3 +1,5 @@
+import { stream as streamAnthropic } from "@earendil-works/pi-ai/api/anthropic-messages";
+import { getModel, normalizeContext } from "@earendil-works/pi-ai/compat";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ProviderStreamEvent } from "../../src/core/extensions/types.ts";
 import gatewayQueueExtension from "../../src/extensions/gateway-queue/index.ts";
@@ -57,6 +59,62 @@ async function setup(
 }
 
 describe("built-in gateway queue status", () => {
+	it.each(["tui", "rpc"] as const)(
+		"bridges actual native pre-egress wait and cancellation to %s status",
+		async (mode) => {
+			vi.useFakeTimers();
+			const { harness, runner, setStatus } = await setup(undefined, undefined, mode);
+			const model = {
+				...getModel("anthropic", "claude-haiku-4-5"),
+				provider: "claude-lane",
+				baseUrl: "http://127.0.0.1:8765",
+			};
+			harness.session.agent.state.model = model;
+			const controller = new AbortController();
+			const fetch = vi.fn(async () => {
+				const response = new Response("local policy: admission is quiesced; not accepting new work\n", {
+					status: 503,
+					headers: {
+						"content-type": "text/plain; charset=utf-8",
+						"x-anthropic-throttle-proxy": "1",
+						"x-throttle-admission-closed": "1",
+						"retry-after": "5",
+					},
+				});
+				Object.defineProperty(response, "url", { value: `${model.baseUrl}/v1/messages?beta=true` });
+				return response;
+			});
+			const messages = [...harness.session.messages];
+			try {
+				const result = streamAnthropic(
+					model,
+					normalizeContext({ messages: [{ role: "user", content: "Synthetic", timestamp: 1 }] }),
+					{
+						apiKey: "synthetic",
+						fetch,
+						signal: controller.signal,
+						maxRetries: 0,
+						gatewayPreEgressTrust: { origin: model.baseUrl, verify: () => true }, // Isolated fixture only.
+						onResponse: (response) => runner.emit({ type: "after_provider_response", ...response }),
+					},
+				).result();
+				await vi.advanceTimersByTimeAsync(6_300);
+				expect(setStatus).toHaveBeenLastCalledWith(
+					"gateway-queue",
+					"Waiting: maintenance (pre-egress) | waited 5s | next check in 5s",
+				);
+				controller.abort();
+				expect((await result).stopReason).toBe("aborted");
+				expect(setStatus).toHaveBeenLastCalledWith("gateway-queue", undefined);
+				expect(fetch).toHaveBeenCalledTimes(2);
+				expect(harness.session.messages).toEqual(messages);
+				expect(harness.eventsOfType("tool_execution_start")).toEqual([]);
+			} finally {
+				controller.abort();
+				vi.useRealTimers();
+			}
+		},
+	);
 	it("is enabled as a normal built-in CLI extension", () => {
 		expect(builtInExtensions).toContainEqual({
 			name: "gateway-queue",

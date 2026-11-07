@@ -383,6 +383,7 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
 			type: "after_provider_response",
 			status: response.status,
 			headers: response.headers,
+			...(response.preEgressWait ? { preEgressWait: response.preEgressWait } : {}),
 		});
 	};
 	const handleProviderStreamEvent: NonNullable<ModelsSimpleStreamOptions["onProviderStreamEvent"]> = async (

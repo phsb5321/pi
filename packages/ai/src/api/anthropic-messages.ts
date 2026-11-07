@@ -40,6 +40,7 @@ import type {
 import { raceWithAbortSignal } from "../utils/abort.ts";
 import { appendAssistantMessageDiagnostic } from "../utils/diagnostics.ts";
 import { AssistantMessageEventStream } from "../utils/event-stream.ts";
+import { GatewayPreEgressTrustError, gatewayPreEgressFetch } from "../utils/gateway-pre-egress.ts";
 import { headersToRecord } from "../utils/headers.ts";
 import { type ClientIdentity, getIdentityHeaders } from "../utils/identity.ts";
 import { parseJsonWithRepair, parseStreamingJson, parseToolCallArguments } from "../utils/json-parse.ts";
@@ -599,6 +600,16 @@ export const stream: StreamFunction<"anthropic-messages", AnthropicOptions> = (
 	const currentTools = getCurrentTools(normalizedContext.messages);
 
 	(async () => {
+		const deadline =
+			options?.gatewayPreEgressTrust && options.timeoutMs !== undefined && options.timeoutMs > 0
+				? new AbortController()
+				: undefined;
+		const deadlineTimer = deadline
+			? setTimeout(() => deadline.abort(new Error("Request deadline exceeded")), options?.timeoutMs)
+			: undefined;
+		const signal = deadline
+			? AbortSignal.any([deadline.signal, ...(options?.signal ? [options.signal] : [])])
+			: options?.signal;
 		const output: AssistantMessage = {
 			role: "assistant",
 			content: [],
@@ -647,7 +658,13 @@ export const stream: StreamFunction<"anthropic-messages", AnthropicOptions> = (
 					model,
 					apiKey,
 					options?.headers,
-					options?.fetch,
+					gatewayPreEgressFetch(
+						model,
+						options?.fetch ?? globalThis.fetch,
+						(response) => options?.onResponse?.(response, model),
+						options?.maxRetryDelayMs,
+						options?.gatewayPreEgressTrust,
+					),
 					copilotDynamicHeaders,
 					cacheSessionId,
 					federation,
@@ -657,14 +674,14 @@ export const stream: StreamFunction<"anthropic-messages", AnthropicOptions> = (
 				isOAuth = created.isOAuthToken;
 			}
 			const requestOptions = {
-				...(options?.signal ? { signal: options.signal } : {}),
+				...(signal ? { signal } : {}),
 				...(options?.timeoutMs !== undefined ? { timeout: options.timeoutMs } : {}),
 				maxRetries: 0,
 			};
 			let disablePreferredStrictTools = false;
 			let response: Response;
 			for (;;) {
-				options?.signal?.throwIfAborted();
+				signal?.throwIfAborted();
 				const built = buildParams(model, normalizedContext, isOAuth, options, disablePreferredStrictTools);
 				if (built.providerThinkingLevel) output.providerThinkingLevel = built.providerThinkingLevel;
 				let params = built.params;
@@ -674,11 +691,22 @@ export const stream: StreamFunction<"anthropic-messages", AnthropicOptions> = (
 				}
 				try {
 					response = await retryProviderRequest(
-						() => client.beta.messages.create(params, requestOptions).asResponse(),
+						async () => {
+							try {
+								return await client.beta.messages.create(params, requestOptions).asResponse();
+							} catch (error) {
+								if (
+									error instanceof Anthropic.APIConnectionError &&
+									error.cause instanceof GatewayPreEgressTrustError
+								)
+									throw error.cause;
+								throw error;
+							}
+						},
 						{
 							maxRetries: options?.maxRetries,
 							maxRetryDelayMs: options?.maxRetryDelayMs,
-							signal: options?.signal,
+							signal,
 						},
 					);
 					break;
@@ -714,7 +742,7 @@ export const stream: StreamFunction<"anthropic-messages", AnthropicOptions> = (
 			type Block = (ThinkingContent | TextContent | (ToolCall & { partialJson: string })) & { index: number };
 			const blocks = output.content as Block[];
 
-			for await (const event of iterateAnthropicEvents(response, options?.signal, (data) =>
+			for await (const event of iterateAnthropicEvents(response, signal, (data) =>
 				options?.onProviderStreamEvent?.(data, model),
 			)) {
 				await options?.onProviderStreamEvent?.(event, model);
@@ -953,6 +981,8 @@ export const stream: StreamFunction<"anthropic-messages", AnthropicOptions> = (
 			if (bounce.retryAfterMs !== undefined) output.retryAfterMs = bounce.retryAfterMs;
 			stream.push({ type: "error", reason: output.stopReason, error: output });
 			stream.end();
+		} finally {
+			clearTimeout(deadlineTimer);
 		}
 	})();
 

@@ -96,7 +96,7 @@ function createAbortError(): Error {
 	return error;
 }
 
-function abortableSleep(ms: number, signal?: AbortSignal): Promise<void> {
+export function abortableSleep(ms: number, signal?: AbortSignal): Promise<void> {
 	return new Promise((resolve, reject) => {
 		if (signal?.aborted) {
 			reject(createAbortError());

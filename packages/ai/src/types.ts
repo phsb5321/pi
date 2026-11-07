@@ -154,6 +154,25 @@ export type FetchFunction = typeof globalThis.fetch;
 export interface ProviderResponse {
 	status: number;
 	headers: Record<string, string>;
+	/** Adapter-validated local pre-response wait, NOT a wire SSE event or model output. */
+	preEgressWait?: {
+		state: "waiting" | "ended";
+		reason: "maintenance";
+		elapsedMs: number;
+		nextCheckMs: number;
+	};
+}
+
+/** Host-issued trust seam, NOT an assertion supplied by HTTP response headers. */
+export interface GatewayPreEgressTrust {
+	/** Exact canonical origin whose complete configured relay chain the host verifies. */
+	readonly origin: string;
+	/**
+	 * Revalidate fresh loaded-code/transport provenance on EVERY relay tier. Return true
+	 * only for the patched chain; old/unknown/stale/unpatched central must return false.
+	 * No default issuer exists. A normal gateway marker or source merge is not proof.
+	 */
+	readonly verify: (signal: AbortSignal) => boolean | Promise<boolean>;
 }
 
 /** Authentication, HTTP transport, and lifecycle callbacks shared by provider requests. */
@@ -218,6 +237,8 @@ export interface ProviderRequestOptions<TModel = Model<Api>> {
 }
 
 export interface StreamOptions extends ProviderRequestOptions<Model<Api>> {
+	/** Native local pre-egress waits are disabled unless a trusted host supplies this verifier. */
+	gatewayPreEgressTrust?: GatewayPreEgressTrust;
 	/**
 	 * Optional callback invoked after an HTTP response is received and before
 	 * its body stream is consumed.
