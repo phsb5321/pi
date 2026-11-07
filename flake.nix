@@ -30,12 +30,23 @@
         let
           pkgs = import (nixpkgsFor system) { inherit system; };
         in
-        pkgs.callPackage ./nix/package.nix { source = self; };
+        pkgs.callPackage ./nix/package.nix {
+          # A measured pin describes these bytes; it must not feed back into them.
+          source = pkgs.lib.cleanSourceWith {
+            src = self;
+            filter = path: _type:
+              !(pkgs.lib.hasPrefix "${self}/packaging/fleet/fleet-pin." path
+                && pkgs.lib.hasSuffix ".json" path);
+          };
+        };
     in
     {
       packages = forAllSystems (system: {
         default = packageFor system;
         pi = packageFor system;
+        fleet-source = (import (nixpkgsFor system) { inherit system; }).callPackage ./nix/fleet-source.nix {
+          pi = packageFor system;
+        };
       });
 
       apps = forAllSystems (system: {
