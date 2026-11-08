@@ -83,6 +83,8 @@ export function createLocalGatewayMaintenanceFetch(
 		const url = new URL(input instanceof Request ? input.url : String(input));
 		if (url.origin !== origin || url.pathname !== "/v1/messages" || init?.method?.toUpperCase() !== "POST")
 			return send(input, init);
+		// A URL object is mutable across awaits; Request.url is immutable and retains Request semantics.
+		const destination = input instanceof Request ? input : url.href;
 		const signal = init.signal;
 		if (!signal || typeof init.body !== "string")
 			throw new GatewayPreEgressTrustError("Gateway request lacks native signal or serialized body");
@@ -132,7 +134,7 @@ export function createLocalGatewayMaintenanceFetch(
 			signal.throwIfAborted();
 			// A pre-fence lease stays through headers: p1 must settle it BEFORE closing admission.
 			dispatching = true;
-			response = await send(input, request);
+			response = await send(destination, request);
 		} catch (error) {
 			// Guard/refusal failures must not become retryable SDK connection failures.
 			failure = {

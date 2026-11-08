@@ -107,25 +107,43 @@ describe("host-owned INITIAL maintenance fence", () => {
 		expect(await f.receiving()).toEqual([]);
 	});
 
-	it("captures the original body and headers, not mutable caller state or a new request", async () => {
-		const f = await setup();
-		const controller = new AbortController();
-		const request = {
-			method: "POST",
-			body: "ORIGINAL_SERIALIZED",
-			headers: { "x-original": "one" },
-			signal: controller.signal,
-		};
-		const pending = f.wrapped(`${model.baseUrl}/v1/messages`, request);
-		await f.waitForHeld();
-		request.body = "MUTATED";
-		request.headers["x-original"] = "two";
-		await f.publish({ phase: "released" });
-		await pending;
-		expect(f.fetch.mock.calls[0][1]?.body).toBe("ORIGINAL_SERIALIZED");
-		expect(new Headers(f.fetch.mock.calls[0][1]?.headers).get("x-original")).toBe("one");
-		expect(f.fetch.mock.calls[0][1]?.signal).toBe(controller.signal);
-	});
+	it.each(["string", "mutable origin", "mutable path", "mutable origin and path", "Request"])(
+		"captures the original destination, body and headers, not mutable caller state (%s)",
+		async (kind) => {
+			const f = await setup();
+			const controller = new AbortController();
+			const destination = `${model.baseUrl}/v1/messages?beta=true`;
+			const input = kind.startsWith("mutable")
+				? new URL(destination)
+				: kind === "Request"
+					? new Request(destination, { credentials: "omit", cache: "no-store" })
+					: destination;
+			const request = {
+				method: "POST",
+				body: "ORIGINAL_SERIALIZED",
+				headers: { "x-original": "one" },
+				signal: controller.signal,
+			};
+			const pending = f.wrapped(input, request);
+			await f.waitForHeld();
+			if (input instanceof URL) {
+				if (kind.includes("origin")) input.href = "https://example.invalid/v1/messages?beta=true";
+				if (kind.includes("path")) input.pathname = "/v1/not-messages";
+			}
+			request.body = "MUTATED";
+			request.headers["x-original"] = "two";
+			await f.publish({ phase: "released" });
+			await pending;
+			expect(f.fetch).toHaveBeenCalledTimes(1);
+			const [sent, captured] = f.fetch.mock.calls[0];
+			expect(sent instanceof Request ? sent.url : String(sent)).toBe(destination);
+			if (input instanceof Request) expect(sent).toBe(input);
+			expect(captured?.body).toBe("ORIGINAL_SERIALIZED");
+			expect(new Headers(captured?.headers).get("x-original")).toBe("one");
+			expect(captured?.signal).toBe(controller.signal);
+			expect(await f.receiving()).toEqual([]);
+		},
+	);
 
 	it.each(["caller cancellation", "original effective deadline"])(
 		"preserves %s with zero dispatch or provider retries, even after release",
