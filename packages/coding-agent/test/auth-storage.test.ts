@@ -5,7 +5,7 @@ import { type CredentialStore, createModels, type Provider } from "@earendil-wor
 import lockfile from "proper-lockfile";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { AuthStorage, FileAuthStorageBackend } from "../src/core/auth-storage.ts";
-import { getFileRevision } from "../src/utils/paths.ts";
+import * as paths from "../src/utils/paths.ts";
 
 describe("AuthStorage", () => {
 	const tempDir = join(tmpdir(), `pi-test-auth-storage-${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -162,20 +162,18 @@ describe("AuthStorage", () => {
 	});
 
 	test("reloads after a same-length rewrite that leaves the file metadata identical", async () => {
-		// The metadata revision (dev:ino:size:mtimeNs:ctimeNs) does not change for a same-length
-		// in-place rewrite inside one timestamp quantum, so a cache keyed on it served the previous
-		// credential (run 419). Find such a pair, then require the reader to see the newer content.
-		let storage: AuthStorage | undefined;
-		for (let attempt = 0; attempt < 200 && !storage; attempt++) {
-			const candidate = join(tempDir, `same-length-${attempt}.json`);
-			writeFileSync(candidate, JSON.stringify({ anthropic: { type: "api_key", key: "old" } }));
-			const before = getFileRevision(candidate);
-			const opened = AuthStorage.create(candidate);
-			writeFileSync(candidate, JSON.stringify({ anthropic: { type: "api_key", key: "new" } }));
-			if (getFileRevision(candidate) === before) storage = opened;
-		}
-		// A filesystem that gives every write a distinct timestamp cannot exercise the collision.
-		if (!storage) return;
+		// Run 474 timed out in the collision-search fixture. Pin the metadata identity
+		// for the run 419 regression instead, keeping real reads, locks, and a same-length rewrite.
+		vi.spyOn(paths, "getFileRevision").mockReturnValue("unchanged-metadata");
+		writeAuthJson({ anthropic: { type: "api_key", key: "old" } });
+		const size = statSync(authJsonPath).size;
+		const before = paths.getFileRevision(authJsonPath);
+		const storage = AuthStorage.create(authJsonPath);
+
+		writeAuthJson({ anthropic: { type: "api_key", key: "new" } });
+
+		expect(statSync(authJsonPath).size).toBe(size);
+		expect(paths.getFileRevision(authJsonPath)).toBe(before);
 		expect(await storage.read("anthropic")).toEqual({ type: "api_key", key: "new" });
 	});
 
