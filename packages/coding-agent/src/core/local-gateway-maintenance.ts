@@ -95,7 +95,10 @@ export function createLocalGatewayMaintenanceFetch(
 		try {
 			signal.throwIfAborted();
 			// Capture once. No payload reconstruction, callback replay, timeout renewal or selection mutation.
-			const request = { ...init, headers: new Headers(init.headers), signal };
+			const request = { ...init, signal };
+			request.headers = new Headers(
+				request.headers === undefined && input instanceof Request ? input.headers : request.headers,
+			);
 			await mkdir(requests, { recursive: true, mode: 0o700 });
 			const directory = await lstat(requests);
 			if (!directory.isDirectory() || directory.uid !== process.getuid?.() || (directory.mode & 0o777) !== 0o700)
