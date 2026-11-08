@@ -48,6 +48,22 @@ The capability is an in-process producer contract, not a health/header claim. It
 
 Trust is not capacity: verification never requires admission allowance, quota headroom or a model completion. Admission-closed and `allow=false` are valid identity-verification states. The unchanged native adapter still requires the exact status/body/method/path/model/stream stamps and refuses arbitrary503, genuine auth/quota errors, SSE/partial output or unknown outcomes. Patient sleep does not renew the original deadline.
 
+## INITIAL maintenance fence
+
+The host also wraps the actual native fetch boundary for this exact local route. It does not use `before_provider_request` (extension handler errors are advisory), interpret a 503 as an INITIAL handoff, or replay a settled operation. The native adapter already starts its effective deadline before payload callbacks and passes the combined deadline/caller signal through the HTTP request. The wrapper preserves that signal and captures the serialized body/headers once. Cancellation, expiry, refused/changed custody and cleanup errors terminate without provider retries. Other routes retain their original fetch option, including an absent option.
+
+The rollout owner may atomically publish `~/.local/state/throttler-gateway/maintenance.json`, mode0600, with exactly:
+
+```json
+{"schemaVersion":1,"kind":"gateway-initial-maintenance","id":"<32 lowercase hex>","origin":"http://127.0.0.1:8765","startedAt":0,"expiresAt":1,"phase":"holding"}
+```
+
+Times are integer epoch milliseconds, not the illustrative placeholders; the window must be current and no longer than360s. `holding` defers; `released` additionally requires fresh verification of the accepted live generation before dispatch. `aborted`, invalid, missing-after-latch, expired or replaced windows fail closed. The identity/origin/original start and expiry cannot change while a request waits. The file is a host withholding instruction, NEVER a substitute for `accepted-chain.json` and genuine process/module/config/nonce observations.
+
+Every participating fetch registers an owner-only lease in the private0700 `receiving/` directory BEFORE reading the window. A `.json` lease stays until response headers/error. A latched request atomically renames its lease to `.<window-id>.waiting`, then stays in that SAME fetch call without sending HTTP. The publisher MUST publish HOLDING BEFORE enumerating leases and MUST settle every pre-fence `.json` lease before closing admission; a newly registered reader then either appears in that inventory or sees HOLDING and never dispatches. Unknown/stale/foreign/malformed leases are a stop, not garbage-collection permission. Waiting leases are not old upstream work.
+
+The one120s natural-drain deadline begins at window publication and includes lease settlement. Before replacing the gateway, require CLOSED admission and four strict integer-zero counters before that original deadline. Otherwise restore exact-prior admission and abort; independent restoration must complete within360s. Never stop a stream, renew the drain or restore controller automation. Only a genuinely supporting newly loaded generation can be joined/accepted and the SAME window atomically changed to `released`. Delete the window only after receiving/waiting leases have settled; removal while latched is a refusal, not release. Source/unit/fixture controls alone do not authorize this transaction or cover older/unobserved clients.
+
 ## Release boundary
 
 The producer capability contract must be independently implemented/tested and its exact immutable artifact qualified by the producer/rollout owners. An older22 producer without this contract is unsupported and stays fail-closed. Host unit/native/AgentSession tests are not actual deployed producer, rendered TUI/RPC subprocess or all-instance loaded-code acceptance. Those remain separate canary and per-instance rollout gates. No Ghostty/Herdr server restart, `/reload` or default-symlink change proves that existing Pi processes loaded these bytes.

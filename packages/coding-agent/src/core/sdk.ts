@@ -10,6 +10,7 @@ import { CacheWarmer } from "./cache-warmer.ts";
 import { getClientIdentity } from "./client-identity.ts";
 import { DEFAULT_THINKING_LEVEL } from "./defaults.ts";
 import type { ExtensionRunner, LoadExtensionsResult, SessionStartEvent, ToolDefinition } from "./extensions/index.ts";
+import { createLocalGatewayMaintenanceFetch } from "./local-gateway-maintenance.ts";
 import { createLocalGatewayPreEgressTrust } from "./local-gateway-trust.ts";
 import { createToolNameMatcher } from "./mcp-servers.ts";
 import { convertToLlm } from "./messages.ts";
@@ -346,9 +347,11 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
 		const httpIdleTimeoutMs = settingsManager.getHttpIdleTimeoutMs();
 		const effectiveTimeoutMs = httpIdleTimeoutMs === 0 ? 2147483647 : httpIdleTimeoutMs;
 		const headerRunner = extensionRunnerRef.current;
+		const gatewayPreEgressTrust = options.gatewayPreEgressTrust ?? createLocalGatewayPreEgressTrust(model);
 		return {
 			...options,
-			gatewayPreEgressTrust: options.gatewayPreEgressTrust ?? createLocalGatewayPreEgressTrust(model),
+			gatewayPreEgressTrust,
+			fetch: createLocalGatewayMaintenanceFetch(model, options.fetch, gatewayPreEgressTrust),
 			timeoutMs: options.timeoutMs ?? providerRetrySettings.timeoutMs ?? effectiveTimeoutMs,
 			websocketConnectTimeoutMs: options.websocketConnectTimeoutMs ?? settingsManager.getWebSocketConnectTimeoutMs(),
 			maxRetries: options.maxRetries ?? providerRetrySettings.maxRetries,
