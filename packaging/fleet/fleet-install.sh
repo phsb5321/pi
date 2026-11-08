@@ -87,6 +87,15 @@ cmd_compute() {
   local src="$1"
   [ -d "$src/dist" ] || die "no dist/ in $src"
   local version m8 pj sw cli
+  # node_flags / wrapper_rev are pin POLICY, not artifact facts: read them from
+  # the pin being regenerated, so a recompute can never silently reset a flags
+  # flip (or a launcher rev) back to the old defaults.
+  local node_flags="" wrapper_rev=1
+  if [ -f "$PIN_FILE" ]; then
+    node_flags="$(json_get "$PIN_FILE" node_flags)"
+    wrapper_rev="$(json_get "$PIN_FILE" wrapper_rev)"
+    [ -n "$wrapper_rev" ] || wrapper_rev=1
+  fi
   version="$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$src/package.json" | head -n1)"
   pj="$(file_sha "$src/package.json")"
   sw="$(install_lock_digest "$src")"
@@ -103,8 +112,8 @@ cmd_compute() {
   "package_json_sha512": "$pj",
   "install_lock_sha512": "$sw",
   "dist_cli_sha512": "$cli",
-  "node_flags": "",
-  "wrapper_rev": 1
+  "node_flags": "$node_flags",
+  "wrapper_rev": $wrapper_rev
 }
 EOF
 }
@@ -124,14 +133,33 @@ cmd_install() {
 
   verify_source "$src" "$PIN_FILE"
 
-  local version manifest id target
+  local version manifest id target wrapper_rev
   version="$(json_get "$PIN_FILE" version)"
   manifest="$(json_get "$PIN_FILE" bundle_manifest_sha512)"
-  id="$version-${manifest:0:8}"
+  wrapper_rev="$(json_get "$PIN_FILE" wrapper_rev)"
+  [ -n "$wrapper_rev" ] || wrapper_rev=1
+  # Work identity = bundle bytes AND the launcher contract. A wrapper_rev bump
+  # therefore materializes a new immutable directory instead of resolving to the
+  # old one and reporting success while installing nothing; the previous
+  # directory stays on disk as the rollback target.
+  id="$version-${manifest:0:8}-r$wrapper_rev"
   target="$root/$id"
 
   if [ -d "$target" ] && [ "$force" = 0 ]; then
     echo "fleet-install: $target already installed; switching current"
+    # A flags-only pin flip (node_flags / wrapper_rev) keeps the same
+    # version+manifest id, so this branch must still take the new pin: the
+    # activation hook compares .fleet-pin.json with the input pin and would
+    # otherwise retry on every activation without ever converging. An
+    # identical pin is left byte-for-byte alone, so a repeat run writes nothing.
+    if ! cmp -s "$PIN_FILE" "$target/.fleet-pin.json"; then
+      chmod u+w "$target"
+      if [ -e "$target/.fleet-pin.json" ]; then chmod u+w "$target/.fleet-pin.json"; fi
+      cp "$PIN_FILE" "$target/.fleet-pin.json"
+      chmod a-w "$target/.fleet-pin.json"
+      chmod a-w "$target"
+      echo "fleet-install: refreshed .fleet-pin.json for the changed pin (flags-only flip)"
+    fi
   else
     # A previous attempt can leave a read-only .tmp (any failure after the
     # chmod below), and `rm -rf` cannot descend into it.

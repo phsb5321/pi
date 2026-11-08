@@ -96,5 +96,27 @@ class FleetInstall(unittest.TestCase):
         self.assertEqual((self.root / 'current').resolve(), old)
 
 
+    def test_flags_only_pin_change_reaches_current_pin(self):
+        """pram-06: a node_flags/wrapper_rev flip must land in current/.fleet-pin.json."""
+        self.run_tool('install', extra=['--root', str(self.root)])
+        first = (self.root / 'current').resolve()
+        flagged = {**self.pin, 'node_flags': '--optimize-for-size'}
+        for name, pin in {'same wrapper_rev': flagged,
+                          'wrapper_rev bump': {**flagged, 'wrapper_rev': 2}}.items():
+            with self.subTest(name=name):
+                self.set_pin(pin)
+                self.run_tool('install', extra=['--root', str(self.root)])
+                current = (self.root / 'current').resolve()
+                self.assertEqual(json.loads((current / '.fleet-pin.json').read_text()), pin)
+                self.assertEqual(current.stat().st_mode & 0o222, 0)
+                self.assertEqual((current / 'dist/cli.js').read_bytes(), (self.source / 'dist/cli.js').read_bytes())
+        # compute must not reset a flipped pin; a repeat install of the same pin writes nothing.
+        self.assertEqual(self.compute()['node_flags'], '--optimize-for-size')
+        marker = (self.root / 'current/.fleet-pin.json').stat().st_mtime_ns
+        self.run_tool('install', extra=['--root', str(self.root)])
+        self.assertEqual((self.root / 'current/.fleet-pin.json').stat().st_mtime_ns, marker)
+        self.assertTrue((first / 'dist/cli.js').exists())  # rollback target retained
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
