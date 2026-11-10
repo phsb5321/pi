@@ -4,7 +4,6 @@ import {
 	type Model,
 	type Models,
 	normalizeContext,
-	Type,
 	uuidv7,
 } from "@earendil-works/pi-ai";
 import { builtinModels } from "@earendil-works/pi-ai/providers/all";
@@ -18,6 +17,7 @@ import {
 	hook,
 	MemoryStorage,
 } from "@earendil-works/pi-durable";
+import { obj, str } from "@earendil-works/pi-schema";
 import { describe, expect, it } from "vitest";
 import { streamSimple as streamSimpleAnthropic } from "../../ai/src/api/anthropic-messages.ts";
 import { resolveApiKey } from "../../ai/test/oauth.ts";
@@ -41,18 +41,18 @@ function instructions(nonce: string): string {
 	return lines.join("\n");
 }
 
-const Parameters = Type.Object({ text: Type.String() });
+const Parameters = obj({ text: str() });
 const first = defineTool({
 	name: "probe_first",
 	description: "Unused probe tool.",
 	parameters: Parameters,
-	execute: async () => ({ content: [] }),
+	execute: async () => ({ output: [] }),
 });
 const second = defineTool({
 	name: "probe_second",
 	description: "Unused probe tool added on the second turn.",
 	parameters: Parameters,
-	execute: async () => ({ content: [] }),
+	execute: async () => ({ output: [] }),
 });
 
 /** Puts the leading system message back after the user messages before it: the request order before the fix. */

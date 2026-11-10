@@ -1,8 +1,10 @@
-import type { Context, JsonValue } from "@earendil-works/chord";
+import type { Context } from "@earendil-works/chord/context";
 import { applyImmutableBatches, type Op } from "@earendil-works/chord/delta";
-import { StorageRejected } from "../errors.ts";
+import type { JsonValue } from "@earendil-works/chord/json";
+import { StorageRequestError } from "../errors.ts";
 import { idFromNumber, seqFromNumber } from "../ids.ts";
 import type {
+	CommitResult,
 	ConversationId,
 	ConversationQuery,
 	ConversationRecord,
@@ -122,7 +124,8 @@ const freeze = <T>(value: T): T => {
 const cursorId = <I extends Id<string>>(cursor: Readonly<Record<string, JsonValue>> | undefined): I | undefined => {
 	const after = cursor?.after;
 	if (after === undefined) return undefined;
-	if (typeof after !== "number" || !Number.isSafeInteger(after)) throw new TypeError("Invalid storage cursor");
+	if (typeof after !== "number" || !Number.isSafeInteger(after))
+		throw new StorageRequestError("Invalid storage cursor");
 	return idFromNumber<I>(after);
 };
 
@@ -246,7 +249,7 @@ export class MemoryStorage implements Storage {
 		entryCommitSeqs: new Map(),
 		tasks: new Map(),
 		taskIds: [],
-		taskIdsByStatus: { pending: [], running: [], waiting: [], completing: [], terminal: [] },
+		taskIdsByStatus: { pending: [], running: [], waiting: [], sleeping: [], completing: [], terminal: [] },
 		submissions: new Map(),
 		submissionIds: [],
 		submissionIdsByStatus: { queued: [], placed: [], done: [], unanswered: [] },
@@ -259,8 +262,35 @@ export class MemoryStorage implements Storage {
 	private nextSeq = 1;
 	private closed = false;
 
-	async commit(writes: readonly StorageWrite[], _context: Context): Promise<Seq> {
-		return this.prepareCommit(writes).apply();
+	/**
+	 * Apply `batches` one by one, each checked against the state the earlier ones left (`prepareCommit()`, which only
+	 * checks and detaches, so a batch it refuses changed nothing); stops at the first one refused. Memory is durable at
+	 * once; the receipts follow the last batch.
+	 */
+	async commit(
+		batches: readonly (readonly StorageWrite[])[],
+		receive: (index: number, seq: Seq) => void,
+		_context: Context,
+	): Promise<CommitResult> {
+		this.assertOpen();
+		const seqs: Seq[] = [];
+		let refused: { readonly error: unknown } | undefined;
+		try {
+			for (const writes of batches) {
+				let prepared: PreparedMemoryCommit;
+				try {
+					prepared = this.prepareCommit(writes);
+				} catch (error) {
+					refused = { error };
+					break;
+				}
+				seqs.push(prepared.apply());
+			}
+		} finally {
+			// Also when a batch's apply throws: the batches applied before it are stored, and their receipts stand.
+			for (const [index, seq] of seqs.entries()) receive(index, seq);
+		}
+		return refused === undefined ? { stored: seqs.length } : { stored: seqs.length, refused: refused.error };
 	}
 
 	/** Validate and detach one commit without changing observable state. */
@@ -321,8 +351,7 @@ export class MemoryStorage implements Storage {
 					content: { kind: "base", version: stored.version, value: stored.value },
 				};
 			} catch (error) {
-				if (error instanceof StorageRejected) throw error;
-				throw new StorageRejected(`Document copy ${write.record.id} was rejected`, { cause: error });
+				throw new Error(`Document copy ${write.record.id} was rejected`, { cause: error });
 			}
 		});
 	}
@@ -480,7 +509,7 @@ export class MemoryStorage implements Storage {
 			if (entry === undefined) return undefined;
 			return { entry: clone(entry), commitSeq: this.state.entryCommitSeqs.get(id)! };
 		}
-		if (typeof idOrContext !== "number") throw new TypeError("Storage.entry() requires an entry ID");
+		if (typeof idOrContext !== "number") throw new StorageRequestError("Storage.entry() requires an entry ID");
 		const conversationId = idFromNumber<ConversationId>(idOrConversationId);
 		const id = idFromNumber<EntryId>(idOrContext);
 		const entry = this.visibleEntries(conversationId, id, id).next().value;
@@ -495,7 +524,7 @@ export class MemoryStorage implements Storage {
 	): Promise<(EntryRecord & { readonly head: EntryId }) | undefined> {
 		this.assertOpen();
 		if (!this.state.conversations.has(conversationId)) {
-			throw new Error(`Unknown conversation: ${conversationId}`);
+			throw new StorageRequestError(`Unknown conversation: ${conversationId}`);
 		}
 		let currentId = conversationId;
 		let upperEntryId = atOrBeforeEntryId ?? Number.POSITIVE_INFINITY;
@@ -660,7 +689,7 @@ export class MemoryStorage implements Storage {
 		const stored = this.state.documents.get(id);
 		if (stored === undefined) return undefined;
 		if (at !== "current" && isCurrentOnly(stored.record)) {
-			throw new Error(`Document ${id} does not retain historical content`);
+			throw new StorageRequestError(`Document ${id} does not retain historical content`);
 		}
 		if (!isAliveAt(stored.record, at)) return undefined;
 		const revisions = at === "current" ? stored.revisions : stored.revisions.filter((revision) => revision.seq <= at);
@@ -681,7 +710,7 @@ export class MemoryStorage implements Storage {
 		maxEntryId: number = Number.POSITIVE_INFINITY,
 	): Generator<EntryRecord> {
 		if (!this.state.conversations.has(conversationId)) {
-			throw new Error(`Unknown conversation: ${conversationId}`);
+			throw new StorageRequestError(`Unknown conversation: ${conversationId}`);
 		}
 		let currentId = conversationId;
 		let upperEntryId = maxEntryId;
@@ -707,7 +736,7 @@ export class MemoryStorage implements Storage {
 		maxEntryId: number = Number.POSITIVE_INFINITY,
 	): Generator<EntryRecord> {
 		if (!this.state.conversations.has(conversationId)) {
-			throw new Error(`Unknown conversation: ${conversationId}`);
+			throw new StorageRequestError(`Unknown conversation: ${conversationId}`);
 		}
 		const segments: { readonly conversationId: ConversationId; readonly upper: number }[] = [];
 		let currentId = conversationId;
