@@ -16,8 +16,8 @@
 #             (e.g. a warm npx-cache copy or an extracted npm tarball)
 #   --root    shared install root (default: ${XDG_DATA_HOME:-~/.local/share}/pi-fleet)
 #
-# Layout:  <root>/<version>-<manifest8>/   immutable install (a-w)
-#          <root>/current -> <version>-<manifest8>   atomic symlink switch
+# Layout:  <root>/<version>-<manifest8>-<pin16>/   immutable install (a-w)
+#          <root>/current -> <version>-<manifest8>-<pin16>   atomic symlink switch
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -124,10 +124,13 @@ cmd_install() {
 
   verify_source "$src" "$PIN_FILE"
 
-  local version manifest id target
+  local version manifest pin_hash id target
   version="$(json_get "$PIN_FILE" version)"
   manifest="$(json_get "$PIN_FILE" bundle_manifest_sha512)"
-  id="$version-${manifest:0:8}"
+  # Launcher flags and wrapper revisions can change without changing the bundle.
+  # Keep the previous pin immutable and available for an atomic rollback.
+  pin_hash="$(file_sha "$PIN_FILE")"
+  id="$version-${manifest:0:8}-${pin_hash:0:16}"
   target="$root/$id"
 
   if [ -d "$target" ] && [ "$force" = 0 ]; then
