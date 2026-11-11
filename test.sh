@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Drop inaccessible PATH entries after a CI privilege drop. Otherwise execvp reports
+# EACCES for missing commands when the inherited root profile cannot be searched.
+IFS=: read -r -a inherited_path <<< "$PATH"
+searchable_path=()
+for directory in "${inherited_path[@]}"; do
+	[[ -n "$directory" && -d "$directory" && -x "$directory" ]] && searchable_path+=("$directory")
+done
+PATH="$(IFS=:; printf '%s' "${searchable_path[*]}")"
+export PATH
+
 # Isolate user resources, credentials, temporary files, and tool configuration.
 temp_parent="${TMPDIR:-/tmp}"
 temp_parent="${temp_parent%/}"

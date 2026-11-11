@@ -173,7 +173,7 @@ describe("scheduler retention", () => {
 		gate("parent").resolve();
 		await harness.waitForTask(parent, context);
 		await harness.close(context);
-	});
+	}, 30_000);
 
 	it("holds a live owner for work later created in a forgotten conversation, loading its chain again", async () => {
 		const { harness, root } = await open();

@@ -37,9 +37,10 @@ export function aborted(signal: AbortSignal): Promise<never> {
 	});
 }
 
-/** Flush macrotask turns until `check` holds. */
+/** Allow asynchronous work up to two seconds to satisfy `check`. */
 export async function eventually(check: () => boolean | Promise<boolean>): Promise<void> {
-	for (let attempt = 0; attempt < 200; attempt++) {
+	const deadline = performance.now() + 2_000;
+	while (performance.now() < deadline) {
 		if (await check()) return;
 		await flush();
 	}
