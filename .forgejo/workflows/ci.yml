@@ -48,11 +48,15 @@ jobs:
       - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
       - name: Build, check and test with pinned tools inside the bounded container
         run: |
-          nix shell --inputs-from . nixpkgs#nodejs_22 nixpkgs#fd nixpkgs#ripgrep nixpkgs#cargo nixpkgs#rustc nixpkgs#openssh --command bash -euo pipefail <<'CI'
+          nix shell --inputs-from . nixpkgs#nodejs_22 nixpkgs#fd nixpkgs#ripgrep nixpkgs#cargo nixpkgs#rustc nixpkgs#openssh nixpkgs#tini --command bash -euo pipefail <<'CI'
           npm ci --ignore-scripts
           node scripts/update-model-catalog-pin.mjs --hydrate-only
           npm run build:offline
           npm run check
           npm run build:daemon --workspace packages/env
-          ./test.sh
+          # Permission and process-tree tests require a real unprivileged user and an orphan reaper.
+          install -d -m 0755 /run/sshd
+          useradd --create-home --shell /bin/bash pi-ci
+          chown -R pi-ci:pi-ci "$PWD"
+          tini -s -- runuser -u pi-ci -- env "PATH=$PATH" ./test.sh
           CI
