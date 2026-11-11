@@ -52,7 +52,7 @@ jobs:
           npm ci --ignore-scripts
           node scripts/update-model-catalog-pin.mjs --hydrate-only
           npm run build:offline
-          npm run check
+          NODE_OPTIONS=--max-old-space-size=2048 npm run check
           npm run build:daemon --workspace packages/env
           # Permission and process-tree tests require a real unprivileged user and an orphan reaper.
           install -d -m 0755 /run/sshd
