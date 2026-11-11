@@ -12,6 +12,8 @@ export default mergeConfig(
 	base,
 	defineConfig({
 		test: {
+			// SQLite-backed lifecycle tests share the bounded runner CPU and disk budget.
+			fileParallelism: false,
 			testNamePattern:
 				/^(?!.*(resumes a retry backoff after reopen|sleeps again for a retry stored as a running phase|polls a checkpoint stored without a thinking level|refuses to create the root of an empty storage))/,
 			include: [
