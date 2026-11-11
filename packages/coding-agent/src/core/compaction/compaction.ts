@@ -583,6 +583,9 @@ ${UPDATE_SUMMARIZATION_INSTRUCTIONS}`;
  * A length stop contains partial text and must not become a session checkpoint.
  */
 export function getSummarizationFailure(response: AssistantMessage, label: string): string | undefined {
+	if (response.stopReason === "aborted") {
+		return `${label} failed: ${response.errorMessage || "This operation was aborted"}`;
+	}
 	if (response.stopReason === "error") {
 		return `${label} failed: ${response.errorMessage || "Unknown error"}`;
 	}

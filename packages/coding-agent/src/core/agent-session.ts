@@ -13,6 +13,7 @@
  * Modes use this class and add their own I/O layer on top.
  */
 
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { basename, dirname } from "node:path";
 import {
@@ -77,6 +78,7 @@ import {
 	estimateTokens,
 	generateBranchSummary,
 	prepareCompaction,
+	serializeConversation,
 	shouldCompact,
 } from "./compaction/index.ts";
 import { DEFAULT_THINKING_LEVEL, THINKING_LEVEL_OPTIONS } from "./defaults.ts";
@@ -437,6 +439,7 @@ export class AgentSession {
 
 	// Compaction state
 	private _compactionAbortController: AbortController | undefined = undefined;
+	private _failedCompactionInput: string | undefined;
 	private _autoCompactionAbortController: AbortController | undefined = undefined;
 	private _overflowRecoveryAttempted = false;
 
@@ -847,7 +850,19 @@ export class AgentSession {
 			return { ...context, messages: projection.messages };
 		}
 		await this._runAutoCompaction("threshold", false);
+		this._assertCompactionRecovered();
 		return { ...context, messages: this.sessionManager.buildSessionProjection().messages };
+	}
+
+	private _assertCompactionRecovered(): void {
+		if (!this._failedCompactionInput) return;
+		const preparation = prepareCompaction(
+			this.sessionManager.getBranch(),
+			this.settingsManager.getCompactionSettings(this.model),
+		);
+		if (preparation && this._compactionInputKey(preparation) === this._failedCompactionInput) {
+			throw new Error("Automatic compaction failed for this context. Use /compact to retry explicitly.");
+		}
 	}
 
 	private _installAgentRequestProjection(): void {
@@ -903,6 +918,7 @@ export class AgentSession {
 			// the projection.
 			if (this._exceedsCompactionThreshold(route.model, projection)) {
 				await this._runAutoCompaction("threshold", false);
+				this._assertCompactionRecovered();
 				({ previous, context } = await prepare());
 			}
 			return { ...previous, context, model: route.model, thinkingLevel: route.thinkingLevel };
@@ -2892,26 +2908,55 @@ export class AgentSession {
 		reason: "manual" | "threshold" | "overflow",
 	): Promise<CompactionResult> {
 		// Resolve the request only when Pi summarizes itself: routing may call models or fail.
+		const inputKey = this._compactionInputKey(preparation, customInstructions);
 		const request = await this._getSummarizationRequestAuth(model, signal);
-		return compact(
-			preparation,
-			request.model,
-			request.apiKey,
-			request.headers,
-			customInstructions,
-			signal,
-			request.thinkingLevel,
-			this.agent.streamFunction,
-			request.env,
-			this.settingsManager.getRetrySettings(),
-			this._summarizationRetryCallbacks({ source: "compaction", reason }),
-			undefined, // sessionId
-		);
+		let dispatched = false;
+		try {
+			return await compact(
+				preparation,
+				request.model,
+				request.apiKey,
+				request.headers,
+				customInstructions,
+				signal,
+				request.thinkingLevel,
+				(...args) => {
+					dispatched = true;
+					return this.agent.streamFunction(...args);
+				},
+				request.env,
+				this.settingsManager.getRetrySettings(),
+				this._summarizationRetryCallbacks({ source: "compaction", reason }),
+				undefined, // sessionId
+			);
+		} catch (error) {
+			if (dispatched) this._failedCompactionInput = inputKey;
+			throw error;
+		}
 	}
 
 	private _clearManualCompactionState(): void {
 		this._compactionAbortController = undefined;
 		this._resolveIdleWaitIfIdle();
+	}
+
+	private _compactionInputKey(preparation: CompactionPreparation, customInstructions?: string): string {
+		// Usage estimates and metadata-only leaf changes are not new summary input.
+		return createHash("sha256")
+			.update(
+				JSON.stringify({
+					session: this.sessionManager.getSessionId(),
+					provider: this.model?.provider,
+					model: this.model?.id,
+					thinkingLevel: this.thinkingLevel,
+					customInstructions,
+					messages: serializeConversation(convertToLlm(preparation.messagesToSummarize)),
+					prefix: serializeConversation(convertToLlm(preparation.turnPrefixMessages)),
+					previousSummary: preparation.previousSummary,
+					settings: preparation.settings,
+				}),
+			)
+			.digest("hex");
 	}
 
 	/**
@@ -3040,6 +3085,7 @@ export class AgentSession {
 				usage,
 				details,
 			};
+			this._failedCompactionInput = undefined;
 			// compaction_end listeners may submit queued prompts, so expose idle state before notifying them.
 			this._clearManualCompactionState();
 			this._emit({
@@ -3277,6 +3323,9 @@ export class AgentSession {
 				return false;
 			}
 
+			const inputKey = this._compactionInputKey(preparation);
+			if (inputKey === this._failedCompactionInput) return false;
+
 			abortController = new AbortController();
 			this._autoCompactionAbortController = abortController;
 			started = true;
@@ -3366,6 +3415,7 @@ export class AgentSession {
 				usage,
 				details,
 			};
+			this._failedCompactionInput = undefined;
 			this._emit({ type: "compaction_end", reason, result, aborted: false, willRetry });
 
 			if (willRetry) return true;
