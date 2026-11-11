@@ -786,7 +786,8 @@ function startThemeWatcher(): void {
 					onThemeChangeCallback();
 				}
 			} catch (_error) {
-				// Ignore errors (file might be in invalid state while being edited)
+				// Keep the accepted theme until a later valid file change.
+				return;
 			}
 		}, 100);
 	};
@@ -982,7 +983,7 @@ export class CodeHighlighter {
 			return last.lines;
 		}
 		const lines = highlightCode(code, lang);
-		this.last = { code, lang, theme: currentTheme, languageCount, lines };
+		this.last = { code, lang, theme: currentTheme, languageCount: getHighlightLanguageCount(), lines };
 		return lines;
 	}
 }
