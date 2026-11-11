@@ -1,0 +1,58 @@
+name: ci
+
+on:
+  push:
+    branches-ignore: ['archive/**']
+    tags-ignore: ['*']
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+      - name: Validate the immutable catalog used by the Nix build
+        run: |
+          nix shell --inputs-from . nixpkgs#nodejs_22 --command bash -euo pipefail <<'CI'
+          npm ci --ignore-scripts
+          node scripts/update-model-catalog-pin.mjs --hydrate-only
+          npm run check:model-data
+          git diff --exit-code -- packages/ai/src/models.generated.ts packages/ai/src/providers nix/model-catalog.json
+          CI
+
+  build-check-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      PI_OFFLINE: '1'
+      PI_NO_LOCAL_LLM: '1'
+      VITEST_MAX_WORKERS: '2'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+      - name: Build, check and test with pinned tools inside the bounded container
+        run: |
+          nix shell --inputs-from . nixpkgs#nodejs_22 nixpkgs#fd nixpkgs#ripgrep nixpkgs#cargo nixpkgs#rustc nixpkgs#openssh --command bash -euo pipefail <<'CI'
+          npm ci --ignore-scripts
+          node scripts/update-model-catalog-pin.mjs --hydrate-only
+          npm run build:offline
+          npm run check
+          npm run build:daemon --workspace packages/env
+          ./test.sh
+          CI
