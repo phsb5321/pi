@@ -55,6 +55,7 @@ function saveAuthStorage(storage: AuthStorage): void {
  *
  */
 export async function resolveApiKey(provider: string): Promise<string | undefined> {
+	if (process.env.PI_OFFLINE === "1") return undefined;
 	const storage = loadAuthStorage();
 	const entry = storage[provider];
 

@@ -313,6 +313,36 @@ describe("ownership", () => {
 		await harness.close(context);
 	});
 
+	it("visits task ancestry linearly within one published commit", async () => {
+		const { harness, root } = await openHarness();
+		const depth = 2_000;
+		const get = Map.prototype.get;
+		let lookups = 0;
+		Map.prototype.get = function (key: unknown) {
+			lookups++;
+			return get.call(this, key);
+		};
+		try {
+			await root.commit(async (tx) => {
+				let owner = await tx.createTask(Hold, { name: "linear.root" }, { ownership: { kind: "conversation" } });
+				for (let n = 0; n < depth; n++) {
+					owner = await tx.createTask(
+						Hold,
+						{ name: `linear.${n}` },
+						{ ownership: { kind: "task", taskId: owner } },
+					);
+				}
+			}, context);
+		} finally {
+			Map.prototype.get = get;
+		}
+		try {
+			expect(lookups).toBeLessThan(depth * 200);
+		} finally {
+			await harness.close(context);
+		}
+	});
+
 	it("tracks ownership chains deeper than the call stack", async () => {
 		const { harness, root } = await openHarness();
 		// 20,000 tasks, each owning the next, created in one commit above a live leaf; they end top-down and hold.

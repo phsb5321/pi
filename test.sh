@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Drop inaccessible PATH entries after a CI privilege drop. Otherwise execvp reports
+# EACCES for missing commands when the inherited root profile cannot be searched.
+IFS=: read -r -a inherited_path <<< "$PATH"
+searchable_path=()
+for directory in "${inherited_path[@]}"; do
+	[[ -n "$directory" && -d "$directory" && -x "$directory" ]] && searchable_path+=("$directory")
+done
+PATH="$(IFS=:; printf '%s' "${searchable_path[*]}")"
+export PATH
+
 # Isolate user resources, credentials, temporary files, and tool configuration.
 temp_parent="${TMPDIR:-/tmp}"
 temp_parent="${temp_parent%/}"
@@ -60,6 +70,8 @@ test_env=(
 	"NPM_CONFIG_GLOBALCONFIG=$test_root/npm-globalconfig"
 	"NPM_CONFIG_CACHE=$test_root/cache/npm"
 	"PI_NO_LOCAL_LLM=1"
+	"PI_OFFLINE=1"
+	"VITEST_MAX_WORKERS=2"
 	"AWS_EC2_METADATA_DISABLED=true"
 )
 

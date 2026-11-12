@@ -14,7 +14,7 @@ use serde_json::{Map, Value, json};
 use std::collections::HashMap;
 use std::path::Path;
 use std::process::{Child, ExitStatus, Stdio};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::{self, RecvTimeoutError, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -189,6 +189,7 @@ pub fn run(
         json!({ "kind": "started", "pid": pid }),
     ));
 
+    let unsent = Arc::new(AtomicUsize::new(0));
     let names = ["stdout", "stderr"];
     let mut ended = [false, false];
     let mut status: Option<Result<ExitStatus, String>> = None;
@@ -232,7 +233,7 @@ pub fn run(
                         json!({ "kind": "output", "stream": names[stream] }),
                         bytes,
                     ),
-                    None,
+                    Some(unsent.clone()),
                 );
                 if status.is_some() {
                     idle_until = Some(Instant::now() + EXIT_STDIO_GRACE);
@@ -264,6 +265,10 @@ pub fn run(
     processes.lock().unwrap().remove(&id);
     groups.lock().unwrap().remove(&pid);
     if aborted {
+        return Err(Failure::new("aborted", "aborted"));
+    }
+    output.wait_until_sent(&unsent, &control.aborted);
+    if control.aborted.load(Ordering::SeqCst) {
         return Err(Failure::new("aborted", "aborted"));
     }
     match status {

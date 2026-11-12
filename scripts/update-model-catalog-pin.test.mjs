@@ -171,3 +171,24 @@ test("does not treat an unreachable pinned revision as stale", async () => {
 	await assert.rejects(updateModelCatalogPin(root, { ifStale: true }), /unavailable/);
 	assert.equal(readPin(), pinFile(currentRevision));
 });
+
+
+test("hydrates only the hash-verified pinned catalog without discovery or pin change", async () => {
+	const requests = mockPiDev();
+	assert.deepEqual(await pinned(updateModelCatalogPin(root, { hydrateOnly: true })), {
+		revision: currentRevision,
+		updated: false,
+	});
+	assert.deepEqual(requests, [`https://pi.dev/api/models/revisions/${currentRevision}?${typed}`]);
+	assert.equal(readPin(), pinFile(currentRevision));
+	assert.ok(readFileSync(join(root, "packages/ai/src/providers/data/test-provider.json"), "utf8").includes("model-a"));
+});
+
+for (const failure of ["revision-http", "revision-hash"]) {
+	test(`refuses pinned-only hydration on ${failure}`, async () => {
+		const requests = mockPiDev({ failure });
+		await assert.rejects(updateModelCatalogPin(root, { hydrateOnly: true }));
+		assert.deepEqual(requests, [`https://pi.dev/api/models/revisions/${currentRevision}?${typed}`]);
+		assert.equal(readPin(), pinFile(currentRevision));
+	});
+}

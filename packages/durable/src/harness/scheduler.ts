@@ -789,6 +789,7 @@ export class TaskScheduler {
 		let changed = false;
 		// The conversations whose idleness the commit's task changes can change; undefined when a chain is not known.
 		let dirty: Set<ConversationId> | undefined = new Set();
+		const coveredTasks = new Set<TaskId>();
 		// Edges first, so the tasks a commit creates in a new conversation hang from it.
 		for (const change of publication.changes) {
 			if (change.type === "conversation" && !this.#edges.has(change.value.id)) {
@@ -805,7 +806,7 @@ export class TaskScheduler {
 			// Idleness counts live tasks, so only a task that became live or ended can change it. Collected before `#sweep()`,
 			// which may forget the chain of a task that ended.
 			const liveness = previous === undefined || record.state.status === "terminal";
-			if (liveness && dirty !== undefined && !this.#addScopesAbove(record, dirty)) dirty = undefined;
+			if (liveness && dirty !== undefined && !this.#addScopesAbove(record, dirty, coveredTasks)) dirty = undefined;
 			if (record.state.status === "terminal") {
 				this.#failedMigrations.delete(record.id);
 				this.#failFastChecks.delete(record.id);
@@ -872,12 +873,17 @@ export class TaskScheduler {
 
 	/**
 	 * Add the conversations above `record` to `scopes`: those whose idleness a change of it can change. False when a node
-	 * on the way up is not known. A conversation already in `scopes` has everything above it there too.
+	 * on the way up is not known. Tasks covered in this publication and conversations in `scopes` already have their
+	 * ancestry included. An unknown ascent discards `scopes`, so its partial prefixes cannot be reused.
 	 */
-	#addScopesAbove(record: AnyTaskRecord, scopes: Set<ConversationId>): boolean {
+	#addScopesAbove(record: AnyTaskRecord, scopes: Set<ConversationId>, coveredTasks: Set<TaskId>): boolean {
 		for (const step of this.#above(parentOf(record))) {
 			if ("unknown" in step) return false;
-			if (!("conversation" in step)) continue;
+			if ("task" in step) {
+				if (coveredTasks.has(step.task)) return true;
+				coveredTasks.add(step.task);
+				continue;
+			}
 			if (scopes.has(step.conversation)) return true;
 			scopes.add(step.conversation);
 		}
