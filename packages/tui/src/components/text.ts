@@ -20,6 +20,8 @@ export class Text extends MemoizedRender implements Component {
 	}
 
 	setText(text: string): void {
+		// Renderers often set the same text on every update; keep the wrapped lines then.
+		if (text === this.text) return;
 		this.text = text;
 		this.dropRenderCache();
 	}

@@ -158,13 +158,20 @@ jobs:
         with:
           node-version: 22
 
-      - name: Regenerate model catalog
+      # Since upstream 1.5 the catalog is a pinned revision (nix/model-catalog.json) that builds hydrate
+      # into packages/ai/src/providers/data; the generator script this job ran is gone. The fork commits the
+      # hydrated data, so the check is: hydrate the pinned revision, verify its hash, and require no diff.
+      - name: Hydrate the pinned model catalog
         run: |
           npm ci --ignore-scripts
-          node packages/ai/scripts/generate-models.ts
+          revision=$(node -p 'require("./nix/model-catalog.json").revision')
+          curl -fsSL "https://pi.dev/api/models/revisions/${revision}?types=chat,image,classifier" -o "$RUNNER_TEMP/model-catalog.json"
+          echo "${revision#sha256-}  $RUNNER_TEMP/model-catalog.json" | sha256sum -c -
+          node packages/ai/scripts/hydrate-model-catalog.ts "$RUNNER_TEMP/model-catalog.json"
+          node packages/ai/scripts/check-model-data.ts
 
-      - name: Verify catalog is clean
-        run: git diff --exit-code -- packages/ai/src/models.generated.ts
+      - name: Verify the committed catalog matches the pin
+        run: git diff --exit-code -- packages/ai/src/providers/data packages/ai/src/models.generated.ts
 
       - name: "Status bridge → GitHub (context: generate)"
         if: always()
