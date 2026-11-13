@@ -992,6 +992,9 @@ export const stream: StreamFunction<"anthropic-messages", AnthropicOptions> = (
 					});
 				}
 			}
+			// The deadline bounds the wait for a response (gateway queue, retries); once headers are in, the stream
+			// is bounded by the caller's signal and idle handling, not by the request's total duration.
+			clearTimeout(deadlineTimer);
 			await options?.onResponse?.({ status: response.status, headers: headersToRecord(response.headers) }, model);
 			stream.push({ type: "start", partial: output });
 
