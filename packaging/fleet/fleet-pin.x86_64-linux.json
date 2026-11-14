@@ -1,11 +1,11 @@
 {
   "schema": 1,
   "package": "@earendil-works/pi-coding-agent",
-  "version": "1.4.0",
-  "bundle_manifest_sha512": "84393c6d535cf18e0a8c5be4f61505d85dd920f7091aad9f6879b88857f5076eebd594c03c90b430a8fb61d933bc8b477717b346b879333d8fa62e13486ce2f6",
-  "bundle_manifest_short": "84393c6d",
-  "package_json_sha512": "1080061ab08b917555655ce5c4efb0a14a9b43b019f0807494fa5ced67be225943029fd17af0a29f326e55e1a198342562b01a394bb5f7f2d49a31df8fcabba3",
-  "install_lock_sha512": "a89e4bff433ab5b3bb87b83712bbff11cd8d93f8c0164675bac5b865f68c61410fa5ebac14e9f0cfe862053a222f85870a6b2db8b02c1650165e48aef06c7e20",
+  "version": "1.5.2",
+  "bundle_manifest_sha512": "dff4fc2404a3aa556871199fcdab35d7aee870580898e273310518b35c43540e4506f7c2c44afb8dc158be1d422f51b72e3a675eb5703ee86787a3a32dc317f4",
+  "bundle_manifest_short": "dff4fc24",
+  "package_json_sha512": "57526f1aa34f946211a74ad16a9906eb3b880b27e9da207ded7a6b9344f420ccd670d42640250a2e886a0b389065bc0feb2ac4d2f0735097ae0851bbf8043e6c",
+  "install_lock_sha512": "ab3ce7408eacc38d12aec4bf9d5da57997391a319bfe3870d2c113a91e830d17fbc7e8d225c1dbcc178ce62cd6507f397f5ea3113960f2b9514cec0574c800ed",
   "dist_cli_sha512": "5d7f67e6cbdfc5411dfad4e1bb74a62c80391e1ea3b1dfd339a789e3b18193c342a266810645cbb4ad3c235229860dfd56af654e3ee540cd6e1133e27a930539",
   "node_flags": "--optimize-for-size",
   "wrapper_rev": 2

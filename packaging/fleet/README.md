@@ -67,3 +67,19 @@ presence is not behavioral acceptance: the exact combined artifact still owes
 the real native observer/footer/RPC hold-to-output, cancellation, partial/error
 and provenance-negative canary. Disk/default identity never proves a live
 process has reloaded native module-cache bytes. p1 alone owns later activation.
+
+## Pin commit must be CI-servable (pin-ref-guard)
+
+A pin may only name a commit that a Forgejo branch contains and whose
+`ci / generate (push)` and `ci / build-check-test (push)` contexts are green.
+The 10/11 pin (`3650f4348`) sat on no branch on either forge and was
+unrecoverable by CI. Before the NixOS pin PR:
+
+```sh
+python3 packaging/fleet/pin-ref-guard.py <sha>   # exit 0 = pinnable, 1 = refused
+python3 packaging/fleet/pin-ref-guard.py --self-test
+```
+
+The artifact must also keep the stream deadline fix: on the installed target,
+`pi-stream-timeout-check.mjs <install> survives` must exit 0 (a whole-request
+timer aborts any claude-lane reply longer than 300 s).
