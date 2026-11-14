@@ -12,6 +12,7 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 	useSyncExternalStore,
 } from "react";
@@ -50,9 +51,12 @@ export function useHold<C extends Contract>(Type: C, params: ParamsOf<C>): Held<
 	const host = useHost();
 	const key = canonicalJson(params as never, BACKGROUND_CONTEXT);
 	const [held, setHeld] = useState<{ readonly key: string; readonly ref: Held<C> } | undefined>(undefined);
-	// `key` is `params` by value, so an inline object does not re-hold.
+	// `key` is `params` by value, so an inline object does not re-hold: the effect reads the latest params through a
+	// ref and re-runs only when `key` changes.
+	const latestParams = useRef(params);
+	latestParams.current = params;
 	useEffect(() => {
-		const ref = host.hold(Type, params, BACKGROUND_CONTEXT);
+		const ref = host.hold(Type, latestParams.current, BACKGROUND_CONTEXT);
 		setHeld({ key, ref });
 		return () => ref.release();
 	}, [host, Type, key]);
