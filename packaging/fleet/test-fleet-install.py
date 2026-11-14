@@ -65,6 +65,11 @@ class PinIdentity(unittest.TestCase):
         self.pin.update(node_flags="--optimize-for-size", wrapper_rev=2)
         self.assert_new_immutable_install()
 
+    def test_compute_keeps_launcher_policy(self):
+        self.pin.update(node_flags="--optimize-for-size", wrapper_rev=2)
+        self.pin_file.write_text(json.dumps(self.pin, indent=2) + "\n")
+        self.assertEqual(json.loads(self.run_installer("compute")), self.pin)
+
     def test_identical_pin_is_not_rewritten(self):
         before = (self.original / ".fleet-pin.json").stat()
         self.assertEqual(self.install(), self.original)

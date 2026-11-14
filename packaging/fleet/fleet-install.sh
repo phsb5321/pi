@@ -87,6 +87,14 @@ cmd_compute() {
   local src="$1"
   [ -d "$src/dist" ] || die "no dist/ in $src"
   local version m8 pj sw cli
+  # Launcher policy is not an artifact fact: keep what the pin being
+  # regenerated already says, so a recompute cannot reset a flags flip.
+  local node_flags="" wrapper_rev=1
+  if [ -f "$PIN_FILE" ]; then
+    node_flags="$(json_get "$PIN_FILE" node_flags)"
+    wrapper_rev="$(json_get "$PIN_FILE" wrapper_rev)"
+    [ -n "$wrapper_rev" ] || wrapper_rev=1
+  fi
   version="$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$src/package.json" | head -n1)"
   pj="$(file_sha "$src/package.json")"
   sw="$(install_lock_digest "$src")"
@@ -103,8 +111,8 @@ cmd_compute() {
   "package_json_sha512": "$pj",
   "install_lock_sha512": "$sw",
   "dist_cli_sha512": "$cli",
-  "node_flags": "",
-  "wrapper_rev": 1
+  "node_flags": "$node_flags",
+  "wrapper_rev": $wrapper_rev
 }
 EOF
 }
