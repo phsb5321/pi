@@ -5,13 +5,11 @@ Pi output. It copies the complete native `node_modules` closure, not only its
 nested coding-agent package. Dependencies and minification remain owned by
 `nix/package.nix`; this bridge does not resolve or upgrade dependencies.
 
-The installer is the proven 1.4 fleet packaging source (SHA-256
-`63c04d3ca1a2e32a9263630c39f7cd66e2e7e279ed0d3c316baf897c77b29ce6`) plus the
-pram-06 launcher-contract change (pi PR #26): the install id is
-`<version>-<manifest8>-r<wrapper_rev>`, a same-id install refreshes a differing
-`.fleet-pin.json` in place, and `compute` keeps `node_flags`/`wrapper_rev` from
-the pin it regenerates. `node_flags`/`wrapper_rev` are launcher policy, not
-artifact content: the bundle hashes do not move when they change.
+The install id is `<version>-<manifest8>-<pin16>`, where `pin16` is the
+first 16 hex digits of the SHA-512 of the complete pin file. A launcher
+policy change materializes a new directory and leaves the previous pin
+intact for rollback. `compute` retains `node_flags` and `wrapper_rev` from
+the pin it regenerates; changing either does not change the bundle hashes.
 No legacy experimental ABI, wrapper, provider policy or 1.1 dependency tree is
 ported. No `install` app or activation hook is added.
 

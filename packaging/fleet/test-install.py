@@ -96,10 +96,13 @@ class FleetInstall(unittest.TestCase):
         self.assertEqual((self.root / 'current').resolve(), old)
 
 
-    def test_flags_only_pin_change_reaches_current_pin(self):
-        """pram-06: a node_flags/wrapper_rev flip must land in current/.fleet-pin.json."""
+    def test_flags_only_pin_change_preserves_rollback(self):
+        """Launcher policy changes get a new root without rewriting an installed pin."""
         self.run_tool('install', extra=['--root', str(self.root)])
         first = (self.root / 'current').resolve()
+        first_pin = (first / '.fleet-pin.json').read_bytes()
+        first_mtime = (first / '.fleet-pin.json').stat().st_mtime_ns
+        previous = first
         flagged = {**self.pin, 'node_flags': '--optimize-for-size'}
         for name, pin in {'same wrapper_rev': flagged,
                           'wrapper_rev bump': {**flagged, 'wrapper_rev': 2}}.items():
@@ -107,6 +110,10 @@ class FleetInstall(unittest.TestCase):
                 self.set_pin(pin)
                 self.run_tool('install', extra=['--root', str(self.root)])
                 current = (self.root / 'current').resolve()
+                self.assertNotEqual(current, previous)
+                previous = current
+                self.assertEqual((first / '.fleet-pin.json').read_bytes(), first_pin)
+                self.assertEqual((first / '.fleet-pin.json').stat().st_mtime_ns, first_mtime)
                 self.assertEqual(json.loads((current / '.fleet-pin.json').read_text()), pin)
                 self.assertEqual(current.stat().st_mode & 0o222, 0)
                 self.assertEqual((current / 'dist/cli.js').read_bytes(), (self.source / 'dist/cli.js').read_bytes())
@@ -115,7 +122,11 @@ class FleetInstall(unittest.TestCase):
         marker = (self.root / 'current/.fleet-pin.json').stat().st_mtime_ns
         self.run_tool('install', extra=['--root', str(self.root)])
         self.assertEqual((self.root / 'current/.fleet-pin.json').stat().st_mtime_ns, marker)
-        self.assertTrue((first / 'dist/cli.js').exists())  # rollback target retained
+        self.set_pin(self.pin)
+        self.run_tool('install', extra=['--root', str(self.root)])
+        self.assertEqual((self.root / 'current').resolve(), first)
+        self.assertEqual((first / '.fleet-pin.json').read_bytes(), first_pin)
+        self.assertEqual((first / '.fleet-pin.json').stat().st_mtime_ns, first_mtime)
 
 
 if __name__ == '__main__':

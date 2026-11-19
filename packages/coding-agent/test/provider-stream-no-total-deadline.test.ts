@@ -36,7 +36,12 @@ beforeAll(async () => {
 			res.writeHead(200, { "content-type": "text/event-stream" });
 			sse(res, {
 				type: "message_start",
-				message: { id: "mock", model: "claude-mock", role: "assistant", usage: { input_tokens: 1, output_tokens: 0 } },
+				message: {
+					id: "mock",
+					model: "claude-mock",
+					role: "assistant",
+					usage: { input_tokens: 1, output_tokens: 0 },
+				},
 			});
 			if (mode === "silent") return;
 			sse(res, { type: "content_block_start", index: 0, content_block: { type: "text", text: "" } });
