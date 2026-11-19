@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { debuglog } from "node:util";
 import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
 import {
 	backgroundAnsi,
@@ -785,8 +786,8 @@ function startThemeWatcher(): void {
 				if (onThemeChangeCallback) {
 					onThemeChangeCallback();
 				}
-			} catch (_error) {
-				// Ignore errors (file might be in invalid state while being edited)
+			} catch (error) {
+				debuglog("pi-theme")("Theme reload failed (%s)", error instanceof Error ? error.name : "unknown error");
 			}
 		}, 100);
 	};
@@ -982,7 +983,8 @@ export class CodeHighlighter {
 			return last.lines;
 		}
 		const lines = highlightCode(code, lang);
-		this.last = { code, lang, theme: currentTheme, languageCount, lines };
+		// Highlighting can register a lazy grammar. Cache the result against the resulting registry.
+		this.last = { code, lang, theme: currentTheme, languageCount: getHighlightLanguageCount(), lines };
 		return lines;
 	}
 }
