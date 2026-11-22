@@ -67,9 +67,11 @@ if (task.startsWith("record-argv:")) {
 } else if (task.startsWith("large")) {
 	emitMessage(assistant(`${"x".repeat(60 * 1024)}\n${"line\n".repeat(2100)}`));
 } else if (task.startsWith("ignore-sigterm:")) {
-	fs.writeFileSync(task.slice("ignore-sigterm:".length), String(process.pid));
+	// The pid file tells the test that it may abort. Write it last: an abort that arrives before the handler is
+	// installed kills this process before it has emitted the partial message.
 	process.on("SIGTERM", () => {});
 	emitMessage(assistant("partial", { stopReason: "toolUse" }));
+	fs.writeFileSync(task.slice("ignore-sigterm:".length), String(process.pid));
 	setInterval(() => {}, 1000);
 } else if (task.startsWith("hold:")) {
 	fs.appendFileSync(task.slice("hold:".length), `${process.pid}\n`);
