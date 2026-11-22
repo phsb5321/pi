@@ -106,12 +106,13 @@ test("terminal host: the agent's calls", { timeout: 120_000, skip: unavailable }
 			const first = await agent.read({
 				sessionId: "s1",
 				target: "dev",
-				// The program's output, then the next prompt.
-				wait: { until: "match", pattern: "^hi-there\\n.*[$#] $", timeoutMs: 10_000 },
+				// The program's output, then the next prompt. A shell that was not ready when the command was typed
+				// (the terminal echoed it already) prints its first prompt in front of the output: "# hi-there".
+				wait: { until: "match", pattern: "^(?:[$#] )?hi-there\\n.*[$#] $", timeoutMs: 10_000 },
 			});
 			assert.equal(first.waited, "match", JSON.stringify(first.text));
 			assert.equal(first.from, 0);
-			assert.match(first.text, /^hi-there$/m);
+			assert.match(first.text, /^(?:[$#] )?hi-there$/m);
 			const cursor = await agent.call({ op: "cursor", sessionId: "s1", target: ":1" });
 			assert.equal(cursor.kind, "cursor");
 			const from = (cursor as Extract<HostResult, { kind: "cursor" }>).offset;
