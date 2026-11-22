@@ -62,7 +62,7 @@ jobs:
           {
             echo "::: Install system dependencies"
             sudo apt-get update
-            sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev ripgrep
+            sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev ripgrep tini
             # Pinned fd: jammy's fd-find 8.3.1 lacks --no-require-git, which pi's find tool passes.
             curl -fsSL https://github.com/sharkdp/fd/releases/download/v10.5.0/fd-v10.5.0-x86_64-unknown-linux-musl.tar.gz | sudo tar -xz -C /usr/local/bin --strip-components=1 --wildcards '*/fd'
             fd --version
@@ -103,7 +103,13 @@ jobs:
         run: |
           { echo "::: Build the pi-env daemon"; npm run build:daemon --workspace packages/env; } 2>&1 | tee -a "$CI_LOG"
 
+      - name: Record PID 1
+        run: |
+          { echo "::: Record PID 1"; ps -o pid,ppid,comm -p 1; } 2>&1 | tee -a "$CI_LOG"
+
       - name: Test
+        # Tests kill orphaned grandchildren and wait for them to vanish. This runner's PID 1 does not reap orphans, so a
+        # killed orphan stays a zombie that kill(pid, 0) still sees. tini -s is a subreaper that reaps them.
         # PI_NO_LOCAL_LLM: the local llama.cpp/ollama probes hit localhost:8081 and
         # the runner host listens there, so the probe passes and the test runs
         # against an unrelated service. The runner has no local LLM to test.
@@ -114,7 +120,7 @@ jobs:
           # then loses its 10 s budget to CPU contention. Capped at 2: 906 files, 2762 tests, 0 failed, 4 min.
           VITEST_MAX_WORKERS: "2"
         run: |
-          { echo "::: Test"; npm test; } 2>&1 | tee -a "$CI_LOG"
+          { echo "::: Test"; tini -s -- npm test; } 2>&1 | tee -a "$CI_LOG"
 
       - name: Failure log → GitHub commit comment
         if: failure()
