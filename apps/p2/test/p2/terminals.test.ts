@@ -14,7 +14,7 @@ import { encodeFrame, type TerminalEvent } from "../../plugins/terminals/protoco
 import terminalsServer from "../../plugins/terminals/server.ts";
 import { startServer } from "../../src/hosts/server.ts";
 import { Server } from "../../src/runtime/server.ts";
-import { APP, clientHost, expectChord, holdIn, type LocalOwner, localOwner, poll, testHost } from "./helpers.ts";
+import { APP, byteChannel, clientHost, expectChord, holdIn, localOwner, poll, testHost } from "./helpers.ts";
 
 let noDaemon: string | undefined;
 try {
@@ -57,23 +57,6 @@ test("terminals objects deny guests before acquiring a detached-host resource", 
 	const view = guest.hold(Terminals, { session: "s", view: randomUUID() }, BACKGROUND_CONTEXT);
 	await expectChord(whenLive(view), "forbidden");
 });
-
-async function byteChannel(owner: LocalOwner, token: string) {
-	const socket = new WebSocket(`ws://127.0.0.1:${owner.port}/terminal?${new URLSearchParams({ token })}`, {
-		headers: { Cookie: owner.cookie },
-	});
-	const events: TerminalEvent[] = [];
-	const output: Buffer[] = [];
-	socket.on("message", (data, binary) => {
-		if (binary) output.push(Buffer.from(data as Buffer));
-		else events.push(JSON.parse(data.toString()) as TerminalEvent);
-	});
-	await new Promise<void>((resolve, reject) => {
-		socket.once("open", resolve);
-		socket.once("error", reject);
-	});
-	return { socket, events, output, text: () => Buffer.concat(output).toString("utf8") };
-}
 
 async function refused(port: number, query: string, headers: Record<string, string> = {}): Promise<number> {
 	const socket = new WebSocket(`ws://127.0.0.1:${port}/terminal${query}`, { headers });

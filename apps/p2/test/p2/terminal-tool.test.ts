@@ -21,7 +21,7 @@ import { localSystem, terminalDaemon } from "../../plugins/terminals/daemon.ts";
 import { connectTerminalHost } from "../../plugins/terminals/detached.ts";
 import { encodeFrame, type TerminalEvent, type TerminalInfo } from "../../plugins/terminals/protocol.ts";
 import { Hosts } from "../../src/runtime/server.ts";
-import { APP, expectChord, holdIn, http, poll, startFixture, until } from "./helpers.ts";
+import { APP, byteChannel, expectChord, holdIn, http, poll, startFixture, until } from "./helpers.ts";
 
 let unavailable: string | undefined;
 try {
@@ -84,7 +84,7 @@ test(
 		};
 		// The owner's terminal panel: its byte channel hears the session's terminals change.
 		const view = await holdIn(owner, Terminals, { session: session.id, view: randomUUID() }, "owner");
-		const bytes = await byteChannel(fixture.server.port, (await view.channel({}, BACKGROUND_CONTEXT)).token);
+		const bytes = await byteChannel(fixture.owner, (await view.channel({}, BACKGROUND_CONTEXT)).token);
 		t.after(() => bytes.socket.terminate());
 		await view.list({}, BACKGROUND_CONTEXT);
 		const listed = () =>
@@ -238,6 +238,9 @@ test(
 		await t.test("archiving the session closes its terminals", async () => {
 			await sessions.archive({ id: session.id }, BACKGROUND_CONTEXT);
 			const service = (await fixture.server.host.registry(TerminalServices, BACKGROUND_CONTEXT)).value!.service;
+			// The archive job closes the terminals after `archive` returns.
+			const windows = async () => (await service.call({ op: "list", sessionId: session.id })) as { windows: unknown[] };
+			await poll(async () => (await windows()).windows.length === 0, 20_000, "the archived session's terminals closed");
 			assert.deepEqual(await service.call({ op: "list", sessionId: session.id }), { kind: "list", windows: [] });
 			await poll(() => listed().length === 0);
 		});
@@ -261,19 +264,3 @@ test(
 		});
 	},
 );
-
-async function byteChannel(port: number, token: string) {
-	const socket = new WebSocket(`ws://127.0.0.1:${port}/terminal?${new URLSearchParams({ token })}`);
-	const events: TerminalEvent[] = [];
-	socket.on("message", (data, binary) => {
-		if (!binary) {
-			const event = JSON.parse(data.toString()) as TerminalEvent | { type: "ping" };
-			if (event.type !== "ping") events.push(event);
-		}
-	});
-	await new Promise<void>((resolve, reject) => {
-		socket.once("open", resolve);
-		socket.once("error", reject);
-	});
-	return { socket, events };
-}

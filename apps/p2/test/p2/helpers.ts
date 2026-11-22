@@ -20,6 +20,7 @@ import {
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import type { NativeWatchable, Watchable } from "@earendil-works/chord/watch";
 import { WebSocket as NodeWebSocket } from "ws";
+import type { TerminalEvent } from "../../plugins/terminals/protocol.ts";
 import type { WebManifest } from "../../src/hosts/bundles.ts";
 import { type P2Server, type ServerOptions, startServer } from "../../src/hosts/server.ts";
 import { WEB_MANIFEST_PATH } from "../../src/hosts/web.ts";
@@ -551,6 +552,30 @@ export function until<T>(source: Followed<T>, predicate: (value: T) => boolean, 
 			resolve(value);
 		});
 	});
+}
+
+/**
+ * The terminal byte channel of a view, as the owner: its JSON events (pings left out) and the output bytes. Without the
+ * owner's cookie the upgrade is refused (loopback alone is nobody).
+ */
+export async function byteChannel(owner: LocalOwner, token: string) {
+	const socket = new NodeWebSocket(`ws://127.0.0.1:${owner.port}/terminal?${new URLSearchParams({ token })}`, {
+		headers: { Cookie: owner.cookie },
+	});
+	const events: TerminalEvent[] = [];
+	const output: Buffer[] = [];
+	socket.on("message", (data, binary) => {
+		if (binary) output.push(Buffer.from(data as Buffer));
+		else {
+			const event = JSON.parse(data.toString()) as TerminalEvent | { type: "ping" };
+			if (event.type !== "ping") events.push(event);
+		}
+	});
+	await new Promise<void>((resolve, reject) => {
+		socket.once("open", resolve);
+		socket.once("error", reject);
+	});
+	return { socket, events, output, text: () => Buffer.concat(output).toString("utf8") };
 }
 
 export async function poll(
