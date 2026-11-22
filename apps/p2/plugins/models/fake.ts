@@ -61,12 +61,13 @@ const SCRIPTED: Record<string, () => ReturnType<typeof fauxToolCall>> = {
 			].join("\n"),
 		}),
 	// Code mode across a worker restart: the slow middle call is interrupted, the script catches it and continues.
+	// A killed worker leaves its shell running: the `$PPID` check keeps that orphan from logging `two` afterwards.
 	"codemode-restart": () =>
 		fauxToolCall("codemode", {
 			code: [
 				'const one = (await tools.bash({ command: "echo one >> codemode.log; printf one" })).output;',
 				"let two;",
-				'try { two = (await tools.bash({ command: "sleep 5; echo two >> codemode.log; printf two" })).output; }',
+				'try { two = (await tools.bash({ command: "sleep 5; kill -0 $PPID && echo two >> codemode.log; printf two" })).output; }',
 				'catch (error) { two = "two failed: " + error.message; }',
 				'const three = (await tools.bash({ command: "echo three >> codemode.log; printf three" })).output;',
 				'return [one, two, three].join(" | ");',
