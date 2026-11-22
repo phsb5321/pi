@@ -96,7 +96,7 @@ test(
 		await t.test("a script opens a window, types into it and reads its output", async () => {
 			const value = (await script(
 				[
-					'const opened = await tools.terminal({ command: "new-window", args: ["-n", "dev", "-w", "/^hello-agent$/", "echo hello-age\'\'nt"] });',
+					'const opened = await tools.terminal({ command: "new-window", args: ["-n", "dev", "-w", "/^(?:[$#] )?hello-agent$/", "echo hello-age\'\'nt"] });',
 					'const sent = await tools.terminal({ command: "send-keys", args: ["-t", "dev", "-w", "/^two$/", "echo t\'\'wo", "Enter"] });',
 					'const windows = await tools.terminal({ command: "list-windows" });',
 					"return { opened, sent, windows };",
@@ -108,7 +108,9 @@ test(
 			};
 			assert.equal(value.opened.window, 1);
 			assert.equal(value.opened.running, true);
-			assert.match(value.opened.output, /^hello-agent$/m);
+			// A shell that was not ready when the command was typed prints its first prompt in front of the output
+			// ("# hello-agent"): see terminal-agent-host.test.ts.
+			assert.match(value.opened.output, /^(?:[$#] )?hello-agent$/m);
 			assert.match(value.sent.output, /^two$/m);
 			assert.doesNotMatch(value.sent.output, /hello-agent/);
 			assert.deepEqual(
