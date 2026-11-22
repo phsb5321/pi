@@ -474,7 +474,8 @@ describe("SessionManager session file creation", () => {
 	});
 
 	// #10166, #10661, #11460: a failed write must not leave later entries pointing to a missing parent
-	it("does not keep an entry in memory when writing it fails", () => {
+	// A root process ignores file modes, so the chmod-based write failure cannot occur.
+	it.skipIf(process.getuid?.() === 0)("does not keep an entry in memory when writing it fails", () => {
 		const session = SessionManager.create(tempDir, tempDir);
 		const firstId = session.appendMessage(userMsg("first question"));
 		const file = session.getSessionFile()!;
@@ -492,7 +493,8 @@ describe("SessionManager session file creation", () => {
 		expect(reopened.getBranch().map((entry) => entry.id)).toEqual([firstId, secondId]);
 	});
 
-	it("does not keep an entry in memory when creating the file fails", () => {
+	// A root process ignores file modes, so the chmod-based create failure cannot occur.
+	it.skipIf(process.getuid?.() === 0)("does not keep an entry in memory when creating the file fails", () => {
 		const sessionDir = join(tempDir, "sessions");
 		mkdirSync(sessionDir);
 		const session = SessionManager.create(tempDir, sessionDir);
