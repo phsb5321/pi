@@ -1,0 +1,71 @@
+{
+  "schema": "pi-disk-index-github-pr58-desktop-readback-v1",
+  "atUtc": "2026-11-22T01:09:24Z",
+  "repository": "phsb5321/pi",
+  "branch": "pi-disk-backed-index-experiment-20261121",
+  "pr": "https://github.com/phsb5321/pi/pull/58",
+  "node": "v22.23.3",
+  "files": {
+    "disk-session-index.mjs": {
+      "bytes": 6660,
+      "sha256": "48e260e93e0d69016a11747fbdb3487dfda038e58ef5de50762fb4d7d338e850",
+      "gitBlob": "f61808a810262e9af7fca60207d6014ab4676d14"
+    },
+    "disk-session-index.test.mjs": {
+      "bytes": 4389,
+      "sha256": "32820f35bcfdcdf3444b04a32dba4712eaf5abb9dee6cb277f17da86244084c4",
+      "gitBlob": "f8221b4741e8850d9e86351298955087d0d3a597"
+    },
+    "benchmark.mjs": {
+      "bytes": 1920,
+      "sha256": "55a2f5d85191daee46ffd6e2c69024fe7afbb4c623056ba4b7a1366f0f0e4ca5",
+      "gitBlob": "c6250449d9112b7335b7deab46d5bc5d7a66cf38"
+    },
+    "benchmark-worker.mjs": {
+      "bytes": 1622,
+      "sha256": "d4ae3ee9de656d841e7f52c1d86eec35430e0605d8483fff2a8e37c618451970",
+      "gitBlob": "07d4da8b64992d650afa9e5e8179d920a90a9e60"
+    },
+    "README.md": {
+      "bytes": 3868,
+      "sha256": "4fdedf63a8142535213a5cc0ec38d342afdfdd80791dd6f9fd03e2f0a02dd57a",
+      "gitBlob": "6a5bbec5e32989e8c48af30c512f5e679fff35f7"
+    }
+  },
+  "testExit": 0,
+  "testOutputSha256": "453e83ac1fc4d96cce5a64e0d49feee0a583a21103dc4a28821162cc83be31ee",
+  "testPassed": 7,
+  "testFailed": 0,
+  "benchmarkExit": 0,
+  "benchmark": {
+    "kind": "synthetic-32-seat-history-retention-only",
+    "seats": 32,
+    "messagesPerSeat": 350,
+    "notes": [
+      "A single shared Node process is used in each arm; not 32 independent Pi runtimes.",
+      "The disk arm opens/closes SQLite indexes and hydrates only one message per seat; it does not test a Pi UI or model run.",
+      "Does not prove live fleet savings or resume fidelity."
+    ],
+    "disk": {
+      "mode": "disk",
+      "recordsObserved": 11200,
+      "pssKiB": 17659,
+      "rssBytes": 66465792,
+      "heapUsedBytes": 4243200
+    },
+    "baseline": {
+      "mode": "baseline",
+      "recordsObserved": 11200,
+      "pssKiB": 59545,
+      "rssBytes": 105287680,
+      "heapUsedBytes": 51788944
+    },
+    "pssReductionPct": 70.3,
+    "heapReductionPct": 91.8
+  },
+  "noPiInference": true,
+  "noQueueChanges": true,
+  "noServiceChanges": true,
+  "noBrowserActions": true,
+  "acceptedStage": "offline-experiment-only"
+}
