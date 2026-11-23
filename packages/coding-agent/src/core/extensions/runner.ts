@@ -12,6 +12,7 @@ import type { ModelRegistry } from "../model-registry.ts";
 import type { ScopedModel } from "../model-resolver.ts";
 import type { SessionManager } from "../session-manager.ts";
 import type { BuildSystemPromptOptions } from "../system-prompt.ts";
+import { createContextView } from "./context-view.ts";
 import type {
 	BeforeAgentStartEvent,
 	BeforeAgentStartEventResult,
@@ -1031,9 +1032,17 @@ export class ExtensionRunner {
 		return undefined;
 	}
 
+	private reportContextError(extensionPath: string, err: unknown): void {
+		const message = err instanceof Error ? err.message : String(err);
+		const stack = err instanceof Error ? err.stack : undefined;
+		this.emitError({ extensionPath, event: "context", error: message, stack });
+	}
+
 	async emitContext(messages: AgentMessage[]): Promise<AgentMessage[]> {
 		const ctx = this.createContext();
-		let currentMessages = structuredClone(messages);
+		// Opt-in (PI_CONTEXT_COW=1): copy-on-write view instead of a full structuredClone per call. See context-view.ts.
+		const copyOnWrite = process.env.PI_CONTEXT_COW === "1";
+		let currentMessages: AgentMessage[] = copyOnWrite ? messages : structuredClone(messages);
 
 		for (const ext of this.extensions) {
 			const handlers = ext.handlers.get("context");
@@ -1041,21 +1050,18 @@ export class ExtensionRunner {
 
 			for (const handler of handlers) {
 				try {
-					const event: ContextEvent = { type: "context", messages: currentMessages };
+					const view = copyOnWrite ? createContextView(currentMessages) : undefined;
+					const event: ContextEvent = {
+						type: "context",
+						messages: (view?.messages ?? currentMessages) as AgentMessage[],
+					};
 					const handlerResult = await handler(event, ctx);
 
-					if (handlerResult && (handlerResult as ContextEventResult).messages) {
-						currentMessages = (handlerResult as ContextEventResult).messages!;
-					}
+					const returned = (handlerResult as ContextEventResult | undefined)?.messages;
+					const next = returned ? returned : event.messages;
+					currentMessages = view ? (view.materialize(next) as AgentMessage[]) : (next as AgentMessage[]);
 				} catch (err) {
-					const message = err instanceof Error ? err.message : String(err);
-					const stack = err instanceof Error ? err.stack : undefined;
-					this.emitError({
-						extensionPath: ext.path,
-						event: "context",
-						error: message,
-						stack,
-					});
+					this.reportContextError(ext.path, err);
 				}
 			}
 		}

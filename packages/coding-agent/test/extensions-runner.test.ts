@@ -592,6 +592,53 @@ describe("ExtensionRunner", () => {
 		});
 	});
 
+	describe("context copy-on-write", () => {
+		it.each(["0", "1"])(
+			"passes a handler's in-place edit to the next handler and not to the input (PI_CONTEXT_COW=%s)",
+			async (cow) => {
+				const previous = process.env.PI_CONTEXT_COW;
+				process.env.PI_CONTEXT_COW = cow;
+				try {
+					const extCode = `
+				export default function(pi) {
+					pi.on("context", (event) => {
+						event.messages[0].content[0].text = "edited";
+					});
+					pi.on("context", (event) => {
+						return { messages: event.messages.filter((m) => m.role !== "toolResult") };
+					});
+				}
+			`;
+					fs.writeFileSync(path.join(extensionsDir, "cow.ts"), extCode);
+					const input = [
+						{ role: "user", timestamp: 1, content: [{ type: "text", text: "original" }] },
+						{ role: "toolResult", timestamp: 2, content: [{ type: "text", text: "tool" }] },
+					];
+					const snapshot = structuredClone(input);
+
+					const result = await discoverAndLoadExtensions([], tempDir, tempDir);
+					const runner = new ExtensionRunner(
+						result.extensions,
+						result.runtime,
+						tempDir,
+						sessionManager,
+						modelRegistry,
+					);
+
+					const out = await runner.emitContext(input as never);
+					expect(out).toEqual([{ role: "user", timestamp: 1, content: [{ type: "text", text: "edited" }] }]);
+					expect(input).toEqual(snapshot);
+
+					const again = await runner.emitContext(input as never);
+					expect(again[0]).toEqual({ role: "user", timestamp: 1, content: [{ type: "text", text: "edited" }] });
+				} finally {
+					if (previous === undefined) delete process.env.PI_CONTEXT_COW;
+					else process.env.PI_CONTEXT_COW = previous;
+				}
+			},
+		);
+	});
+
 	describe("message and entry renderers", () => {
 		it("gets Markdown transformers in extension load order", async () => {
 			const extCode = `
