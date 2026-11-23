@@ -3,6 +3,7 @@ import { type Component, truncateToWidth, visibleWidth } from "@earendil-works/p
 import type { AgentSession } from "../../../core/agent-session.ts";
 import { areExperimentalFeaturesEnabled } from "../../../core/experimental.ts";
 import type { ReadonlyFooterDataProvider } from "../../../core/footer-data-provider.ts";
+import type { SessionEntry } from "../../../core/session-manager.ts";
 import { addUsageToTotals, createUsageTotals } from "../../../core/usage-totals.ts";
 import { theme } from "../theme/theme.ts";
 
@@ -47,6 +48,30 @@ export function formatCwdForFooter(cwd: string, home: string | undefined): strin
  * Footer component that shows pwd, token stats, and context usage.
  * Computes token/context stats from session, gets git branch and extension statuses from provider.
  */
+interface FooterUsage {
+	usageTotals: ReturnType<typeof createUsageTotals>;
+	latestCacheHitRate: number | undefined;
+}
+
+function createFooterUsage(): FooterUsage {
+	return { usageTotals: createUsageTotals(), latestCacheHitRate: undefined };
+}
+
+function accumulateFooterUsage(acc: FooterUsage, entry: SessionEntry): void {
+	if (entry.type === "message" && entry.message.role === "assistant") {
+		addUsageToTotals(acc.usageTotals, entry.message.usage);
+
+		const latestPromptTokens =
+			entry.message.usage.input + entry.message.usage.cacheRead + entry.message.usage.cacheWrite;
+		acc.latestCacheHitRate =
+			latestPromptTokens > 0 ? (entry.message.usage.cacheRead / latestPromptTokens) * 100 : undefined;
+	} else if (entry.type === "message" && entry.message.role === "toolResult" && entry.message.usage) {
+		addUsageToTotals(acc.usageTotals, entry.message.usage);
+	} else if ((entry.type === "branch_summary" || entry.type === "compaction") && entry.usage) {
+		addUsageToTotals(acc.usageTotals, entry.usage);
+	}
+}
+
 export class FooterComponent implements Component {
 	private autoCompactEnabled = true;
 	private session: AgentSession;
@@ -85,23 +110,12 @@ export class FooterComponent implements Component {
 		const state = this.session.state;
 
 		// Calculate cumulative usage from ALL session entries (not just post-compaction messages)
-		const usageTotals = createUsageTotals();
-		let latestCacheHitRate: number | undefined;
-
-		for (const entry of this.session.sessionManager.getEntries()) {
-			if (entry.type === "message" && entry.message.role === "assistant") {
-				addUsageToTotals(usageTotals, entry.message.usage);
-
-				const latestPromptTokens =
-					entry.message.usage.input + entry.message.usage.cacheRead + entry.message.usage.cacheWrite;
-				latestCacheHitRate =
-					latestPromptTokens > 0 ? (entry.message.usage.cacheRead / latestPromptTokens) * 100 : undefined;
-			} else if (entry.type === "message" && entry.message.role === "toolResult" && entry.message.usage) {
-				addUsageToTotals(usageTotals, entry.message.usage);
-			} else if ((entry.type === "branch_summary" || entry.type === "compaction") && entry.usage) {
-				addUsageToTotals(usageTotals, entry.usage);
-			}
-		}
+		// The fold is cached per session and extended with new entries only, so a render does not rescan the history.
+		const { usageTotals, latestCacheHitRate } = this.session.sessionManager.reduceEntries(
+			"footer-usage",
+			createFooterUsage,
+			accumulateFooterUsage,
+		);
 
 		// Calculate context usage from session (handles compaction correctly).
 		// After compaction, tokens are unknown until the next LLM response.

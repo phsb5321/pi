@@ -26,6 +26,13 @@ import {
 	createCompactionSummaryMessage,
 	createCustomMessage,
 } from "./messages.ts";
+import {
+	IndexedEntryLookup,
+	isSessionDiskIndexEnabled,
+	SessionDiskIndex,
+	type SessionEntryLookup,
+	sessionDiskIndexPath,
+} from "./session-disk-index.ts";
 
 export const CURRENT_SESSION_VERSION = 3;
 
@@ -323,7 +330,16 @@ export function getLatestCompactionEntry(entries: SessionEntry[]): CompactionEnt
 	return null;
 }
 
-function buildEntryIndex(entries: SessionEntry[], byId?: Map<string, SessionEntry>): Map<string, SessionEntry> {
+type EntryGetter = Pick<SessionEntryLookup, "get">;
+
+function lastIndexWhere<T>(items: readonly T[], match: (item: T) => boolean): number {
+	for (let i = items.length - 1; i >= 0; i--) {
+		if (match(items[i])) return i;
+	}
+	return -1;
+}
+
+function buildEntryIndex(entries: SessionEntry[], byId?: EntryGetter): EntryGetter {
 	if (byId) return byId;
 	const index = new Map<string, SessionEntry>();
 	for (const entry of entries) {
@@ -332,11 +348,7 @@ function buildEntryIndex(entries: SessionEntry[], byId?: Map<string, SessionEntr
 	return index;
 }
 
-function buildSessionPath(
-	entries: SessionEntry[],
-	leafId?: string | null,
-	byId?: Map<string, SessionEntry>,
-): SessionEntry[] {
+function buildSessionPath(entries: SessionEntry[], leafId?: string | null, byId?: EntryGetter): SessionEntry[] {
 	const index = buildEntryIndex(entries, byId);
 	let leaf: SessionEntry | undefined;
 	if (leafId === null) {
@@ -419,9 +431,13 @@ export function sessionEntryToContextMessages(entry: SessionEntry): AgentMessage
 export function buildContextEntries(
 	entries: SessionEntry[],
 	leafId?: string | null,
-	byId?: Map<string, SessionEntry>,
+	byId?: EntryGetter,
 ): SessionEntry[] {
-	const path = buildSessionPath(entries, leafId, byId);
+	return contextEntriesFromPath(buildSessionPath(entries, leafId, byId));
+}
+
+/** Compaction-aware context entries for an already resolved root-to-leaf path. */
+function contextEntriesFromPath(path: SessionEntry[]): SessionEntry[] {
 	let compaction: CompactionEntry | null = null;
 
 	for (const entry of path) {
@@ -462,11 +478,14 @@ export function buildContextEntries(
 export function buildSessionContext(
 	entries: SessionEntry[],
 	leafId?: string | null,
-	byId?: Map<string, SessionEntry>,
+	byId?: EntryGetter,
 ): SessionContext {
-	const path = buildSessionPath(entries, leafId, byId);
+	return sessionContextFromPath(buildSessionPath(entries, leafId, byId));
+}
+
+function sessionContextFromPath(path: SessionEntry[]): SessionContext {
 	const { thinkingLevel, model } = getSessionContextSettings(path);
-	const messages = buildContextEntries(entries, leafId, byId).flatMap(sessionEntryToContextMessages);
+	const messages = contextEntriesFromPath(path).flatMap(sessionEntryToContextMessages);
 	return { messages, thinkingLevel, model };
 }
 
@@ -862,7 +881,10 @@ export class SessionManager {
 	private persist: boolean;
 	private flushed: boolean = false;
 	private fileEntries: FileEntry[] = [];
-	private byId: Map<string, SessionEntry> = new Map();
+	private byId: SessionEntryLookup = new Map();
+	/** Set when the transcript is served from the disk index (PI_SESSION_DISK_INDEX=1); fileEntries then holds only the header. */
+	private disk: SessionDiskIndex | undefined;
+	private reduceCache = new Map<string, { acc: unknown; next: number; epoch: number }>();
 	private labelsById: Map<string, string> = new Map();
 	private labelTimestampsById: Map<string, string> = new Map();
 	private leafId: string | null = null;
@@ -896,7 +918,9 @@ export class SessionManager {
 
 	private _setSessionFile(sessionFile: string, preloadedFileEntries?: FileEntry[]): void {
 		this.sessionFile = resolvePath(sessionFile);
+		this._dropDiskIndex();
 		if (existsSync(this.sessionFile)) {
+			if (preloadedFileEntries === undefined && this._openDiskIndex(this.sessionFile)) return;
 			this.fileEntries = preloadedFileEntries ?? loadEntriesFromFile(this.sessionFile);
 
 			// If file was empty, initialize it with a valid session header. If it was
@@ -933,6 +957,8 @@ export class SessionManager {
 		if (options?.id !== undefined) {
 			assertValidSessionId(options.id);
 		}
+		this._dropDiskIndex();
+		this.reduceCache.clear();
 		this.sessionId = options?.id ?? createSessionId();
 		const timestamp = new Date().toISOString();
 		const header: SessionHeader = {
@@ -957,7 +983,68 @@ export class SessionManager {
 		return this.sessionFile;
 	}
 
+	/**
+	 * Serve an existing, current-version transcript from the disk index instead of loading it. Returns false (and
+	 * leaves no state behind) for anything the eager loader would treat differently; the caller then loads eagerly.
+	 */
+	private _openDiskIndex(file: string): boolean {
+		if (!isSessionDiskIndexEnabled()) return false;
+		let index: SessionDiskIndex | undefined;
+		try {
+			index = SessionDiskIndex.open(file, sessionDiskIndexPath(file, getDefaultAgentDir()));
+			const header = index.header();
+			if (
+				index.incompatibility() !== undefined ||
+				header?.type !== "session" ||
+				typeof header.id !== "string" ||
+				header.version !== CURRENT_SESSION_VERSION
+			) {
+				index.close();
+				return false;
+			}
+			index.repairTrailingNewline();
+			this.disk = index;
+			this.byId = new IndexedEntryLookup(index);
+			this.fileEntries = [header];
+			this.sessionId = header.id;
+			this.labelsById.clear();
+			this.labelTimestampsById.clear();
+			this.reduceCache.clear();
+			this.leafId = index.lastId();
+			for (const entry of index.entriesOfKind("label")) this._applyLabel(entry);
+			this.flushed = true;
+			return true;
+		} catch {
+			// The index is derived data. Any problem with it means: load the transcript the normal way.
+			index?.close();
+			this.disk = undefined;
+			this.byId = new Map();
+			return false;
+		}
+	}
+
+	/** Resolve one label entry into the label maps (later entries win; an empty label clears). */
+	private _applyLabel(entry: SessionEntry): void {
+		if (entry.type !== "label") return;
+		if (entry.label) {
+			this.labelsById.set(entry.targetId, entry.label);
+			this.labelTimestampsById.set(entry.targetId, entry.timestamp);
+		} else {
+			this.labelsById.delete(entry.targetId);
+			this.labelTimestampsById.delete(entry.targetId);
+		}
+	}
+
+	private _dropDiskIndex(): void {
+		if (!this.disk) return;
+		this.disk.close();
+		this.disk = undefined;
+		this.byId = new Map();
+		this.reduceCache.clear();
+	}
+
 	private _buildIndex(): void {
+		this.reduceCache.clear();
 		this.byId.clear();
 		this.labelsById.clear();
 		this.labelTimestampsById.clear();
@@ -966,15 +1053,7 @@ export class SessionManager {
 			if (entry.type === "session") continue;
 			this.byId.set(entry.id, entry);
 			this.leafId = entry.id;
-			if (entry.type === "label") {
-				if (entry.label) {
-					this.labelsById.set(entry.targetId, entry.label);
-					this.labelTimestampsById.set(entry.targetId, entry.timestamp);
-				} else {
-					this.labelsById.delete(entry.targetId);
-					this.labelTimestampsById.delete(entry.targetId);
-				}
-			}
+			this._applyLabel(entry);
 		}
 	}
 
@@ -1044,6 +1123,12 @@ export class SessionManager {
 	}
 
 	private _appendEntry(entry: SessionEntry): void {
+		if (this.disk) {
+			// Lazy mode: the transcript already exists and is flushed, so every entry is one appended line.
+			this.disk.append(entry);
+			this.leafId = entry.id;
+			return;
+		}
 		this.fileEntries.push(entry);
 		this.byId.set(entry.id, entry);
 		this.leafId = entry.id;
@@ -1152,6 +1237,10 @@ export class SessionManager {
 	getSessionName(): string | undefined {
 		// Walk entries in reverse to find the latest session_info entry.
 		// Empty names explicitly clear the session title.
+		if (this.disk) {
+			const info = this.disk.lastOfKind("session_info");
+			return info?.type === "session_info" ? info.name?.trim() || undefined : undefined;
+		}
 		const entries = this.getEntries();
 		for (let i = entries.length - 1; i >= 0; i--) {
 			const entry = entries[i];
@@ -1210,6 +1299,7 @@ export class SessionManager {
 	 * Get all direct children of an entry.
 	 */
 	getChildren(parentId: string): SessionEntry[] {
+		if (this.disk) return this.disk.children(parentId);
 		const children: SessionEntry[] = [];
 		for (const entry of this.byId.values()) {
 			if (entry.parentId === parentId) {
@@ -1260,8 +1350,9 @@ export class SessionManager {
 	 * Use buildSessionContext() to get the resolved messages for the LLM.
 	 */
 	getBranch(fromId?: string): SessionEntry[] {
-		const path: SessionEntry[] = [];
 		const startId = fromId ?? this.leafId;
+		if (this.disk) return startId ? this.disk.getMany(this.disk.pathMeta(startId).map((row) => row.id)) : [];
+		const path: SessionEntry[] = [];
 		let current = startId ? this.byId.get(startId) : undefined;
 		while (current) {
 			path.push(current);
@@ -1276,6 +1367,7 @@ export class SessionManager {
 	 * Uses tree traversal from current leaf.
 	 */
 	buildContextEntries(): SessionEntry[] {
+		if (this.disk) return contextEntriesFromPath(this._diskContextPath());
 		return buildContextEntries(this.getEntries(), this.leafId, this.byId);
 	}
 
@@ -1284,7 +1376,61 @@ export class SessionManager {
 	 * Uses tree traversal from current leaf.
 	 */
 	buildSessionContext(): SessionContext {
-		return buildSessionContext(this.getEntries(), this.leafId, this.byId);
+		if (!this.disk) return buildSessionContext(this.getEntries(), this.leafId, this.byId);
+		const meta = this._diskLeafMeta();
+		// Model and thinking level come from the LAST matching entry anywhere on the path; read only those two.
+		const lastIndex = (match: (row: (typeof meta)[number]) => boolean) => lastIndexWhere(meta, match);
+		const picks = [
+			lastIndex((row) => row.kind === "thinking_level_change"),
+			lastIndex((row) => row.kind === "model_change" || (row.kind === "message" && row.role === "assistant")),
+		]
+			.filter((index) => index >= 0)
+			.sort((a, b) => a - b);
+		const settings = getSessionContextSettings(this.disk.getMany(picks.map((index) => meta[index].id)));
+		const messages = contextEntriesFromPath(this._diskContextPath(meta)).flatMap(sessionEntryToContextMessages);
+		return { messages, ...settings };
+	}
+
+	/** Root-to-leaf row metadata (no JSON read), with the eager fallback: an unknown leaf id means the last entry. */
+	private _diskLeafMeta() {
+		const disk = this.disk as SessionDiskIndex;
+		if (this.leafId === null) return [];
+		const direct = this.leafId ? disk.pathMeta(this.leafId) : [];
+		if (direct.length > 0) return direct;
+		const lastId = disk.lastId();
+		return lastId ? disk.pathMeta(lastId) : [];
+	}
+
+	/** The entries buildContextEntries would start from: only the latest compaction and what it keeps or follows. */
+	private _diskContextPath(meta = this._diskLeafMeta()): SessionEntry[] {
+		const disk = this.disk as SessionDiskIndex;
+		let start = 0;
+		const compactionIndex = lastIndexWhere(meta, (row) => row.kind === "compaction");
+		if (compactionIndex >= 0) {
+			const compaction = disk.get(meta[compactionIndex].id);
+			const firstKept =
+				compaction?.type === "compaction"
+					? meta.findIndex((row, index) => index < compactionIndex && row.id === compaction.firstKeptEntryId)
+					: -1;
+			start = firstKept >= 0 ? firstKept : compactionIndex;
+		}
+		return disk.getMany(meta.slice(start).map((row) => row.id));
+	}
+
+	/**
+	 * Entries on the path to `fromId` (default: the leaf) starting at the latest compaction, or the whole path when
+	 * there is none. Enough to answer "what happened since the last compaction" without reading the older history.
+	 */
+	getBranchFromLatestCompaction(fromId?: string): SessionEntry[] {
+		const startId = fromId ?? this.leafId;
+		if (!this.disk) {
+			const path = this.getBranch(fromId);
+			const index = lastIndexWhere(path, (entry) => entry.type === "compaction");
+			return index < 0 ? path : path.slice(index);
+		}
+		const meta = startId ? this.disk.pathMeta(startId) : [];
+		const index = lastIndexWhere(meta, (row) => row.kind === "compaction");
+		return this.disk.getMany(meta.slice(Math.max(index, 0)).map((row) => row.id));
 	}
 
 	/**
@@ -1301,7 +1447,49 @@ export class SessionManager {
 	 * change the leaf pointer. Entries cannot be modified or deleted.
 	 */
 	getEntries(): SessionEntry[] {
+		if (this.disk) return Array.from(this.disk.iterate(), ({ entry }) => entry);
 		return this.fileEntries.filter((e): e is SessionEntry => e.type !== "session");
+	}
+
+	/**
+	 * Visit every entry in file order without building an array. With the disk index on, only one entry at a time
+	 * is resident; prefer this over getEntries() for whole-history scans.
+	 */
+	forEachEntry(visit: (entry: SessionEntry) => void): void {
+		if (this.disk) {
+			for (const { entry } of this.disk.iterate()) visit(entry);
+			return;
+		}
+		for (const entry of this.fileEntries) {
+			if (entry.type !== "session") visit(entry);
+		}
+	}
+
+	/**
+	 * Fold all entries into an accumulator. The session is append-only, so the fold is kept per `key` and each call
+	 * only visits entries added since the previous call. `step` must be the same pure-accumulating function per key.
+	 */
+	reduceEntries<T>(key: string, init: () => T, step: (acc: T, entry: SessionEntry) => void): T {
+		let cached = this.reduceCache.get(key) as { acc: T; next: number; epoch: number } | undefined;
+		this.disk?.refreshIfStale();
+		const epoch = this.disk?.epoch ?? 0;
+		if (!cached || cached.epoch !== epoch) {
+			cached = { acc: init(), next: 0, epoch };
+			this.reduceCache.set(key, cached);
+		}
+		if (this.disk) {
+			for (const { seq, entry } of this.disk.iterate(cached.next)) {
+				step(cached.acc, entry);
+				cached.next = seq;
+			}
+			return cached.acc;
+		}
+		for (let i = cached.next; i < this.fileEntries.length; i++) {
+			const entry = this.fileEntries[i];
+			if (entry.type !== "session") step(cached.acc, entry);
+		}
+		cached.next = this.fileEntries.length;
+		return cached.acc;
 	}
 
 	/**
@@ -1472,6 +1660,7 @@ export class SessionManager {
 				parentId = labelEntry.id;
 			}
 
+			this._dropDiskIndex();
 			this.fileEntries = [header, ...pathWithoutLabels, ...labelEntries];
 			this.sessionId = newSessionId;
 			this.sessionFile = newSessionFile;
