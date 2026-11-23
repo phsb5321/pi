@@ -36,7 +36,8 @@ permissions: {}
 jobs:
   build-check-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # 60: run 516 reached apps/p2 at ~20 min after start; apps/p2 alone takes 28.7 min (measured 23/11), so 45 is too short.
+    timeout-minutes: 60
     permissions:
       contents: read
     env:
@@ -62,7 +63,7 @@ jobs:
           {
             echo "::: Install system dependencies"
             sudo apt-get update
-            sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev ripgrep
+            sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev ripgrep tini
             # Pinned fd: jammy's fd-find 8.3.1 lacks --no-require-git, which pi's find tool passes.
             curl -fsSL https://github.com/sharkdp/fd/releases/download/v10.5.0/fd-v10.5.0-x86_64-unknown-linux-musl.tar.gz | sudo tar -xz -C /usr/local/bin --strip-components=1 --wildcards '*/fd'
             fd --version
@@ -103,7 +104,13 @@ jobs:
         run: |
           { echo "::: Build the pi-env daemon"; npm run build:daemon --workspace packages/env; } 2>&1 | tee -a "$CI_LOG"
 
+      - name: Record PID 1
+        run: |
+          { echo "::: Record PID 1"; ps -o pid,ppid,comm -p 1; } 2>&1 | tee -a "$CI_LOG"
+
       - name: Test
+        # Tests kill orphaned grandchildren and wait for them to vanish. This runner's PID 1 does not reap orphans, so a
+        # killed orphan stays a zombie that kill(pid, 0) still sees. tini -s is a subreaper that reaps them.
         # PI_NO_LOCAL_LLM: the local llama.cpp/ollama probes hit localhost:8081 and
         # the runner host listens there, so the probe passes and the test runs
         # against an unrelated service. The runner has no local LLM to test.
@@ -114,7 +121,7 @@ jobs:
           # then loses its 10 s budget to CPU contention. Capped at 2: 906 files, 2762 tests, 0 failed, 4 min.
           VITEST_MAX_WORKERS: "2"
         run: |
-          { echo "::: Test"; npm test; } 2>&1 | tee -a "$CI_LOG"
+          { echo "::: Test"; tini -s -- npm test; } 2>&1 | tee -a "$CI_LOG"
 
       - name: Failure log → GitHub commit comment
         if: failure()
@@ -158,13 +165,20 @@ jobs:
         with:
           node-version: 22
 
-      - name: Regenerate model catalog
+      # Since upstream 1.5 the catalog is a pinned revision (nix/model-catalog.json) that builds hydrate
+      # into packages/ai/src/providers/data; the generator script this job ran is gone. The fork commits the
+      # hydrated data, so the check is: hydrate the pinned revision, verify its hash, and require no diff.
+      - name: Hydrate the pinned model catalog
         run: |
           npm ci --ignore-scripts
-          node packages/ai/scripts/generate-models.ts
+          revision=$(node -p 'require("./nix/model-catalog.json").revision')
+          curl -fsSL "https://pi.dev/api/models/revisions/${revision}?types=chat,image,classifier" -o "$RUNNER_TEMP/model-catalog.json"
+          echo "${revision#sha256-}  $RUNNER_TEMP/model-catalog.json" | sha256sum -c -
+          node packages/ai/scripts/hydrate-model-catalog.ts "$RUNNER_TEMP/model-catalog.json"
+          node packages/ai/scripts/check-model-data.ts
 
-      - name: Verify catalog is clean
-        run: git diff --exit-code -- packages/ai/src/models.generated.ts
+      - name: Verify the committed catalog matches the pin
+        run: git diff --exit-code -- packages/ai/src/providers/data packages/ai/src/models.generated.ts
 
       - name: "Status bridge → GitHub (context: generate)"
         if: always()

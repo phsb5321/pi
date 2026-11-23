@@ -3,12 +3,22 @@ import markedCjkFriendly from "marked-cjk-friendly";
 import { renderLatex } from "../latex.ts";
 import { getCapabilities, hyperlink, isImageLine } from "../terminal-image.ts";
 import type { Component } from "../tui.ts";
-import { applyBackgroundToLine, flattenLines, visibleWidth, wrapTextWithAnsi } from "../utils.ts";
+import { applyBackgroundToLine, cjkPunctuationRegex, flattenLines, visibleWidth, wrapTextWithAnsi } from "../utils.ts";
 import { MemoizedRender } from "./render-memo.ts";
 
 const STRICT_STRIKETHROUGH_REGEX = /^(~~)(?=[^\s~])((?:\\.|[^\\])*?(?:\\.|[^\s~\\]))\1(?=[^~]|$)/;
 
-class StrictStrikethroughTokenizer extends Tokenizer {
+class MarkdownTokenizer extends Tokenizer {
+	override url(src: string): Tokens.Link | undefined {
+		const token = super.url(src);
+		if (!token) return undefined;
+
+		// Bare URLs stop at CJK punctuation; explicit links and angle autolinks
+		// use separate tokenizers and can still contain these characters.
+		const punctuationIndex = token.raw.search(cjkPunctuationRegex);
+		return punctuationIndex < 0 ? token : super.url(token.raw.slice(0, punctuationIndex));
+	}
+
 	override del(src: string): Tokens.Del | undefined {
 		const match = STRICT_STRIKETHROUGH_REGEX.exec(src);
 		if (!match) {
@@ -188,6 +198,36 @@ function trimPartialClosingFences(tokens: readonly Token[]): void {
 	token.text = token.text.slice(0, -lastLine.length).replace(/\n$/, "");
 }
 
+// An unclosed comment runs to the end of an HTML block, as in CommonMark, so streamed comments stay hidden.
+const HTML_COMMENT_REGEX = /<!--[\s\S]*?(?:-->|$)/g;
+
+function stripHtmlComments(html: string): string {
+	return html.replace(HTML_COMMENT_REGEX, "");
+}
+
+/**
+ * Remove block HTML tokens that hold only comments, so they render no line. A removed comment between two blank
+ * lines, or at the start or end, also drops a blank line, so it leaves no extra gap.
+ * See https://github.com/earendil-works/pi/issues/11710.
+ */
+function removeHtmlCommentBlocks(tokens: Token[]): void {
+	for (let i = tokens.length - 1; i >= 0; i--) {
+		const token = tokens[i];
+		if (token.type === "list") {
+			for (const item of token.items) removeHtmlCommentBlocks(item.tokens);
+		} else if (token.type === "blockquote") {
+			removeHtmlCommentBlocks(token.tokens ?? []);
+		} else if (token.type === "html" && stripHtmlComments(token.raw).trim() === "") {
+			tokens.splice(i, 1);
+			if (tokens[i]?.type === "space" && (i === 0 || tokens[i - 1]?.type === "space")) {
+				tokens.splice(i, 1);
+			} else if (i === tokens.length && tokens[i - 1]?.type === "space") {
+				tokens.splice(--i, 1);
+			}
+		}
+	}
+}
+
 const markdownParser = new Marked();
 
 /** Tokens cover the source exactly; anything else means the incremental append split a block and must be discarded. */
@@ -203,7 +243,7 @@ function tokenRawsMatch(tokens: readonly Token[], source: string): boolean {
 }
 
 markdownParser.setOptions({
-	tokenizer: new StrictStrikethroughTokenizer(),
+	tokenizer: new MarkdownTokenizer(),
 });
 markdownParser.use({
 	tokenizer: { emStrong: markedCjkFriendly().tokenizer?.emStrong },
@@ -248,6 +288,7 @@ export interface MarkdownTheme {
 	italic: (text: string) => string;
 	strikethrough: (text: string) => string;
 	underline: (text: string) => string;
+	/** Highlighted lines of a code block. A Markdown component reuses the result for the same code until invalidate(). */
 	highlightCode?: (code: string, lang?: string) => string[];
 	/** Prefix applied to each rendered code block line (default: "  ") */
 	codeBlockIndent?: string;
@@ -275,16 +316,23 @@ interface LexState {
 	stableOffset: number;
 	/** Number of leading tokens that are stable. */
 	stableCount: number;
+	/** Tokens exactly as lexed: their raws rebuild the source. */
 	tokens: TokensList;
-}
-
-interface BlockLines {
-	width: number;
-	nextType: string | undefined;
-	lines: string[];
+	/** The same tokens with HTML comment blocks removed, which is what render reads. */
+	rendered: TokensList;
 }
 
 const REFERENCE_DEFINITION = /(?:^|\n) {0,3}\[[^\]\n]+\]:/;
+
+/** A top-level block of the last render, keyed by its source, reused by the next render. */
+interface RenderedBlock {
+	/** Width and type of the following block (which decides the spacing) that the lines were rendered for. */
+	width: number;
+	nextTokenType: string | undefined;
+	lines: string[];
+	/** Highlighted lines of the block's code, keyed by language and source; they survive a resize or new spacing. */
+	highlightedCode: Map<string, string[]>;
+}
 
 export class Markdown extends MemoizedRender implements Component {
 	private text: string;
@@ -299,9 +347,13 @@ export class Markdown extends MemoizedRender implements Component {
 	// about ten times the size of its source, and every message of a long transcript keeps a Markdown component. The
 	// tokens survive a burst of re-renders, such as a theme preview, and are collected afterwards.
 	private lexState?: WeakRef<LexState>;
-	// Per-block layout (wrap, margins, background, padding) of the current width. Keyed by token identity: a streamed
-	// message only re-lexes its last block, so every finished block keeps its token object and answers from here.
-	private blockLines = new WeakMap<Token, BlockLines>();
+	// The last render's top-level blocks. While a message streams only its last block changes, so a render styles and
+	// wraps only that block. Each render keeps only the blocks it used, which drops a streamed block's earlier versions.
+	// Held weakly like the tokens: the blocks repeat the source in their keys and the code in their highlighting, and
+	// only a burst of renders, such as streaming or a resize, needs them.
+	private blocks?: WeakRef<Map<string, RenderedBlock>>;
+	// Highlighted code of the block being rendered, only set while renderBlock runs.
+	private blockHighlightedCode?: Map<string, string[]>;
 
 	constructor(
 		text: string,
@@ -322,15 +374,18 @@ export class Markdown extends MemoizedRender implements Component {
 
 	setText(text: string): void {
 		this.text = text;
-		// The rendered result is not a pure function of the source: the transform reads live state such as the streaming
-		// flag, so an identical source can still render differently. Parsing and layout survive below.
-		this.renderMemo.clear();
+		this.clearRenderCache();
 	}
 
 	invalidate(): void {
+		this.clearRenderCache();
+		// The theme may have changed, which changes every styled line and the default style's prefix.
+		this.blocks = undefined;
+		this.defaultStylePrefix = undefined;
+	}
+
+	private clearRenderCache(): void {
 		this.renderMemo.clear();
-		this.lexState = undefined;
-		this.blockLines = new WeakMap();
 	}
 
 	render(width: number): string[] {
@@ -343,6 +398,7 @@ export class Markdown extends MemoizedRender implements Component {
 
 		// Don't render anything if there's no actual text
 		if (!text || text.trim() === "") {
+			this.blocks = undefined;
 			const result: string[] = [];
 			// Update cache
 			this.renderMemo.store(this.text, width, result);
@@ -352,28 +408,27 @@ export class Markdown extends MemoizedRender implements Component {
 		// Replace tabs with 3 spaces for consistent rendering
 		const normalizedText = text.replace(/\t/g, "   ");
 
-		// Parse markdown to HTML-like tokens. A streamed message appends to the last block, so only that block is
-		// re-lexed; every finished block keeps its tokens and its layout across renders.
+		// Parse markdown to HTML-like tokens. A streamed message appends to its last block, so only that block is
+		// re-lexed; every finished block keeps its tokens.
 		const tokens = this.lex(normalizedText);
 
-		// Convert tokens to styled terminal output
+		// A reference link resolves through a definition anywhere in the text, so blocks with the same source can render
+		// differently; such texts are rare in practice and render without reusing blocks.
+		const reuseBlocks = Object.keys(tokens.links).length === 0;
+		const previousBlocks = this.blocks?.deref();
+		const blocks = new Map<string, RenderedBlock>();
+		this.blocks = new WeakRef(blocks);
 		const contentLines: string[] = [];
-
 		for (let i = 0; i < tokens.length; i++) {
 			const token = tokens[i];
-			const nextToken = tokens[i + 1];
-			const nextType = nextToken?.type;
-			const cached = this.blockLines.get(token);
-			if (cached !== undefined && cached.width === width && cached.nextType === nextType) {
-				for (const line of cached.lines) {
-					contentLines.push(line);
-				}
-				continue;
+			const nextTokenType = tokens[i + 1]?.type;
+			const reused = reuseBlocks ? (blocks.get(token.raw) ?? previousBlocks?.get(token.raw)) : undefined;
+			const block = reused ?? { width: -1, nextTokenType, lines: [], highlightedCode: new Map() };
+			if (block.width !== width || block.nextTokenType !== nextTokenType) {
+				this.renderBlock(block, token, nextTokenType, width, contentWidth);
 			}
-
-			const lines = this.layoutLines(this.renderToken(token, contentWidth, nextType), width, contentWidth);
-			this.blockLines.set(token, { width, nextType, lines });
-			for (const line of lines) {
+			if (reuseBlocks) blocks.set(token.raw, block);
+			for (const line of block.lines) {
 				contentLines.push(line);
 			}
 		}
@@ -386,10 +441,10 @@ export class Markdown extends MemoizedRender implements Component {
 			const line = bgFn ? applyBackgroundToLine(emptyLine, width, bgFn) : emptyLine;
 			emptyLines.push(line);
 		}
+		flattenLines(emptyLines);
 
 		// Combine top padding, content, and bottom padding
 		const result = emptyLines.concat(contentLines, emptyLines);
-		flattenLines(result);
 
 		this.renderMemo.store(this.text, width, result);
 
@@ -403,11 +458,14 @@ export class Markdown extends MemoizedRender implements Component {
 	 * token is finished (a block boundary ends at the last token's raw offset), so the tokens already produced for it stay
 	 * valid and only the tail is lexed again. The result is rebuilt from the token raws and compared to the source; any
 	 * disagreement falls back to a full lex, which is exactly the old path.
+	 *
+	 * Returns the tokens render reads, with HTML comment blocks removed. The lex state keeps them: its raws must
+	 * rebuild the source.
 	 */
 	private lex(text: string): TokensList {
 		const cached = this.lexState?.deref();
 		if (cached?.source === text) {
-			return cached.tokens;
+			return cached.rendered;
 		}
 
 		if (cached !== undefined && text.length >= cached.source.length && cached.stableCount > 0) {
@@ -435,6 +493,11 @@ export class Markdown extends MemoizedRender implements Component {
 	}
 
 	private storeLexState(source: string, tokens: TokensList): TokensList {
+		// Comment removal splices the list, so it runs on a copy. It also edits nested list and quote children in
+		// place, which is harmless: they are rendered from, and removing a comment twice removes nothing.
+		const rendered = tokens.slice() as TokensList;
+		rendered.links = tokens.links;
+		removeHtmlCommentBlocks(rendered);
 		// Trailing whitespace can still belong to the block before it (an indented continuation), so the stable prefix
 		// ends at the last non-space block: that block and every token after it are re-lexed on the next append.
 		let lastBlock = tokens.length - 1;
@@ -442,8 +505,14 @@ export class Markdown extends MemoizedRender implements Component {
 			lastBlock--;
 		}
 		if (lastBlock < 0) {
-			this.lexState = new WeakRef({ source, stableOffset: source.length, stableCount: tokens.length, tokens });
-			return tokens;
+			this.lexState = new WeakRef({
+				source,
+				stableOffset: source.length,
+				stableCount: tokens.length,
+				tokens,
+				rendered,
+			});
+			return rendered;
 		}
 		let tailLength = 0;
 		for (let i = lastBlock; i < tokens.length; i++) {
@@ -454,47 +523,45 @@ export class Markdown extends MemoizedRender implements Component {
 			stableOffset: source.length - tailLength,
 			stableCount: lastBlock,
 			tokens,
+			rendered,
 		});
-		return tokens;
+		return rendered;
 	}
 
-	/** Wrap, then apply margins, background and right padding to one block's raw lines. */
-	private layoutLines(renderedLines: readonly string[], width: number, contentWidth: number): string[] {
-		const wrappedLines: string[] = [];
-		for (const line of renderedLines) {
-			if (isImageLine(line)) {
-				wrappedLines.push(line);
-			} else {
-				for (const wrappedLine of wrapTextWithAnsi(line, contentWidth)) {
-					wrappedLines.push(wrappedLine);
-				}
-			}
-		}
-
+	/** Render one top-level block to output lines: wrapped, with margins, and padded or backgrounded to the width. */
+	private renderBlock(
+		block: RenderedBlock,
+		token: Token,
+		nextTokenType: string | undefined,
+		width: number,
+		contentWidth: number,
+	): void {
+		this.blockHighlightedCode = block.highlightedCode;
 		const leftMargin = " ".repeat(this.paddingX);
 		const rightMargin = " ".repeat(this.paddingX);
 		const bgFn = this.defaultTextStyle?.bgColor;
 		const lines: string[] = [];
-
-		for (const line of wrappedLines) {
+		for (const line of this.renderToken(token, contentWidth, nextTokenType)) {
 			if (isImageLine(line)) {
 				lines.push(line);
 				continue;
 			}
-
-			const lineWithMargins = leftMargin + line + rightMargin;
-
-			if (bgFn) {
-				lines.push(applyBackgroundToLine(lineWithMargins, width, bgFn));
-			} else {
-				// No background - just pad to width
-				const visibleLen = visibleWidth(lineWithMargins);
-				const paddingNeeded = Math.max(0, width - visibleLen);
-				lines.push(lineWithMargins + " ".repeat(paddingNeeded));
+			for (const wrappedLine of wrapTextWithAnsi(line, contentWidth)) {
+				const lineWithMargins = leftMargin + wrappedLine + rightMargin;
+				if (bgFn) {
+					lines.push(applyBackgroundToLine(lineWithMargins, width, bgFn));
+				} else {
+					// No background - just pad to width
+					const paddingNeeded = Math.max(0, width - visibleWidth(lineWithMargins));
+					lines.push(lineWithMargins + " ".repeat(paddingNeeded));
+				}
 			}
 		}
-
-		return lines;
+		this.blockHighlightedCode = undefined;
+		flattenLines(lines);
+		block.lines = lines;
+		block.width = width;
+		block.nextTokenType = nextTokenType;
 	}
 
 	/**
@@ -633,10 +700,14 @@ export class Markdown extends MemoizedRender implements Component {
 
 			case "latexBlock": {
 				const latexToken = token as LatexToken;
-				const rendered =
+				let rendered =
 					!latexToken.pending && this.options.renderLatex !== false
-						? (renderLatex(latexToken.text, { display: true }) ?? latexToken.raw.trim())
-						: latexToken.raw.trim();
+						? renderLatex(latexToken.text, { display: true })
+						: undefined;
+				// A 2D layout cannot be wrapped row by row; fall back to the raw source when it does not fit.
+				if (rendered === undefined || rendered.split("\n").some((line) => visibleWidth(line) > width)) {
+					rendered = latexToken.raw.trim();
+				}
 				for (const line of rendered.split("\n")) {
 					lines.push(this.applyDefaultStyle(line));
 				}
@@ -650,8 +721,13 @@ export class Markdown extends MemoizedRender implements Component {
 				const indent = this.theme.codeBlockIndent ?? "  ";
 				lines.push(this.theme.codeBlockBorder(`\`\`\`${token.lang || ""}`));
 				if (this.theme.highlightCode) {
-					const highlightedLines = this.theme.highlightCode(token.text, token.lang);
-					for (const hlLine of highlightedLines) {
+					const key = `${token.lang ?? ""}\0${token.text}`;
+					let highlighted = this.blockHighlightedCode?.get(key);
+					if (!highlighted) {
+						highlighted = this.theme.highlightCode(token.text, token.lang);
+						this.blockHighlightedCode?.set(key, highlighted);
+					}
+					for (const hlLine of highlighted) {
 						lines.push(`${indent}${hlLine}`);
 					}
 				} else {
@@ -693,8 +769,21 @@ export class Markdown extends MemoizedRender implements Component {
 					return quoteStyle(lineWithReappliedStyle);
 				};
 
+				// With no room for another border ("│ " plus at least one content column), render the
+				// nested content without one. Otherwise each extra level re-wraps every child line at
+				// width 1 and the output grows exponentially with nesting depth.
+				if (width < 3) {
+					const quoteTokens = token.tokens || [];
+					for (let i = 0; i < quoteTokens.length; i++) {
+						for (const line of this.renderToken(quoteTokens[i], width, quoteTokens[i + 1]?.type, styleContext)) {
+							lines.push(line);
+						}
+					}
+					break;
+				}
+
 				// Calculate available width for quote content (subtract border "│ " = 2 chars)
-				const quoteContentWidth = Math.max(1, width - 2);
+				const quoteContentWidth = width - 2;
 
 				// Blockquotes contain block-level tokens (paragraph, list, code, etc.), so render
 				// children with renderToken() instead of renderInlineTokens().
@@ -708,9 +797,14 @@ export class Markdown extends MemoizedRender implements Component {
 				for (let i = 0; i < quoteTokens.length; i++) {
 					const quoteToken = quoteTokens[i];
 					const nextQuoteToken = quoteTokens[i + 1];
-					renderedQuoteLines.push(
-						...this.renderToken(quoteToken, quoteContentWidth, nextQuoteToken?.type, quoteInlineStyleContext),
-					);
+					for (const line of this.renderToken(
+						quoteToken,
+						quoteContentWidth,
+						nextQuoteToken?.type,
+						quoteInlineStyleContext,
+					)) {
+						renderedQuoteLines.push(line);
+					}
 				}
 
 				// Avoid rendering an extra empty quote line before the outer blockquote spacing.
@@ -739,9 +833,9 @@ export class Markdown extends MemoizedRender implements Component {
 				break;
 
 			case "html":
-				// Render HTML as plain text (escaped for terminal)
+				// Render HTML as plain text (escaped for terminal), without its comments
 				if ("raw" in token && typeof token.raw === "string") {
-					lines.push(this.applyDefaultStyle(token.raw.trim()));
+					lines.push(this.applyDefaultStyle(stripHtmlComments(token.raw).trim()));
 				}
 				break;
 
@@ -769,7 +863,15 @@ export class Markdown extends MemoizedRender implements Component {
 			return segments.map((segment: string) => applyText(segment)).join("\n");
 		};
 
-		for (const token of tokens) {
+		// After a skipped HTML comment, drop the next text's leading space if the text before ended with one,
+		// so "a <!-- c --> b" renders as "a b".
+		let dropLeadingSpace = false;
+		for (let i = 0; i < tokens.length; i++) {
+			let token = tokens[i];
+			if (dropLeadingSpace && token.type === "text" && !token.tokens?.length && /^[ \t]/.test(token.text)) {
+				token = { ...token, text: token.text.replace(/^[ \t]+/, "") };
+			}
+			dropLeadingSpace = false;
 			switch (token.type) {
 				case "latex": {
 					const latexToken = token as LatexToken;
@@ -848,8 +950,10 @@ export class Markdown extends MemoizedRender implements Component {
 				}
 
 				case "html":
-					// Render inline HTML as plain text
-					if ("raw" in token && typeof token.raw === "string") {
+					// Render inline HTML as plain text; comments are hidden
+					if (token.raw.startsWith("<!--")) {
+						dropLeadingSpace = i === 0 || /[ \t]$/.test(tokens[i - 1].raw);
+					} else {
 						result += applyTextWithNewlines(token.raw);
 					}
 					break;

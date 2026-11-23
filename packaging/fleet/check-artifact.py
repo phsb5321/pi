@@ -15,7 +15,7 @@ def main():
     root = args.artifact.resolve(strict=True)
     package = json.loads((root / 'package.json').read_text())
     assert package['name'] == '@earendil-works/pi-coding-agent'
-    assert package['version'] == '1.4.0'
+    assert package['version'].count('.') == 2, package['version']  # dependencies, CLI and cohort below are checked against it
     assert package['exports']['.']['import'] == './dist/index.js'
     assert package['exports']['./rpc-entry']['import'] == './dist/bundle/rpc-entry.js'
     assert (root / 'install-lock/package-lock.json').is_file()
