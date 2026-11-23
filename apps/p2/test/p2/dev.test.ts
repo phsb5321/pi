@@ -96,7 +96,8 @@ const webFacet = `import "./style.css"; ${emptyFacet}`;
 
 test(
 	"manual button/CLI reloads are atomic during streaming; explicit restarts preserve workers and inputs",
-	{ timeout: 120_000 },
+	// 240 s: 62.8 s standalone on 23/11; 120 s was exceeded in CI run 533 under suite load.
+	{ timeout: 240_000 },
 	async () => {
 		const directory = await mkdtemp(join(tmpdir(), "p2-dev-"));
 		const project = join(directory, "apps/p2");

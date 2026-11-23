@@ -71,8 +71,14 @@ describe("subagent team messaging (fake provider)", () => {
 		await until(root.view, (value) =>
 			JSON.stringify(value).includes("Echo: [asks; answer with subagent send to asker]"),
 		);
-		await idle();
-		const reports = agentMessages(root.view.value).filter((m) => m.data.intent === "answered");
+		// Both reports must land: the asker's can arrive after the root session is already idle.
+		const reportsView = await until(root.view, (value) => {
+			const names = agentMessages(value)
+				.filter((m) => m.data.intent === "answered")
+				.map((m) => m.data.from.name);
+			return names.includes("asker") && names.includes("first");
+		});
+		const reports = agentMessages(reportsView).filter((m) => m.data.intent === "answered");
 		assert.deepEqual(reports.map((m) => m.data.from.name).sort(), ["asker", "first"]);
 		assert.match(reports[0]?.model ?? "", /\[answered, no reply needed\]/);
 		assert.deepEqual(
