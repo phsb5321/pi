@@ -123,6 +123,11 @@ export interface TuiMainScreenRenderState {
 export class TuiMainScreen extends TuiBase implements TUI {
 	readonly mode = "regular" as const;
 	private previousLines: string[] = [];
+	// Component output of the previous frame, index-aligned with previousLines (its processed form).
+	// Empty means no processed line may be reused.
+	private previousRawLines: string[] = [];
+	// 1 where the previous frame's line carries a Kitty graphics sequence, aligned with previousRawLines.
+	private previousKittyFlags: Uint8Array = new Uint8Array(0);
 	private previousKittyImageIds = new Set<number>();
 	private previousWidth = 0;
 	private previousHeight = 0;
@@ -145,6 +150,8 @@ export class TuiMainScreen extends TuiBase implements TUI {
 
 	restoreRenderState(state: TuiMainScreenRenderState): void {
 		this.previousLines = state.previousLines.map((line) => (isImageLine(line) ? "" : line));
+		this.previousRawLines = [];
+		this.previousKittyFlags = new Uint8Array(0);
 		this.previousKittyImageIds = new Set();
 		this.previousWidth = state.previousWidth;
 		this.previousHeight = state.previousHeight;
@@ -156,6 +163,8 @@ export class TuiMainScreen extends TuiBase implements TUI {
 
 	protected override resetRenderState(): void {
 		this.previousLines = [];
+		this.previousRawLines = [];
+		this.previousKittyFlags = new Uint8Array(0);
 		this.previousWidth = -1;
 		this.previousHeight = -1;
 		this.cursorRow = 0;
@@ -174,7 +183,30 @@ export class TuiMainScreen extends TuiBase implements TUI {
 		this.terminal.write("\r\n");
 	}
 
-	private collectKittyImageIds(lines: string[]): Set<number> {
+	private rememberFrame(newLines: string[], rawLines: string[], kittyFlags: Uint8Array, newHasKitty: boolean): void {
+		this.previousLines = newLines;
+		this.previousRawLines = rawLines;
+		this.previousKittyFlags = kittyFlags;
+		this.previousKittyImageIds = this.collectKittyImageIds(newLines, newHasKitty);
+	}
+
+	/** Per-line Kitty sequence flags; a line whose raw text did not change keeps the previous frame's flag. */
+	private kittyFlagsFor(rawLines: string[]): Uint8Array {
+		const flags = new Uint8Array(rawLines.length);
+		const reusable = Math.min(this.previousRawLines.length, this.previousKittyFlags.length);
+		for (let i = 0; i < rawLines.length; i++) {
+			flags[i] =
+				i < reusable && rawLines[i] === this.previousRawLines[i]
+					? this.previousKittyFlags[i]
+					: rawLines[i].includes(KITTY_SEQUENCE_PREFIX)
+						? 1
+						: 0;
+		}
+		return flags;
+	}
+
+	private collectKittyImageIds(lines: string[], hasKitty = true): Set<number> {
+		if (!hasKitty) return new Set();
 		const ids = new Set<number>();
 		for (const line of lines) {
 			for (const id of extractKittyImageIds(line)) {
@@ -210,6 +242,7 @@ export class TuiMainScreen extends TuiBase implements TUI {
 		firstChanged: number,
 		lastChanged: number,
 		newLines: string[],
+		newHasKitty: boolean,
 	): { firstChanged: number; lastChanged: number } {
 		let expandedFirstChanged = firstChanged;
 		let expandedLastChanged = lastChanged;
@@ -224,8 +257,8 @@ export class TuiMainScreen extends TuiBase implements TUI {
 			}
 		};
 
-		expandForLines(this.previousLines);
-		expandForLines(newLines);
+		if (this.previousKittyImageIds.size > 0) expandForLines(this.previousLines);
+		if (newHasKitty) expandForLines(newLines);
 		return { firstChanged: expandedFirstChanged, lastChanged: expandedLastChanged };
 	}
 
@@ -267,10 +300,16 @@ export class TuiMainScreen extends TuiBase implements TUI {
 			newLines = this.compositeOverlays(newLines, width, height);
 		}
 
+		// The processed form of a line depends only on its raw text, so unchanged raw lines reuse the
+		// previous frame's processed string instead of being normalized and concatenated again.
+		const rawLines = newLines.slice();
+
 		// Extract cursor position before applying line resets (marker must be found first)
 		const cursorPos = this.extractCursorPosition(newLines, height);
 
-		newLines = this.applyLineResets(newLines);
+		newLines = this.applyLineResetsReusing(newLines, rawLines, this.previousRawLines, this.previousLines);
+		const kittyFlags = this.kittyFlagsFor(rawLines);
+		const newHasKitty = kittyFlags.includes(1);
 
 		// Helper to clear scrollback and viewport and render all new lines
 		const fullRender = (clear: boolean): void => {
@@ -311,8 +350,7 @@ export class TuiMainScreen extends TuiBase implements TUI {
 			const bufferLength = Math.max(height, newLines.length);
 			this.previousViewportTop = Math.max(0, bufferLength - height);
 			this.positionHardwareCursor(cursorPos, newLines.length);
-			this.previousLines = newLines;
-			this.previousKittyImageIds = this.collectKittyImageIds(newLines);
+			this.rememberFrame(newLines, rawLines, kittyFlags, newHasKitty);
 			this.previousWidth = width;
 			this.previousHeight = height;
 		};
@@ -381,7 +419,7 @@ export class TuiMainScreen extends TuiBase implements TUI {
 			lastChanged = newLines.length - 1;
 		}
 		if (firstChanged !== -1) {
-			const expandedRange = this.expandChangedRangeForKittyImages(firstChanged, lastChanged, newLines);
+			const expandedRange = this.expandChangedRangeForKittyImages(firstChanged, lastChanged, newLines, newHasKitty);
 			firstChanged = expandedRange.firstChanged;
 			lastChanged = expandedRange.lastChanged;
 		}
@@ -437,8 +475,7 @@ export class TuiMainScreen extends TuiBase implements TUI {
 				this.hardwareCursorRow = targetRow;
 			}
 			this.positionHardwareCursor(cursorPos, newLines.length);
-			this.previousLines = newLines;
-			this.previousKittyImageIds = this.collectKittyImageIds(newLines);
+			this.rememberFrame(newLines, rawLines, kittyFlags, newHasKitty);
 			this.previousWidth = width;
 			this.previousHeight = height;
 			this.previousViewportTop = prevViewportTop;
@@ -608,8 +645,7 @@ export class TuiMainScreen extends TuiBase implements TUI {
 		// Position hardware cursor for IME
 		this.positionHardwareCursor(cursorPos, newLines.length);
 
-		this.previousLines = newLines;
-		this.previousKittyImageIds = this.collectKittyImageIds(newLines);
+		this.rememberFrame(newLines, rawLines, kittyFlags, newHasKitty);
 		this.previousWidth = width;
 		this.previousHeight = height;
 	}

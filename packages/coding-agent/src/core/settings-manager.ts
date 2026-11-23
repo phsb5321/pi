@@ -41,6 +41,7 @@ export interface TerminalSettings {
 	showImages?: boolean; // default: true (only relevant if terminal supports images)
 	imageWidthCells?: number; // default: 60 (preferred inline image width in terminal cells)
 	clearOnShrink?: boolean; // default: false (clear empty rows when content shrinks)
+	unfocusedRenderIntervalMs?: number; // default: unset/0 (off; frame interval while the terminal reports focus loss)
 	showTerminalProgress?: boolean; // default: false (OSC 9;4 terminal progress indicators)
 	hyperlinks?: boolean | "auto";
 	images?: "kitty" | "iterm2" | "auto" | false;
@@ -1175,6 +1176,12 @@ export class SettingsManager {
 			return this.settings.terminal.clearOnShrink;
 		}
 		return process.env.PI_CLEAR_ON_SHRINK === "1";
+	}
+
+	/** Frame interval while the terminal reports focus loss. Undefined leaves PI_TUI_UNFOCUSED_RENDER_MS (default off) in charge. */
+	getUnfocusedRenderIntervalMs(): number | undefined {
+		const ms = this.settings.terminal?.unfocusedRenderIntervalMs;
+		return typeof ms === "number" && Number.isFinite(ms) && ms >= 0 ? ms : undefined;
 	}
 
 	setClearOnShrink(enabled: boolean): void {

@@ -301,6 +301,9 @@ export interface TUI extends Component {
 	setShowHardwareCursor(enabled: boolean): void;
 	getClearOnShrink(): boolean;
 	setClearOnShrink(enabled: boolean): void;
+	getUnfocusedRenderInterval(): number;
+	setUnfocusedRenderInterval(ms: number): void;
+	seedTerminalFocus(focused: boolean): void;
 	setFocus(component: Component | null): void;
 	showOverlay(component: Component, options?: OverlayOptions): OverlayHandle;
 	hideOverlay(): void;
@@ -328,6 +331,14 @@ export function isViewportTUI(tui: TUI): tui is ViewportTUI {
 	return (tui as Partial<ViewportTUI>)[VIEWPORT_TUI] === true;
 }
 
+const FOCUS_IN_REPORT = "\x1b[I";
+const FOCUS_OUT_REPORT = "\x1b[O";
+
+function parseRenderIntervalMs(value: string | undefined): number {
+	const ms = Number(value);
+	return Number.isFinite(ms) && ms > 0 ? Math.floor(ms) : 0;
+}
+
 export abstract class TuiBase extends Container implements TUI {
 	abstract readonly mode: TuiMode;
 	public terminal: Terminal;
@@ -341,9 +352,18 @@ export abstract class TuiBase extends Container implements TUI {
 	private renderTimer: NodeJS.Timeout | undefined;
 	private lastRenderAt = 0;
 	private static readonly MIN_RENDER_INTERVAL_MS = 16;
+	// Frame interval while the terminal reports focus loss (CSI ?1004). 0 keeps MIN_RENDER_INTERVAL_MS (off).
+	private unfocusedRenderIntervalMs = parseRenderIntervalMs(process.env.PI_TUI_UNFOCUSED_RENDER_MS);
+	// Focus is assumed until the terminal reports otherwise, so a terminal without focus reporting never slows down.
+	private terminalFocused = true;
+	private focusEventSeen = false;
+	private focusReportingEnabled = false;
+	private started = false;
 	private showHardwareCursor = process.env.PI_HARDWARE_CURSOR === "1";
 	private clearOnShrink = process.env.PI_CLEAR_ON_SHRINK === "1";
 	protected fullRedrawCount = 0;
+	/** Lines that went through normalization since start; unchanged lines reuse the previous frame's result. */
+	protected linesProcessed = 0;
 	protected stopped = false;
 	private pendingOsc11BackgroundReplies = 0;
 	private pendingOsc11BackgroundQueries: PendingOsc11BackgroundQuery[] = [];
@@ -697,6 +717,7 @@ export abstract class TuiBase extends Container implements TUI {
 
 	start(): void {
 		this.stopped = false;
+		this.started = true;
 		this.beforeTerminalStart();
 		this.terminal.start(
 			(data) => this.handleTerminalInput(data),
@@ -707,6 +728,7 @@ export abstract class TuiBase extends Container implements TUI {
 		if (this.terminalColorSchemeNotificationsEnabled) {
 			this.terminal.write("\x1b[?2031h");
 		}
+		this.syncFocusReporting();
 		this.queryCellSize();
 		this.requestRender();
 	}
@@ -751,14 +773,68 @@ export abstract class TuiBase extends Container implements TUI {
 
 	stop(options: TuiStopOptions = {}): void {
 		this.stopped = true;
+		this.started = false;
 		this.cancelRenderTimer();
 		if (this.terminalColorSchemeNotificationsEnabled) {
 			this.terminal.write("\x1b[?2031l");
+		}
+		if (this.focusReportingEnabled) {
+			this.terminal.write("\x1b[?1004l");
+			this.focusReportingEnabled = false;
 		}
 		this.beforeTerminalStop(options);
 		this.terminal.showCursor();
 		this.terminal.stop();
 		this.afterTerminalStop(options);
+	}
+
+	/** Frame interval used while the terminal reports focus loss; 0 disables the slower interval. */
+	getUnfocusedRenderInterval(): number {
+		return this.unfocusedRenderIntervalMs;
+	}
+
+	setUnfocusedRenderInterval(ms: number): void {
+		this.unfocusedRenderIntervalMs = Number.isFinite(ms) && ms > 0 ? Math.floor(ms) : 0;
+		if (this.started) this.syncFocusReporting();
+	}
+
+	/**
+	 * Ask the terminal for focus events (CSI ?1004) only while a slower unfocused interval is configured.
+	 * Fullscreen mode already owns ?1004 for its mouse handling and keeps doing so.
+	 */
+	private syncFocusReporting(): void {
+		if (this.mode !== "regular") return;
+		const wanted = this.unfocusedRenderIntervalMs > 0;
+		if (wanted === this.focusReportingEnabled) return;
+		this.focusReportingEnabled = wanted;
+		this.terminal.write(wanted ? "\x1b[?1004h" : "\x1b[?1004l");
+		if (!wanted) this.terminalFocused = true;
+	}
+
+	/** True until the terminal reports focus loss. */
+	isTerminalFocused(): boolean {
+		return this.terminalFocused;
+	}
+
+	private currentRenderIntervalMs(): number {
+		if (this.terminalFocused) return TuiBase.MIN_RENDER_INTERVAL_MS;
+		return Math.max(TuiBase.MIN_RENDER_INTERVAL_MS, this.unfocusedRenderIntervalMs);
+	}
+
+	/**
+	 * Initial focus from an out-of-band source (a terminal sends focus events only on change, never at start).
+	 * A focus event the terminal already reported wins.
+	 */
+	seedTerminalFocus(focused: boolean): void {
+		if (!this.focusEventSeen) this.terminalFocused = focused;
+	}
+
+	private setTerminalFocused(focused: boolean): void {
+		this.focusEventSeen = true;
+		if (this.terminalFocused === focused) return;
+		this.terminalFocused = focused;
+		// Regaining focus repaints now instead of waiting out the slower interval.
+		if (focused) this.requestImmediateRender();
 	}
 
 	renderNow(force = false): void {
@@ -808,7 +884,7 @@ export abstract class TuiBase extends Container implements TUI {
 			return;
 		}
 		const elapsed = performance.now() - this.lastRenderAt;
-		const delay = Math.max(0, TuiBase.MIN_RENDER_INTERVAL_MS - elapsed);
+		const delay = Math.max(0, this.currentRenderIntervalMs() - elapsed);
 		this.renderTimer = setTimeout(() => {
 			this.renderTimer = undefined;
 			if (this.stopped || !this.renderRequested) {
@@ -825,6 +901,10 @@ export abstract class TuiBase extends Container implements TUI {
 
 	private handleTerminalInput(data: string): void {
 		if (this.consumeOsc11BackgroundResponse(data)) {
+			return;
+		}
+		if (this.focusReportingEnabled && (data === FOCUS_IN_REPORT || data === FOCUS_OUT_REPORT)) {
+			this.setTerminalFocused(data === FOCUS_IN_REPORT);
 			return;
 		}
 		if (this.consumeTerminalColorSchemeReport(data)) {
@@ -1155,6 +1235,34 @@ export abstract class TuiBase extends Container implements TUI {
 		}
 
 		return result;
+	}
+
+	/**
+	 * applyLineResets, but a line whose raw text equals the same index of the previous frame reuses that frame's
+	 * processed line. `lines` holds the cursor-stripped lines, `rawLines` their text before stripping.
+	 */
+	protected applyLineResetsReusing(
+		lines: string[],
+		rawLines: string[],
+		previousRawLines: string[],
+		previousProcessed: string[],
+	): string[] {
+		const reset = SEGMENT_RESET;
+		const reusable = Math.min(previousRawLines.length, previousProcessed.length);
+		let processed = 0;
+		for (let i = 0; i < lines.length; i++) {
+			if (i < reusable && rawLines[i] === previousRawLines[i]) {
+				lines[i] = previousProcessed[i];
+				continue;
+			}
+			processed++;
+			const line = lines[i];
+			if (!isImageLine(line)) {
+				lines[i] = normalizeTerminalOutput(line) + reset;
+			}
+		}
+		this.linesProcessed += processed;
+		return lines;
 	}
 
 	protected applyLineResets(lines: string[]): string[] {

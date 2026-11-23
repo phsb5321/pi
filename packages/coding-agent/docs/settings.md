@@ -183,6 +183,7 @@ Keep `retry.provider.maxRetries` at `0` unless provider-level retries are explic
 | `terminal.showImages` | boolean | `true` | Show images in terminal (if supported) |
 | `terminal.imageWidthCells` | number | `60` | Preferred inline image width in terminal cells |
 | `terminal.clearOnShrink` | boolean | `false` | Clear empty rows when content shrinks (can cause flicker) |
+| `terminal.unfocusedRenderIntervalMs` | number | unset (off) | Minimum milliseconds between frames while the terminal reports focus loss (for example a Herdr pane you are not looking at). Try `150`. Pi then asks the terminal for focus events (`CSI ?1004h`). `PI_TUI_UNFOCUSED_RENDER_MS` sets the same value when the setting is unset. Fullscreen mode is not affected. |
 | `terminal.hyperlinks` | boolean or `"auto"` | `"auto"` | Override OSC 8 hyperlink support (advanced, JSON-only) |
 | `terminal.images` | string or boolean | `"auto"` | Override image protocol support with `"kitty"`, `"iterm2"`, `false`, or `"auto"` (advanced, JSON-only) |
 | `terminal.trueColor` | boolean or `"auto"` | `"auto"` | Override truecolor support (advanced, JSON-only) |
