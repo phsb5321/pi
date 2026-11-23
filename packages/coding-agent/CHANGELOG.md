@@ -4,6 +4,7 @@
 
 ### Added
 
+- Added `lazy` and `idleTimeout` to MCP server entries: a `lazy` server starts on its first call from a cached tool list, and a server with `idleTimeout` closes (stdio child included) after that many idle seconds and reconnects on the next call.
 - Added opt-in idle-seat sleep, default OFF: with `PI_SEAT_SLEEP_MIN` set and a resident launcher present
   (`PI_SEAT_SLEEP_LAUNCHER=1`), an idle seat writes a checkpoint and exits instead of holding ~150 MiB; the
   launcher's stub (`assets/seat-sleep-stub.sh`) holds the pane and wakes pi on the first input line, resuming the

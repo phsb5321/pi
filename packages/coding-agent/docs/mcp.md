@@ -68,6 +68,8 @@ Both server types support:
 - `timeout`: per-request timeout in seconds (default 60). Progress notifications reset it.
 - `enabled: false`: keep the entry without connecting to it.
 - `exposure` and `toolExposure`: control how tools reach the model (see [Control tool exposure](#control-tool-exposure)).
+- `lazy: true`: do not start the server at session start. Its tools are registered from the list of its last connection, kept in `mcp-tools-cache.json` in the agent directory, and the server starts on its first call, so a seat that never calls it holds no child process. The first session with no cache entry, a changed `command`, `args`, `env`, `cwd` or `url`, or a damaged cache connects at startup once to fill it. It does not apply to a server with `direct` tools, which must connect first. Name the server in codemode scripts (`mcp__<server>`): a script that calls `searchTools()` or reads `ALL_TOOLS` starts every server it reaches only if it then calls one.
+- `idleTimeout`: close the connection, and stop a stdio server, after this many seconds without a request. The tools stay registered and the next call connects again. Never while a request is in flight. Default: never, or 120 for a `lazy` server.
 - `description`: what the server offers, in a sentence. It lists the server in the system prompt (see [Control tool exposure](#control-tool-exposure)), tool search ranks the server's tools by it, and codemode's `describeNamespace()` returns it. Without it, the first line of the server instructions is used once the server connects.
 
 Keep personal servers and servers with credentials in the user-level file. Use the project file only for servers the project requires, and only in trusted projects.
