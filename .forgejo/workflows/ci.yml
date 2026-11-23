@@ -36,7 +36,8 @@ permissions: {}
 jobs:
   build-check-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # 60: run 516 reached apps/p2 at ~20 min after start; apps/p2 alone takes 28.7 min (measured 23/11), so 45 is too short.
+    timeout-minutes: 60
     permissions:
       contents: read
     env:
