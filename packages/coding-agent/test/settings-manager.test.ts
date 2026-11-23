@@ -394,6 +394,19 @@ describe("SettingsManager", () => {
 		});
 	});
 
+	describe("unfocusedRenderIntervalMs", () => {
+		it("is undefined unless set to a non-negative number", () => {
+			const read = (terminal: NonNullable<Settings["terminal"]>) =>
+				SettingsManager.inMemory({ terminal }).getUnfocusedRenderIntervalMs();
+
+			expect(SettingsManager.inMemory({}).getUnfocusedRenderIntervalMs()).toBeUndefined();
+			expect(read({ unfocusedRenderIntervalMs: 150 })).toBe(150);
+			expect(read({ unfocusedRenderIntervalMs: 0 })).toBe(0);
+			expect(read({ unfocusedRenderIntervalMs: -5 })).toBeUndefined();
+			expect(read({ unfocusedRenderIntervalMs: Number.NaN })).toBeUndefined();
+		});
+	});
+
 	describe("httpIdleTimeoutMs", () => {
 		it("should default to 5 minutes", () => {
 			const manager = SettingsManager.create(projectDir, agentDir);

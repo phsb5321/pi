@@ -91,6 +91,8 @@ export async function createStartupTui(settingsManager: SettingsManager): Promis
 	setKeybindings(KeybindingsManager.create());
 	const ui: TUI = new TuiMainScreen(new ProcessTerminal(), settingsManager.getShowHardwareCursor(), getAgentDir());
 	ui.setClearOnShrink(settingsManager.getClearOnShrink());
+	const unfocusedRenderIntervalMs = settingsManager.getUnfocusedRenderIntervalMs();
+	if (unfocusedRenderIntervalMs !== undefined) ui.setUnfocusedRenderInterval(unfocusedRenderIntervalMs);
 	return ui;
 }
 

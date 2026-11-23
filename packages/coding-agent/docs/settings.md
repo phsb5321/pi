@@ -106,6 +106,7 @@ See [Compaction Reference](compaction.md) for trigger, summarization, and valida
 | `terminal.showImages` | boolean | `true` | Display inline images when supported. |
 | `terminal.imageWidthCells` | number | `60` | Preferred inline image width in terminal cells. |
 | `terminal.clearOnShrink` | boolean | `false` | Clear empty rows when rendered content shrinks. When unset, `PI_CLEAR_ON_SHRINK=1` enables it. |
+| `terminal.unfocusedRenderIntervalMs` | number | unset (off) | Minimum milliseconds between frames while the terminal reports focus loss, for example a Herdr pane you are not looking at. Try `150`. Pi then asks the terminal for focus events (`CSI ?1004h`). When unset, `PI_TUI_UNFOCUSED_RENDER_MS` sets the same value. Fullscreen mode is not affected. |
 | `terminal.showTerminalProgress` | boolean | `false` | Show OSC 9;4 progress in the terminal tab. |
 | `terminal.hyperlinks` | `boolean \| "auto"` | `"auto"` | Override OSC 8 hyperlink detection. |
 | `terminal.images` | `"kitty" \| "iterm2" \| "auto" \| false` | `"auto"` | Override inline-image protocol detection. |

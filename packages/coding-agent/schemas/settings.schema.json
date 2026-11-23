@@ -425,6 +425,10 @@
           "description": "Clear empty rows when content shrinks.",
           "default": false
         },
+        "unfocusedRenderIntervalMs": {
+          "type": "number",
+          "description": "Frame interval in milliseconds while the terminal reports focus loss. Unset or 0 leaves the interval off."
+        },
         "showTerminalProgress": {
           "type": "boolean",
           "description": "Show OSC 9;4 terminal progress indicators.",

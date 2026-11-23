@@ -96,6 +96,12 @@ const TerminalSettingsSchema = Type.Object({
 			default: SETTINGS_DEFAULTS.terminal.clearOnShrink,
 		}),
 	),
+	unfocusedRenderIntervalMs: Type.Optional(
+		Type.Number({
+			description:
+				"Frame interval in milliseconds while the terminal reports focus loss. Unset or 0 leaves the interval off.",
+		}),
+	),
 	showTerminalProgress: Type.Optional(
 		Type.Boolean({
 			description: "Show OSC 9;4 terminal progress indicators.",
