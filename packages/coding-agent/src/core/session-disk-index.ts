@@ -24,6 +24,7 @@ const CHUNK_SIZE = 64 * 1024;
 const BLOCK_SIZE = 1024 * 1024;
 const MAX_RECORD = 128 * 1024 * 1024;
 const ENTRY_CACHE_SIZE = 256;
+const CHANGED_WHILE_INDEXING = "Transcript changed while indexing";
 
 export const SESSION_DISK_INDEX_ENV = "PI_SESSION_DISK_INDEX";
 export const SESSION_DISK_INDEX_DIR_ENV = "PI_SESSION_DISK_INDEX_DIR";
@@ -295,7 +296,7 @@ export class SessionDiskIndex {
 			}
 			const endsInNewline = fragmentBytes === 0;
 			if (fragmentBytes > 0) consume(Buffer.concat(fragments, fragmentBytes));
-			if (signatureOf(this.source) !== before) throw new Error("Transcript changed while indexing");
+			if (signatureOf(this.source) !== before) throw new Error(CHANGED_WHILE_INDEXING);
 			this.storeBlocks(fd, Math.floor(startAt / BLOCK_SIZE), offset);
 			this.setMeta("source_signature", before);
 			this.setMeta("source_bytes", String(offset));
@@ -308,7 +309,7 @@ export class SessionDiskIndex {
 			if (!incremental) this.epoch++;
 			return { strategy: incremental ? "append" : "rebuild", entries: this.count(), scannedBytes: offset - startAt };
 		} catch (error) {
-			this.db.exec("ROLLBACK");
+			this.rollback();
 			throw error;
 		}
 	}
@@ -344,7 +345,15 @@ export class SessionDiskIndex {
 
 	private ensureFresh(): void {
 		this.assertOpen();
-		if (signatureOf(this.source) !== this.signature) this.refresh();
+		// A live writer can append while a scan runs; the scan then reports a changed file. Try again a few times.
+		for (let attempt = 1; signatureOf(this.source) !== this.signature; attempt++) {
+			try {
+				this.refresh();
+				return;
+			} catch (error) {
+				if (attempt >= 3 || !(error instanceof Error) || error.message !== CHANGED_WHILE_INDEXING) throw error;
+			}
+		}
 	}
 
 	private readRecord(row: Row, id: string, openFd?: number): FileEntry | undefined {
@@ -526,7 +535,21 @@ export class SessionDiskIndex {
 		appendFileSync(this.source, line);
 		const length = Buffer.byteLength(line) - 1;
 		const after = signatureOf(this.source);
+		this.remember(entry);
 		if (sizeFromSignature(after) !== offset + length + 1) return; // someone else wrote too: the next read refreshes
+		// The line is already in the transcript, which is the source of truth. If the index is busy (another process
+		// holds the database) or fails, keep the entry and leave `signature` stale: the next read re-syncs by scanning.
+		try {
+			this.record(entry, offset, length, after);
+		} catch (error) {
+			this.deferredSyncError = error;
+		}
+	}
+
+	/** Last index write that was deferred to the next read because the database was busy or failed. */
+	deferredSyncError: unknown;
+
+	private record(entry: SessionEntry, offset: number, length: number, after: string): void {
 		this.db.exec("BEGIN IMMEDIATE");
 		try {
 			const result = this.stmt(
@@ -550,11 +573,15 @@ export class SessionDiskIndex {
 			this.setMeta("source_bytes", String(offset + length + 1));
 			this.db.exec("COMMIT");
 			this.signature = after;
-			this.remember(entry);
+			this.deferredSyncError = undefined;
 		} catch (error) {
-			this.db.exec("ROLLBACK");
+			this.rollback();
 			throw error;
 		}
+	}
+
+	private rollback(): void {
+		if (this.db.isTransaction) this.db.exec("ROLLBACK");
 	}
 
 	exists(): boolean {

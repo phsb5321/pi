@@ -1,6 +1,7 @@
 import { appendFileSync, mkdirSync, readFileSync, rmSync, truncateSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getAgentDir } from "../../src/config.ts";
 import { sessionDiskIndexPath } from "../../src/core/session-disk-index.ts";
@@ -30,7 +31,10 @@ function assistant(content: unknown[], timestamp: number) {
 
 /** Internal state the memory claim rests on. */
 function internals(manager: SessionManager) {
-	return manager as unknown as { fileEntries: unknown[]; disk: { refresh(): { strategy: string } } | undefined };
+	return manager as unknown as {
+		fileEntries: unknown[];
+		disk: { refresh(): { strategy: string }; deferredSyncError: unknown } | undefined;
+	};
 }
 
 describe("SessionManager disk index (PI_SESSION_DISK_INDEX=1)", () => {
@@ -231,6 +235,29 @@ describe("SessionManager disk index (PI_SESSION_DISK_INDEX=1)", () => {
 				.getEntries()
 				.map((e) => e.id),
 		);
+	});
+
+	it("keeps an appended entry when another process holds the index database, and re-syncs on the next read", () => {
+		const l = lazy();
+		const other = new DatabaseSync(sessionDiskIndexPath(file, getAgentDir()));
+		other.exec("BEGIN IMMEDIATE"); // a second Pi process in the middle of its own index write
+		let id: string;
+		try {
+			id = l.appendCustomEntry("while-locked", { n: 1 }); // waits for the busy timeout, then defers the index write
+		} finally {
+			other.exec("ROLLBACK");
+			other.close();
+		}
+		expect(lines().at(-1)).toBe(JSON.stringify(l.getEntry(id)));
+		expect(l.getLeafId()).toBe(id);
+		expect(internals(l).disk?.deferredSyncError).toBeDefined();
+		// next read finds the line by scanning only the new bytes
+		expect(lazy().getEntry(id)).toStrictEqual(l.getEntry(id));
+		expect(l.getEntries().at(-1)?.id).toBe(id);
+		expect(eager().getEntries()).toStrictEqual(l.getEntries());
+		const next = l.appendCustomEntry("after");
+		expect(internals(l).disk?.deferredSyncError).toBeUndefined();
+		expect(lazy().getLeafId()).toBe(next);
 	});
 
 	it("opens a transcript whose last line is unterminated and repairs it like the eager loader", () => {
