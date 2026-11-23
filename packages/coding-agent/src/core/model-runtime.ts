@@ -69,6 +69,7 @@ import { getAgentDir } from "../config.ts";
 import { operationSignal, raceWithAbortSignal } from "../utils/abort.ts";
 import { AuthStorage as DefaultAuthStorage } from "./auth-storage.ts";
 import { ModelConfig } from "./model-config.ts";
+import type { InvocationGuard } from "./model-invocation-fence.ts";
 import { FileModelsStore, InMemoryCodingAgentModelsStore } from "./models-store.ts";
 import {
 	type AuthStatus,
@@ -648,6 +649,13 @@ export class ModelRuntime implements Models {
 		return check ? { configured: true, source: "environment", label: check.source } : { configured: false };
 	}
 
+	private invocationGuard: InvocationGuard | undefined;
+
+	/** Install a fail-closed guard run before and after credential resolution on every provider call. */
+	setInvocationGuard(guard: InvocationGuard | undefined): void {
+		this.invocationGuard = guard;
+	}
+
 	private async prepareRequest<
 		TModel extends AnyModel,
 		TOptions extends ProviderRequestOptions<TModel> & ModelsRequestTransforms,
@@ -661,6 +669,10 @@ export class ModelRuntime implements Models {
 	}> {
 		const provider = this.models.getProvider(model.provider);
 		if (!provider) throw new ModelsError("provider", `Unknown provider: ${model.provider}`);
+		await this.invocationGuard?.(
+			{ provider: model.provider, modelId: model.id, api: model.api, baseUrl: model.baseUrl },
+			"pre",
+		);
 		const resolution = await this.getAuth(model, {
 			apiKey: options?.apiKey,
 			env: options?.env,
@@ -677,6 +689,15 @@ export class ModelRuntime implements Models {
 				? { ...(resolution.env ?? {}), ...(providerOptions.env ?? {}) }
 				: undefined;
 		const requestModel: TModel = resolution.auth.baseUrl ? { ...model, baseUrl: resolution.auth.baseUrl } : model;
+		await this.invocationGuard?.(
+			{
+				provider: requestModel.provider,
+				modelId: requestModel.id,
+				api: requestModel.api,
+				baseUrl: requestModel.baseUrl,
+			},
+			"final",
+		);
 		return {
 			provider,
 			model: requestModel,
