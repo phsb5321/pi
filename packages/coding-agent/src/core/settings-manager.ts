@@ -1251,6 +1251,12 @@ export class SettingsManager {
 		return SETTINGS_DEFAULTS.terminal.clearOnShrink;
 	}
 
+	/** Frame interval while the terminal reports focus loss. Undefined leaves PI_TUI_UNFOCUSED_RENDER_MS (default off) in charge. */
+	getUnfocusedRenderIntervalMs(): number | undefined {
+		const ms = this.settings.terminal?.unfocusedRenderIntervalMs;
+		return typeof ms === "number" && Number.isFinite(ms) && ms >= 0 ? ms : undefined;
+	}
+
 	setClearOnShrink(enabled: boolean): void {
 		if (!this.globalSettings.terminal) {
 			this.globalSettings.terminal = {};
