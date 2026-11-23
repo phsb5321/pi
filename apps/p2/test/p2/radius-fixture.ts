@@ -181,7 +181,8 @@ export async function radiusFixture(
 	const radius = await fakeRadius(relay);
 	t.after(async () => {
 		await radius.close();
-		await rm(directory, { recursive: true, force: true });
+		// ENOTEMPTY: a late write from the server still closing (run 515); retried as in browser.ts.
+		await rm(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 	});
 	await writeRadiusConfig(directory, {
 		gateway: radius.gateway,
