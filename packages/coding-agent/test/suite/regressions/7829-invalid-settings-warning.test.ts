@@ -26,6 +26,7 @@ describe("issue #7829 invalid settings warning", () => {
 			];
 			const context = {
 				init: vi.fn(async () => {}),
+				startPaneTtl: vi.fn(),
 				options: { startupDiagnostics },
 				chatContainer,
 				outputPad: 1,
