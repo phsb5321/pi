@@ -25,6 +25,7 @@ import {
 	normalizeBuildSystemPromptOptions,
 } from "../system-prompt.ts";
 import type { VirtualModelDefinition } from "../virtual-models.ts";
+import { createContextView } from "./context-view.ts";
 import type {
 	AgentBeforeSettleEvent,
 	BeforeAgentStartCustomEvent,
@@ -1343,12 +1344,16 @@ export class ExtensionRunner {
 		// No extension can mutate the request, so avoid copying the entire transcript.
 		if (!this.hasHandlers("context") && !this.hasHandlers("context_with_system")) return messages;
 		const ctx = this.createContext();
-		let currentMessages = cloneMessages(messages);
+		// Opt-in (PI_CONTEXT_COW=1): handlers read through a copy-on-write view instead of a full clone. See context-view.ts.
+		const copyOnWrite = process.env.PI_CONTEXT_COW === "1";
+		let currentMessages = copyOnWrite ? messages : cloneMessages(messages);
 
 		for (const { ext, handlers } of snapshotEventHandlers(this.extensions, "context")) {
 			for (const handler of handlers) {
 				try {
-					const visibleMessages = currentMessages.filter((message) => message.role !== "system");
+					const view = copyOnWrite ? createContextView(currentMessages) : undefined;
+					const source = (view?.messages ?? currentMessages) as AgentMessage[];
+					const visibleMessages = source.filter((message) => message.role !== "system");
 					const visibleSnapshot = visibleMessages.slice();
 					const event: ContextEvent = { type: "context", messages: visibleMessages };
 					const handlerResult = (await handler(event, ctx)) as ContextEventResult | undefined;
@@ -1357,8 +1362,20 @@ export class ExtensionRunner {
 					const returned =
 						handlerResult?.messages ??
 						(sameMessages(visibleMessages, visibleSnapshot) ? undefined : visibleMessages);
+					if (view && (!returned || sameMessages(returned, visibleSnapshot))) {
+						// Same messages in the same places: write nested edits back by position. Keeps every system message.
+						let i = 0;
+						currentMessages = currentMessages.map((message) =>
+							message.role === "system" ? message : (view.value(visibleSnapshot[i++]) as AgentMessage),
+						);
+						continue;
+					}
 					if (!returned) continue;
-					currentMessages = restoreSystemMessages(currentMessages, visibleSnapshot, returned);
+					currentMessages = restoreSystemMessages(
+						currentMessages,
+						visibleSnapshot,
+						view ? (view.value(returned) as AgentMessage[]) : returned,
+					);
 				} catch (err) {
 					const message = err instanceof Error ? err.message : String(err);
 					const stack = err instanceof Error ? err.stack : undefined;
@@ -1376,9 +1393,16 @@ export class ExtensionRunner {
 			for (const handler of handlers) {
 				try {
 					const hadLeadingSystemMessage = currentMessages[0]?.role === "system";
-					const event: ContextWithSystemEvent = { type: "context_with_system", messages: currentMessages };
+					const view = copyOnWrite ? createContextView(currentMessages) : undefined;
+					const event: ContextWithSystemEvent = {
+						type: "context_with_system",
+						messages: (view?.messages ?? currentMessages) as AgentMessage[],
+					};
 					const handlerResult = (await handler(event, ctx)) as ContextEventResult | undefined;
-					currentMessages = handlerResult?.messages ?? currentMessages;
+					const returnedMessages = handlerResult?.messages ?? (view ? view.messages : currentMessages);
+					currentMessages = view
+						? (view.materialize(returnedMessages) as AgentMessage[])
+						: (returnedMessages as AgentMessage[]);
 					// Providers read the prompt and initial tools from the leading system message.
 					// Losing it is never intended; report it but honor the handler's output.
 					if (hadLeadingSystemMessage && currentMessages[0]?.role !== "system") {

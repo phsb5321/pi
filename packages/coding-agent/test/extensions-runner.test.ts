@@ -706,6 +706,79 @@ describe("ExtensionRunner", () => {
 		});
 	});
 
+	describe("context copy-on-write", () => {
+		/** Runs one context extension under PI_CONTEXT_COW=cow and returns what emitContext produced. */
+		const runContext = async (cow: string, extCode: string, input: unknown[]) => {
+			const previous = process.env.PI_CONTEXT_COW;
+			process.env.PI_CONTEXT_COW = cow;
+			try {
+				fs.writeFileSync(path.join(extensionsDir, "cow.ts"), extCode);
+				const result = await discoverAndLoadExtensions([], tempDir, tempDir);
+				const runner = new ExtensionRunner(
+					result.extensions,
+					result.runtime,
+					tempDir,
+					sessionManager,
+					modelRegistry,
+				);
+				return await runner.emitContext(input as never);
+			} finally {
+				if (previous === undefined) delete process.env.PI_CONTEXT_COW;
+				else process.env.PI_CONTEXT_COW = previous;
+			}
+		};
+
+		it.each(["0", "1"])(
+			"passes a handler's in-place edit to the next handler and not to the input (PI_CONTEXT_COW=%s)",
+			async (cow) => {
+				const extCode = `
+				export default function(pi) {
+					pi.on("context", (event) => {
+						event.messages[0].content[0].text = "edited";
+					});
+					pi.on("context", (event) => {
+						return { messages: event.messages.filter((m) => m.role !== "toolResult") };
+					});
+				}
+			`;
+				const input = [
+					{ role: "user", timestamp: 1, content: [{ type: "text", text: "original" }] },
+					{ role: "toolResult", timestamp: 2, content: [{ type: "text", text: "tool" }] },
+				];
+				const snapshot = structuredClone(input);
+
+				const out = await runContext(cow, extCode, input);
+				expect(out).toEqual([{ role: "user", timestamp: 1, content: [{ type: "text", text: "edited" }] }]);
+				expect(input).toEqual(snapshot);
+			},
+		);
+
+		it.each(["0", "1"])(
+			"keeps a mid-list system message when a handler edits a message in place (PI_CONTEXT_COW=%s)",
+			async (cow) => {
+				const extCode = `
+				export default function(pi) {
+					pi.on("context", (event) => {
+						event.messages[0].content[0].text = "nested edit";
+					});
+				}
+			`;
+				const input = [
+					{ role: "system", content: [{ type: "text", text: "system-a" }] },
+					{ role: "user", timestamp: 1, content: [{ type: "text", text: "question" }] },
+					{ role: "system", content: [{ type: "text", text: "mid" }] },
+					{ role: "assistant", timestamp: 2, content: [{ type: "text", text: "answer" }] },
+				];
+				const snapshot = structuredClone(input);
+
+				const out = await runContext(cow, extCode, input);
+				expect(out.map((m) => m.role)).toEqual(["system", "user", "system", "assistant"]);
+				expect((out[1] as { content: Array<{ text: string }> }).content[0].text).toBe("nested edit");
+				expect(input).toEqual(snapshot);
+			},
+		);
+	});
+
 	describe("message and entry renderers", () => {
 		it("gets Markdown transformers in extension load order", async () => {
 			const extCode = `
