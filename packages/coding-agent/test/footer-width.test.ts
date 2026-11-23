@@ -2,6 +2,7 @@ import { visibleWidth } from "@earendil-works/pi-tui";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { AgentSession } from "../src/core/agent-session.ts";
 import type { ReadonlyFooterDataProvider } from "../src/core/footer-data-provider.ts";
+import type { SessionEntry } from "../src/core/session-manager.ts";
 import { FooterComponent, formatCwdForFooter } from "../src/modes/interactive/components/footer.ts";
 import { initTheme } from "../src/modes/interactive/theme/theme.ts";
 import { stripAnsi } from "../src/utils/ansi.ts";
@@ -75,6 +76,11 @@ function createSession(options: {
 		},
 		sessionManager: {
 			getEntries: () => entries,
+			reduceEntries: <T>(_key: string, init: () => T, step: (acc: T, entry: SessionEntry) => void): T => {
+				const acc = init();
+				for (const entry of entries) step(acc, entry as unknown as SessionEntry);
+				return acc;
+			},
 			getSessionName: () => options.sessionName,
 			getCwd: () => "/tmp/project",
 		},

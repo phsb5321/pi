@@ -3278,18 +3278,17 @@ export class AgentSession {
 	 * Get all user messages from session for fork selector.
 	 */
 	getUserMessagesForForking(): Array<{ entryId: string; text: string }> {
-		const entries = this.sessionManager.getEntries();
 		const result: Array<{ entryId: string; text: string }> = [];
 
-		for (const entry of entries) {
-			if (entry.type !== "message") continue;
-			if (entry.message.role !== "user") continue;
+		this.sessionManager.forEachEntry((entry) => {
+			if (entry.type !== "message") return;
+			if (entry.message.role !== "user") return;
 
 			const text = contentText(entry.message.content, "");
 			if (text) {
 				result.push({ entryId: entry.id, text });
 			}
-		}
+		});
 
 		return result;
 	}
@@ -3307,11 +3306,11 @@ export class AgentSession {
 		let toolCalls = 0;
 		const usageTotals = createUsageTotals();
 
-		for (const entry of this.sessionManager.getEntries()) {
+		this.sessionManager.forEachEntry((entry) => {
 			if ((entry.type === "branch_summary" || entry.type === "compaction") && entry.usage) {
 				addUsageToTotals(usageTotals, entry.usage);
 			}
-			if (entry.type !== "message") continue;
+			if (entry.type !== "message") return;
 			totalMessages++;
 			const message = entry.message;
 			if (message.role === "user") {
@@ -3329,7 +3328,7 @@ export class AgentSession {
 				}
 				addUsageToTotals(usageTotals, assistantMsg.usage);
 			}
-		}
+		});
 
 		return {
 			sessionFile: this.sessionFile,
@@ -3361,7 +3360,7 @@ export class AgentSession {
 		// After compaction, the last assistant usage reflects pre-compaction context size.
 		// We can only trust usage from an assistant that responded after the latest compaction.
 		// If no such assistant exists, context token count is unknown until the next LLM response.
-		const branchEntries = this.sessionManager.getBranch();
+		const branchEntries = this.sessionManager.getBranchFromLatestCompaction();
 		const latestCompaction = getLatestCompactionEntry(branchEntries);
 
 		if (latestCompaction) {
