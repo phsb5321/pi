@@ -1040,6 +1040,8 @@
 - Added `ui_prompt_start` and `ui_prompt_end` extension events so host integrations can distinguish active agent work from waiting on user-facing `ctx.ui` prompts ([#8355](https://github.com/earendil-works/pi/pull/8355) by [@cristinaponcela](https://github.com/cristinaponcela)).
 - Added `detectSupportedImageMimeTypeFromFile()` to the public library exports ([#8600](https://github.com/earendil-works/pi/pull/8600) by [@xl0](https://github.com/xl0)).
 - Added inherited experimental vision-capable `deepseek-v4-flash-vision-exp` model support.
+- Added opt-in `PI_PANE_TTL_MIN` idle time-to-live for interactive panes: after N minutes of quiet time Pi writes an expiry receipt for the Herdr roster and exits 0. Active work never counts as idle.
+- Added `ui_prompt_start` and `ui_prompt_end` extension events so host integrations can distinguish active agent work from waiting on user-facing `ctx.ui` prompts ([#5329](https://github.com/earendil-works/pi/issues/5329)).
 - Added transcript usage notices for compaction and branch summaries when cache miss notices are enabled.
 - Added RPC `clear_queue` to retrieve and remove queued steering and follow-up messages ([#8432](https://github.com/earendil-works/pi/issues/8432)).
 - Added environment variables and advanced settings for overriding auto-detected terminal hyperlink, image, and truecolor capabilities ([#8665](https://github.com/earendil-works/pi/issues/8665)).

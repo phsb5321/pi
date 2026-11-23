@@ -104,6 +104,8 @@ import {
 } from "../../core/model-resolver.ts";
 import { CredentialSynchronizationError } from "../../core/model-runtime.ts";
 import { DefaultPackageManager } from "../../core/package-manager.ts";
+import { isPaneBusy, PaneTtl, parsePaneTtl } from "../../core/pane-ttl.ts";
+import { writeExpiryReceipt } from "../../core/pane-ttl-receipt.ts";
 import { compareProviders } from "../../core/preferred-providers.ts";
 import { findMatchingProviders } from "../../core/provider-matching.ts";
 import { RADIUS_PROVIDER_ID } from "../../core/radius.ts";
@@ -593,6 +595,9 @@ export class InteractiveMode {
 	 * order. Reset removes only these, not pi's own overlays.
 	 */
 	private readonly extensionOverlays = new Map<OverlayHandle, () => void>();
+	private paneTtl: PaneTtl | undefined = undefined;
+	private paneTtlMin = 0;
+	private paneTtlInputUnsubscribe: (() => void) | undefined = undefined;
 	private extensionTerminalInputSubscriptions = new Set<{
 		handler: (data: string) => { consume?: boolean; data?: string } | undefined;
 		unsubscribe: () => void;
@@ -982,6 +987,7 @@ export class InteractiveMode {
 		nextUi.start();
 		this.themeController.rebindTui();
 		this.rebindExtensionTerminalInputListeners();
+		this.rebindPaneTtlInput();
 		if (
 			restoreProgress &&
 			this.settingsManager.getShowTerminalProgress() &&
@@ -1183,6 +1189,7 @@ export class InteractiveMode {
 	 */
 	async run(): Promise<void> {
 		await this.init();
+		this.startPaneTtl();
 
 		if (!process.env.PI_OFFLINE) {
 			const controller = new AbortController();
@@ -3579,6 +3586,7 @@ export class InteractiveMode {
 	}
 
 	private async handleEvent(event: AgentSessionEvent): Promise<void> {
+		this.paneTtl?.touch();
 		if (!this.isInitialized) {
 			await this.init();
 		}
@@ -4552,7 +4560,7 @@ export class InteractiveMode {
 	 */
 	private isShuttingDown = false;
 
-	private async shutdown(options?: { fromSignal?: boolean }): Promise<void> {
+	private async shutdown(options?: { fromSignal?: boolean; idleTtlMin?: number }): Promise<void> {
 		if (this.isShuttingDown) return;
 		this.isShuttingDown = true;
 		// Keep signal handlers registered until terminal cleanup has completed.
@@ -4586,11 +4594,65 @@ export class InteractiveMode {
 		await this.runtimeHost.dispose();
 
 		const resumeCommand = formatResumeCommand(this.sessionManager);
-		if (resumeCommand) {
+		if (options?.idleTtlMin !== undefined) {
+			const resume = resumeCommand ? `, resume: ${resumeCommand}` : "";
+			process.stdout.write(`${chalk.dim(`pi exited (idle TTL ${options.idleTtlMin} min${resume})`)}\n`);
+		} else if (resumeCommand) {
 			process.stdout.write(`${chalk.dim("To resume this session:")} ${resumeCommand}\n`);
 		}
 
 		process.exit(0);
+	}
+
+	/**
+	 * Opt-in idle TTL for worker panes (PI_PANE_TTL_MIN, see core/pane-ttl.ts). Unset means no timer.
+	 */
+	private startPaneTtl(): void {
+		const parsed = parsePaneTtl(process.env);
+		if (parsed.warning) this.showWarning(parsed.warning);
+		if (!parsed.config || this.paneTtl) return;
+		const { ttlMs, ttlMin } = parsed.config;
+		this.paneTtlMin = ttlMin;
+		this.paneTtl = new PaneTtl({
+			ttlMs,
+			isBusy: () =>
+				isPaneBusy(this.session, {
+					hasOpenDialog: () => this.extensionDialogs.length > 0,
+					hasDraft: () => this.editor.getText().trim().length > 0,
+				}),
+			onExpire: (idleMs) => void this.expirePane(idleMs),
+		});
+		this.paneTtl.start();
+		this.rebindPaneTtlInput();
+	}
+
+	private rebindPaneTtlInput(): void {
+		if (!this.paneTtl) return;
+		this.paneTtlInputUnsubscribe?.();
+		this.paneTtlInputUnsubscribe = this.ui.addInputListener(() => {
+			this.paneTtl?.touch();
+			return undefined;
+		});
+	}
+
+	private stopPaneTtl(): void {
+		this.paneTtl?.stop();
+		this.paneTtlInputUnsubscribe?.();
+		this.paneTtlInputUnsubscribe = undefined;
+	}
+
+	/** Quiet time ran out: record the expiry for the roster, then exit 0 through the normal shutdown. */
+	private async expirePane(idleMs: number): Promise<void> {
+		if (this.isShuttingDown) return;
+		writeExpiryReceipt({
+			env: process.env,
+			sessionFile: this.sessionManager.getSessionFile(),
+			ttlMin: this.paneTtlMin,
+			idleMs,
+			now: new Date(),
+			pid: process.pid,
+		});
+		await this.shutdown({ idleTtlMin: this.paneTtlMin });
 	}
 
 	private emergencyTerminalExit(): never {
@@ -7361,6 +7423,7 @@ export class InteractiveMode {
 	}
 
 	stop(fullscreenExitOutput = this.settingsManager.getFullscreenExitOutput()): void {
+		this.stopPaneTtl();
 		this.disposeActiveSelector();
 		if (this.settingsManager.getShowTerminalProgress()) {
 			this.ui.terminal.setProgress(false);
