@@ -62,12 +62,15 @@ import {
 import { loadMcpRuntime } from "./runtime.lazy.ts";
 import type * as McpRuntime from "./runtime.ts";
 import type { McpServerConnection, McpServerLog, McpTransportFactory } from "./runtime.ts";
+import { McpToolCache } from "./tool-cache.ts";
 import { createMcpToolDefinition, createMcpToolRenderers, type McpToolDetails } from "./tools.ts";
 import { type McpMenu, type McpUi, showMcpManager } from "./ui.ts";
 
 export type { McpTransportFactory } from "./runtime.ts";
 
 export interface McpExtensionOptions {
+	/** Directory of `mcp-tools-cache.json`, the tool lists of `lazy` servers. Defaults to the agent directory. */
+	toolCacheDir?: string;
 	/** Defaults to reading `mcp.json` from the agent directory and the trusted project. */
 	loadConfig?: (ctx: ExtensionContext) => LoadedMcpConfig;
 	/** Defaults to stdio and streamable HTTP transports built from the server config. */
@@ -145,6 +148,14 @@ function configuredExposures(entry: McpServerEntry): Set<McpExposure> {
 /** Whether some of the server's tools are declared to the model, so the first prompt waits for them. */
 function hasDirectTools(entry: McpServerEntry): boolean {
 	return configuredExposures(entry).has("direct");
+}
+
+/**
+ * Whether the server starts on its first call instead of at session start. Servers with tools declared
+ * to the model must connect first, so `lazy` does not apply to them.
+ */
+function isLazy(entry: McpServerEntry): boolean {
+	return entry.config.lazy === true && !hasDirectTools(entry);
 }
 
 /** Whether some of the server's tools are reached through codemode or tool_search. */
@@ -362,6 +373,12 @@ export function createMcpExtension(options: McpExtensionOptions = {}): Extension
 			return { servers: registered, overridden: overriddenNames };
 		};
 
+		let toolCache: McpToolCache | undefined;
+		const getToolCache = (): McpToolCache => {
+			toolCache ??= new McpToolCache(options.toolCacheDir ?? getAgentDir());
+			return toolCache;
+		};
+
 		const getCredentials = (runtime: typeof McpRuntime): McpOAuthCredentialStore => {
 			credentials ??= new runtime.McpOAuthCredentialStore();
 			return credentials;
@@ -574,7 +591,12 @@ export function createMcpExtension(options: McpExtensionOptions = {}): Extension
 				providerToken: async (provider) => modelRegistry?.getApiKeyForProvider(provider),
 				log: getServerLog(runtime),
 				onTools: (connection) => {
-					if (isCurrent()) registerTools(connection);
+					if (!isCurrent()) return;
+					registerTools(connection);
+					// A connection's tool list is what a later session registers without starting the server.
+					if (connection.state === "connected" && isLazy(connection.entry)) {
+						getToolCache().set(connection.entry, connection.snapshot());
+					}
 				},
 				onChange: (connection) => {
 					if (isCurrent()) onConnectionChange(connection);
@@ -602,6 +624,13 @@ export function createMcpExtension(options: McpExtensionOptions = {}): Extension
 				if (!isCurrent()) return;
 				const connection = await createConnection(server, isCurrent);
 				if (!connection || !isCurrent()) return;
+				// A lazy server with cached tools starts on its first call. Without a cache entry it
+				// connects now, once, which fills the cache.
+				const cached = isLazy(server.entry) ? getToolCache().get(server.entry) : undefined;
+				if (cached) {
+					connection.seed(cached);
+					return;
+				}
 				await connection.getClient().catch(() => undefined);
 			})();
 			server.ready = ready.catch(() => undefined);
@@ -841,10 +870,16 @@ export function createMcpExtension(options: McpExtensionOptions = {}): Extension
 				const state = connection?.state;
 				if (state === "needs-auth")
 					items.push({ value: "signin", label: "Sign in", description: "opens the browser" });
-				if (state === "connected" && connection) {
+				if ((state === "connected" || state === "idle") && connection) {
 					items.push({ value: "tools", label: "Tools", description: `${connection.tools.length} offered` });
 				}
-				if (state === "failed" || state === "disconnected" || state === "connected" || state === "needs-auth") {
+				if (
+					state === "failed" ||
+					state === "disconnected" ||
+					state === "connected" ||
+					state === "idle" ||
+					state === "needs-auth"
+				) {
 					items.push({ value: "reconnect", label: "Reconnect" });
 				}
 				if (state === "connected" && connection?.oauthUrl) {
@@ -1025,14 +1060,17 @@ export function createMcpExtension(options: McpExtensionOptions = {}): Extension
 				const connection = server.connection;
 				if (connection?.state === "needs-auth")
 					return `${name}: needs sign-in, run /mcp login ${name} (${exposure})`;
-				const tools = connection?.state === "connected" ? `, ${connection.tools.length} tools` : "";
+				const tools =
+					connection?.state === "connected" || connection?.state === "idle"
+						? `, ${connection.tools.length} tools`
+						: "";
 				const state = !isEnabled(server)
 					? "disabled"
 					: connection?.state === "disconnected"
 						? "disconnected, reconnects on next call"
 						: (connection?.state ?? "starting");
 				const error =
-					connection?.error && connection.state !== "connected"
+					connection?.error && connection.state !== "connected" && connection.state !== "idle"
 						? `\n    ${connection.error.split("\n").join("\n    ")}`
 						: "";
 				return `${name}: ${state}${tools} (${exposure})${error}`;

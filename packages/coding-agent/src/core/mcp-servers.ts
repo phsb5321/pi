@@ -86,6 +86,26 @@ interface McpServerConfigBase {
 	toolExposure?: Record<string, McpExposure>;
 	/** Per-request timeout in seconds. Progress notifications from the server reset it. Default: 60. */
 	timeout?: number;
+	/**
+	 * Close the connection (and stop a stdio server) after this many seconds without a request. The tools
+	 * stay registered and the next call connects again. Default: never, or `DEFAULT_LAZY_IDLE_TIMEOUT_SECONDS`
+	 * when `lazy` is set.
+	 */
+	idleTimeout?: number;
+	/**
+	 * Do not connect at session start. The tools are registered from the list cached at the last connection
+	 * (`mcp-tools-cache.json` in the agent directory) and the server connects on its first call. Without a
+	 * cache entry the server connects at startup once, to fill it. Default: false.
+	 */
+	lazy?: boolean;
+}
+
+/** Idle timeout of a `lazy` server that sets none. */
+export const DEFAULT_LAZY_IDLE_TIMEOUT_SECONDS = 120;
+
+/** Seconds a server may sit idle before its connection closes; undefined means never. */
+export function getMcpIdleTimeoutSeconds(config: McpServerConfig): number | undefined {
+	return config.idleTimeout ?? (config.lazy ? DEFAULT_LAZY_IDLE_TIMEOUT_SECONDS : undefined);
 }
 
 export interface McpStdioServerConfig extends McpStdioServerFields, McpServerConfigBase {
@@ -191,6 +211,19 @@ function checkExposures(entry: Record<string, unknown>): string | undefined {
 	return undefined;
 }
 
+/** Checks `idleTimeout` and `lazy`. Returns an error message. */
+function checkLifecycle(entry: Record<string, unknown>): string | undefined {
+	const { idleTimeout, lazy } = entry;
+	if (
+		idleTimeout !== undefined &&
+		(typeof idleTimeout !== "number" || !Number.isFinite(idleTimeout) || idleTimeout <= 0)
+	) {
+		return "idleTimeout must be a positive number of seconds";
+	}
+	if (lazy !== undefined && typeof lazy !== "boolean") return "lazy must be a boolean";
+	return undefined;
+}
+
 const LOOPBACK_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
 
 /** Checks `auth` of an HTTP server, which sends a provider's credential to `url`. Returns an error message. */
@@ -220,6 +253,7 @@ export function validateMcpServerConfig(name: string, raw: unknown): McpServerCo
 	if (result.kind === "invalid") return result.error;
 	const error =
 		checkExposures(result.config) ??
+		checkLifecycle(result.config) ??
 		(result.kind === "http" ? checkAuth(result.config.auth, result.config.url) : undefined);
 	if (error) return `server "${name}": ${error}`;
 	// The cast holds because pi's fields were checked above, which the types cannot express.

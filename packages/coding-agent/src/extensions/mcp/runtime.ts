@@ -35,6 +35,7 @@ import {
 	type OAuthChallenge,
 } from "@earendil-works/pi-mcp/oauth";
 import { VERSION } from "../../config.ts";
+import { getMcpIdleTimeoutSeconds } from "../../core/mcp-servers.ts";
 import { resolveConfigValueOrThrow, resolveHeadersOrThrow } from "../../core/resolve-config-value.ts";
 import { sliceTail } from "../../core/tools/truncate.ts";
 import type { McpServerEntry } from "./config.ts";
@@ -60,9 +61,17 @@ const CONNECT_RETRY_DELAYS_MS = [250, 1_000];
 
 /**
  * `disconnected`: the connection dropped (for example the stdio server exited); the next call
- * reconnects.
+ * reconnects. `idle`: no connection on purpose (the idle timeout closed it, or a `lazy` server was not
+ * started); its tools are still offered and the next call connects.
  */
-type ServerState = "connecting" | "connected" | "disconnected" | "needs-auth" | "failed" | "closed";
+export type ServerState = "connecting" | "connected" | "idle" | "disconnected" | "needs-auth" | "failed" | "closed";
+
+/** What a connection offered, kept to register a `lazy` server's tools without starting it. */
+export interface ServerSnapshot {
+	tools: McpTool[];
+	hasResources: boolean;
+	instructions?: string;
+}
 
 export type McpTransportFactory = (
 	entry: McpServerEntry,
@@ -170,6 +179,12 @@ export class McpServerConnection implements McpToolCaller, McpResourceServer {
 	private readonly onTools: (connection: McpServerConnection) => void;
 	private readonly onChange: ((connection: McpServerConnection) => void) | undefined;
 	private readonly log: McpServerLog | undefined;
+	/** Requests in flight; a connection with any is never idle. */
+	private inflight = 0;
+	private idleTimer: NodeJS.Timeout | undefined;
+	/** Set while the idle timeout closes the client, so the close is not reported as a dropped connection. */
+	private closingIdle = false;
+	private readonly idleMs: number | undefined;
 
 	constructor(options: {
 		entry: McpServerEntry;
@@ -190,6 +205,8 @@ export class McpServerConnection implements McpToolCaller, McpResourceServer {
 		this.onTools = options.onTools;
 		this.onChange = options.onChange;
 		this.log = options.log;
+		const idleSeconds = getMcpIdleTimeoutSeconds(this.entry.config);
+		this.idleMs = idleSeconds === undefined ? undefined : idleSeconds * 1000;
 		const url = this.oauthUrl;
 		const provider = "url" in this.entry.config ? this.entry.config.auth?.provider : undefined;
 		this.authProvider = url
@@ -246,6 +263,52 @@ export class McpServerConnection implements McpToolCaller, McpResourceServer {
 		};
 	}
 
+	/**
+	 * Start without a connection, offering the tools of an earlier one (`lazy` servers). The state is
+	 * `idle`; the first request connects, and the connection's own tool list replaces this one.
+	 */
+	seed(snapshot: ServerSnapshot): void {
+		this.tools = snapshot.tools;
+		this.hasResources = snapshot.hasResources;
+		this.instructions = snapshot.instructions;
+		this.state = "idle";
+		this.error = undefined;
+		this.onTools(this);
+		this.changed();
+	}
+
+	snapshot(): ServerSnapshot {
+		return { tools: this.tools, hasResources: this.hasResources, instructions: this.instructions };
+	}
+
+	/** Restart the idle clock; it fires only when no request is in flight. */
+	private touchIdle(): void {
+		if (this.idleMs === undefined || this.closed) return;
+		clearTimeout(this.idleTimer);
+		this.idleTimer = setTimeout(() => void this.closeIfIdle(), this.idleMs);
+		// The timer must never keep the process alive.
+		this.idleTimer.unref();
+	}
+
+	private async closeIfIdle(): Promise<void> {
+		const client = this.client;
+		if (!client || this.closed || this.opening) return;
+		if (this.inflight > 0) {
+			this.touchIdle();
+			return;
+		}
+		this.closingIdle = true;
+		this.client = undefined;
+		this.state = "idle";
+		this.error = undefined;
+		this.changed();
+		try {
+			await client.close().catch(() => undefined);
+		} finally {
+			this.closingIdle = false;
+		}
+	}
+
 	getClient(): Promise<McpClient> {
 		if (this.closed) return Promise.reject(new Error(`MCP server "${this.entry.name}" is shut down`));
 		if (this.client?.connectionState === "connected") return Promise.resolve(this.client);
@@ -288,6 +351,16 @@ export class McpServerConnection implements McpToolCaller, McpResourceServer {
 	 * HTTP error; tool calls are not, since they may have run.
 	 */
 	private async withClient<T>(run: (client: McpClient) => Promise<T>, readOnly = false): Promise<T> {
+		this.inflight++;
+		try {
+			return await this.runWithClient(run, readOnly);
+		} finally {
+			this.inflight--;
+			this.touchIdle();
+		}
+	}
+
+	private async runWithClient<T>(run: (client: McpClient) => Promise<T>, readOnly: boolean): Promise<T> {
 		for (let attempt = 1; ; attempt++) {
 			const client = await this.getClient();
 			try {
@@ -404,6 +477,7 @@ export class McpServerConnection implements McpToolCaller, McpResourceServer {
 			this.instructions = client.instructions?.trim() || undefined;
 			this.state = "connected";
 			this.error = undefined;
+			this.touchIdle();
 			this.onTools(this);
 			this.changed();
 			return client;
@@ -431,7 +505,7 @@ export class McpServerConnection implements McpToolCaller, McpResourceServer {
 
 	/** The transport dropped. The next call reconnects; until then the status shows why. */
 	private handleClientClose(client: McpClient, stdio: StdioTransport | undefined): void {
-		if (this.client !== client || this.closed) return;
+		if (this.closingIdle || this.client !== client || this.closed) return;
 		this.client = undefined;
 		this.state = "disconnected";
 		const stderr = stdio ? sliceTail(stdio.stderr.trim(), STDERR_TAIL_CHARS) : undefined;
@@ -453,6 +527,7 @@ export class McpServerConnection implements McpToolCaller, McpResourceServer {
 
 	/** Resolves once no transport of this server is open, including one that was still connecting. */
 	async close(): Promise<void> {
+		clearTimeout(this.idleTimer);
 		this.shutdown.abort();
 		this.state = "closed";
 		this.changed();
