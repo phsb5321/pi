@@ -32,3 +32,15 @@ export function getModelRuntime(modelRegistry: ModelRegistry): ModelRuntime {
 	if (!runtime) throw new Error("ModelRegistry was not created by the test helper");
 	return runtime;
 }
+
+export function testModel(id: string) {
+	return {
+		id,
+		name: id,
+		reasoning: false,
+		input: ["text"] as ("text" | "image")[],
+		cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+		contextWindow: 10000,
+		maxTokens: 1000,
+	};
+}
