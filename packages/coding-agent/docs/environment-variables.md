@@ -84,6 +84,7 @@ These variables are read by Pi itself:
 | `PI_SESSION_DISK_INDEX` | Set to `1` to keep long sessions out of RAM: an opened session file is read through a SQLite offset index instead of being loaded whole. Derived data only; any problem falls back to the normal load. Needs Node's `node:sqlite` |
 | `PI_SESSION_DISK_INDEX_DIR` | Where the index files live; default `<agent dir>/session-index` |
 | `PI_OFFLINE` | Disable startup network operations, including update checks, package updates, and install/update telemetry |
+| `PI_PANE_TTL_MIN` | Interactive mode only. Exit 0 after this many minutes of quiet time (no input, no agent run, tool, retry wait, queued prompt, open dialog or editor draft). In a Herdr pane it first writes an expiry receipt under `$HERDR_ROSTER_STATE_DIR` (or `~/.local/state/pi-herdr-roster`) so roster tooling treats the pane as final. Unset or invalid means no TTL |
 | `PI_SKIP_VERSION_CHECK` | Disable the `pi.dev` latest-version request |
 | `PI_TELEMETRY` | Override install/update telemetry and provider attribution headers: `1`/`true`/`yes` or `0`/`false`/`no` |
 | `PI_CACHE_RETENTION` | Set to `long` for extended provider prompt caching where supported |
