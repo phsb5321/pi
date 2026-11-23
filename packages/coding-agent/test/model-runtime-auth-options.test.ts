@@ -2,6 +2,7 @@ import { type AuthType, type CredentialStore, InMemoryCredentialStore } from "@e
 import { describe, expect, it } from "vitest";
 import { AuthStorage } from "../src/core/auth-storage.ts";
 import { ModelRuntime } from "../src/core/model-runtime.ts";
+import { testModel } from "./model-runtime-test-utils.ts";
 
 function authOptions(runtime: ModelRuntime, type?: AuthType) {
 	return runtime
@@ -18,18 +19,6 @@ function authOptions(runtime: ModelRuntime, type?: AuthType) {
 					: []
 				: []),
 		]);
-}
-
-function testModel(id: string) {
-	return {
-		id,
-		name: id,
-		reasoning: false,
-		input: ["text"] as ("text" | "image")[],
-		cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-		contextWindow: 10000,
-		maxTokens: 1000,
-	};
 }
 
 describe("ModelRuntime auth options", () => {
